@@ -26,7 +26,8 @@ dotenv.config({ path: join(__dirname, '.env') });
 validateEnv();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = 5000;
+// const PORT = process.env.PORT || 5000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
 // Trust proxy - Required when behind Nginx reverse proxy

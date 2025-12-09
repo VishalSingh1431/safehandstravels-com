@@ -4,7 +4,7 @@ function TripCard({ trip }) {
   return (
     <Link
       to={`/trip/${trip.id}`}
-      className="group relative flex flex-col overflow-hidden rounded-2xl bg-gradient-to-br from-white to-gray-50 shadow-lg border border-gray-200 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 cursor-pointer"
+      className="group relative flex flex-col h-full overflow-hidden rounded-2xl shadow-lg border border-gray-200 transition-all duration-300 hover:shadow-2xl cursor-pointer"
     >
       {/* Image Section */}
       <div className="relative h-40 sm:h-44 w-full overflow-hidden">
@@ -51,4 +51,3 @@ function TripCard({ trip }) {
 }
 
 export default TripCard
-
