@@ -236,6 +236,76 @@ const Navbar = () => {
         <div className="hidden lg:flex flex-wrap items-center gap-x-8 gap-y-3 text-sm font-semibold text-gray-900 lg:justify-between">
           {menuItems.map((item) => {
             const IconComponent = item.Icon;
+            const isCarBooking = item.label === 'Car Booking';
+            const isActive = location.pathname === '/car-rentals' && isCarBooking;
+            
+            // Map menu items to routes
+            const getRoute = (label) => {
+              switch (label) {
+                case 'All India Trips':
+                  return '/all-india-trips';
+                case 'Spiritual Trails':
+                  return '/spiritual-trips';
+                case 'Himalayan Escapes':
+                  return '/himalayan-escapes';
+                case 'Beach & Island Breaks':
+                  return '/beach-island-breaks';
+                case 'Wellness Retreats':
+                  return '/wellness-retreats';
+                default:
+                  return null;
+              }
+            };
+
+            const route = getRoute(item.label);
+            const isCategoryActive = route && location.pathname === route;
+            
+            if (isCarBooking) {
+              return (
+                <Link
+                  key={item.label}
+                  to="/car-rentals"
+                  className={`flex items-center gap-1.5 whitespace-nowrap transition-colors ${
+                    isActive ? 'text-[#017233]' : 'hover:text-[#017233]'
+                  }`}
+                >
+                  <span className="flex-shrink-0">
+                    <IconComponent />
+                  </span>
+                  <span>{item.label}</span>
+                </Link>
+              );
+            }
+            
+            if (route) {
+              return (
+                <Link
+                  key={item.label}
+                  to={route}
+                  className={`flex items-center gap-1.5 whitespace-nowrap transition-colors ${
+                    isCategoryActive ? 'text-[#017233]' : 'hover:text-[#017233]'
+                  }`}
+                >
+                  <span className="flex-shrink-0">
+                    <IconComponent />
+                  </span>
+                  <span>{item.label}</span>
+                  {item.hasDropdown && (
+                    <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
+                      <path
+                        d="M7 10l5 5 5-5"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  )}
+                </Link>
+              );
+            }
+            
             return (
               <button
                 key={item.label}
@@ -321,6 +391,72 @@ const Navbar = () => {
             <div className="flex flex-col gap-3 border-t border-gray-200 pt-4">
               {menuItems.map((item) => {
                 const IconComponent = item.Icon;
+                const isCarBooking = item.label === 'Car Booking';
+                
+                // Map menu items to routes
+                const getRoute = (label) => {
+                  switch (label) {
+                    case 'All India Trips':
+                      return '/all-india-trips';
+                    case 'Spiritual Trails':
+                      return '/spiritual-trips';
+                    case 'Himalayan Escapes':
+                      return '/himalayan-escapes';
+                    case 'Beach & Island Breaks':
+                      return '/beach-island-breaks';
+                    case 'Wellness Retreats':
+                      return '/wellness-retreats';
+                    default:
+                      return null;
+                  }
+                };
+
+                const route = getRoute(item.label);
+                
+                if (isCarBooking) {
+                  return (
+                    <Link
+                      key={item.label}
+                      to="/car-rentals"
+                      className="flex items-center gap-1.5 text-sm font-semibold text-gray-900 transition-colors hover:text-[#017233]"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <span className="flex-shrink-0">
+                        <IconComponent />
+                      </span>
+                      <span>{item.label}</span>
+                    </Link>
+                  );
+                }
+                
+                if (route) {
+                  return (
+                    <Link
+                      key={item.label}
+                      to={route}
+                      className="flex items-center gap-1.5 text-sm font-semibold text-gray-900 transition-colors hover:text-[#017233]"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <span className="flex-shrink-0">
+                        <IconComponent />
+                      </span>
+                      <span>{item.label}</span>
+                      {item.hasDropdown && (
+                        <svg viewBox="0 0 24 24" className="h-4 w-4 ml-auto" aria-hidden="true">
+                          <path
+                            d="M7 10l5 5 5-5"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      )}
+                    </Link>
+                  );
+                }
+                
                 return (
                   <button
                     key={item.label}

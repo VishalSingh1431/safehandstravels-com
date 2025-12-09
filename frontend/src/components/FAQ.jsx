@@ -69,7 +69,7 @@ function FAQ() {
             >
               <button
                 onClick={() => toggleFAQ(index)}
-                className="w-full px-6 py-5 md:px-8 md:py-6 flex items-center justify-between text-left focus:outline-none focus:ring-2 focus:ring-[#017233]/20 transition-all"
+                className="w-full px-6 py-5 md:px-8 md:py-6 flex items-center justify-between text-left focus:outline-none transition-all"
               >
                 <h3 className="text-lg md:text-xl font-bold text-gray-900 pr-4">
                   {faq.question}

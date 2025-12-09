@@ -27,9 +27,9 @@ function UpcomingTrips() {
       <div className="mx-auto w-full max-w-7xl px-4 md:px-6 lg:px-8">
         {/* Main Card Container */}
         <div className="bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden">
-          <div className="p-6 md:p-8 lg:p-12">
+          <div>
             {/* Header Card */}
-            <div className="mb-8">
+            <div className="p-4 md:p-5 lg:p-6 pb-0 mb-8">
               <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center text-white text-xl font-bold shadow-lg">
@@ -67,8 +67,8 @@ function UpcomingTrips() {
             </div>
 
             {/* Trips Grid */}
-            <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 items-stretch">
-              {visibleTrips.slice(0, 8).map((trip) => (
+            <div className="grid gap-0 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 items-stretch">
+              {visibleTrips.slice(0, 16).map((trip) => (
                 <TripCard key={trip.id} trip={trip} />
               ))}
             </div>
