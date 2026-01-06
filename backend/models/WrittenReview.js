@@ -1,4 +1,4 @@
-import pool from '../config/database.js';
+import pool, { queryWithRetry } from '../config/database.js';
 
 /**
  * WrittenReview Model - PostgreSQL operations
@@ -30,7 +30,7 @@ class WrittenReview {
         data.createdBy || null,
       ];
 
-      const result = await pool.query(query, values);
+      const result = await queryWithRetry(() => pool.query(query, values));
       return this.mapRowToWrittenReview(result.rows[0]);
     } catch (error) {
       console.error('WrittenReview.create error:', error);
@@ -44,7 +44,7 @@ class WrittenReview {
   static async findById(id) {
     try {
       const query = 'SELECT * FROM written_reviews WHERE id = $1';
-      const result = await pool.query(query, [id]);
+      const result = await queryWithRetry(() => pool.query(query, [id]));
       return result.rows.length > 0 ? this.mapRowToWrittenReview(result.rows[0]) : null;
     } catch (error) {
       console.error('WrittenReview.findById error:', error);
@@ -81,7 +81,7 @@ class WrittenReview {
         values.push(filters.offset);
       }
 
-      const result = await pool.query(query, values);
+      const result = await queryWithRetry(() => pool.query(query, values));
       return result.rows.map(row => this.mapRowToWrittenReview(row));
     } catch (error) {
       console.error('WrittenReview.findAll error:', error);
@@ -130,7 +130,7 @@ class WrittenReview {
         RETURNING *
       `;
 
-      const result = await pool.query(query, values);
+      const result = await queryWithRetry(() => pool.query(query, values));
       return this.mapRowToWrittenReview(result.rows[0]);
     } catch (error) {
       console.error('WrittenReview.update error:', error);
@@ -144,7 +144,7 @@ class WrittenReview {
   static async delete(id) {
     try {
       const query = 'DELETE FROM written_reviews WHERE id = $1 RETURNING *';
-      const result = await pool.query(query, [id]);
+      const result = await queryWithRetry(() => pool.query(query, [id]));
       return result.rows.length > 0 ? this.mapRowToWrittenReview(result.rows[0]) : null;
     } catch (error) {
       console.error('WrittenReview.delete error:', error);

@@ -430,6 +430,112 @@ export const enquiriesAPI = {
       body: JSON.stringify(enquiryData),
     });
   },
+  getAllEnquiries: async () => {
+    return apiCall('/enquiries', {
+      method: 'GET',
+      requiresAuth: true,
+    });
+  },
+  getEnquiryById: async (id) => {
+    return apiCall(`/enquiries/${id}`, {
+      method: 'GET',
+      requiresAuth: true,
+    });
+  },
+  updateEnquiryStatus: async (id, status) => {
+    return apiCall(`/enquiries/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+      requiresAuth: true,
+    });
+  },
+};
+
+// Drivers API functions
+export const driversAPI = {
+  getAllDrivers: async () => {
+    return apiCall('/drivers', {
+      method: 'GET',
+    });
+  },
+
+  getAllDriversAdmin: async (status = '') => {
+    const params = new URLSearchParams();
+    if (status) params.append('status', status);
+    return apiCall(`/drivers/admin?${params.toString()}`, {
+      method: 'GET',
+    });
+  },
+
+  getDriverById: async (id) => {
+    return apiCall(`/drivers/${id}`, {
+      method: 'GET',
+    });
+  },
+
+  createDriver: async (driverData) => {
+    return apiCall('/drivers', {
+      method: 'POST',
+      body: JSON.stringify(driverData),
+    });
+  },
+
+  updateDriver: async (id, driverData) => {
+    return apiCall(`/drivers/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(driverData),
+    });
+  },
+
+  deleteDriver: async (id) => {
+    return apiCall(`/drivers/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+// Car Booking Settings API functions
+export const carBookingSettingsAPI = {
+  getSettings: async () => {
+    return apiCall('/car-booking-settings', {
+      method: 'GET',
+    });
+  },
+
+  getSettingsAdmin: async () => {
+    return apiCall('/car-booking-settings/admin', {
+      method: 'GET',
+    });
+  },
+
+  updateSettings: async (settings) => {
+    return apiCall('/car-booking-settings', {
+      method: 'PUT',
+      body: JSON.stringify(settings),
+    });
+  },
+};
+
+// Product Page Settings API functions
+export const productPageSettingsAPI = {
+  getSettings: async () => {
+    return apiCall('/product-page-settings', {
+      method: 'GET',
+    });
+  },
+
+  getSettingsAdmin: async () => {
+    return apiCall('/product-page-settings/admin', {
+      method: 'GET',
+    });
+  },
+
+  updateSettings: async (settings) => {
+    return apiCall('/product-page-settings', {
+      method: 'PUT',
+      body: JSON.stringify(settings),
+    });
+  },
 };
 
 export default API_BASE_URL;

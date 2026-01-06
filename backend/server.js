@@ -16,6 +16,9 @@ import certificatesRoutes from './routes/certificates.js';
 import destinationsRoutes from './routes/destinations.js';
 import reviewsRoutes from './routes/reviews.js';
 import writtenReviewsRoutes from './routes/writtenReviews.js';
+import driversRoutes from './routes/drivers.js';
+import carBookingSettingsRoutes from './routes/carBookingSettings.js';
+import productPageSettingsRoutes from './routes/productPageSettings.js';
 
 // Load .env from backend directory (works even when run from different directory)
 const __filename = fileURLToPath(import.meta.url);
@@ -108,6 +111,9 @@ app.use('/api/certificates', certificatesRoutes);
 app.use('/api/destinations', destinationsRoutes);
 app.use('/api/reviews', reviewsRoutes);
 app.use('/api/written-reviews', writtenReviewsRoutes);
+app.use('/api/drivers', driversRoutes);
+app.use('/api/car-booking-settings', carBookingSettingsRoutes);
+app.use('/api/product-page-settings', productPageSettingsRoutes);
 
 // 404 handler
 app.use((req, res) => {

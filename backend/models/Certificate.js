@@ -1,4 +1,4 @@
-import pool from '../config/database.js';
+import pool, { queryWithRetry } from '../config/database.js';
 
 /**
  * Certificate Model - PostgreSQL operations
@@ -77,7 +77,7 @@ class Certificate {
         values.push(filters.offset);
       }
 
-      const result = await pool.query(query, values);
+      const result = await queryWithRetry(() => pool.query(query, values));
       return result.rows.map(row => this.mapRowToCertificate(row));
     } catch (error) {
       console.error('Certificate.findAll error:', error);

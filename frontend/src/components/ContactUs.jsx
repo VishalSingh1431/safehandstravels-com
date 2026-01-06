@@ -1,12 +1,16 @@
 import { useState } from 'react'
+import { enquiriesAPI } from '../config/api'
+import { useToast } from '../contexts/ToastContext'
 
 function ContactUs() {
+  const toast = useToast()
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
     message: ''
   })
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleChange = (e) => {
     setFormData({
@@ -15,17 +19,50 @@ function ContactUs() {
     })
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    // Handle form submission here
-    console.log('Form submitted:', formData)
-    // Reset form
-    setFormData({
-      name: '',
-      email: '',
-      phone: '',
-      message: ''
-    })
+    
+    // Validation
+    if (!formData.name.trim() || !formData.email.trim() || !formData.message.trim()) {
+      toast.error('Please fill in all required fields')
+      return
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(formData.email)) {
+      toast.error('Please enter a valid email address')
+      return
+    }
+
+    try {
+      setIsSubmitting(true)
+      
+      // Submit to enquiries API (works as general contact form)
+      await enquiriesAPI.createEnquiry({
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim() || undefined,
+        message: formData.message.trim(),
+        // No trip-specific fields for general contact form
+      })
+
+      // Success
+      toast.success('Thank you! Your message has been sent successfully. We\'ll get back to you soon!')
+      
+      // Reset form
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        message: ''
+      })
+    } catch (error) {
+      console.error('Error submitting contact form:', error)
+      toast.error(error.message || 'Failed to send message. Please try again later.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -119,9 +156,20 @@ function ContactUs() {
 
                   <button
                     type="submit"
-                    className="w-full bg-gradient-to-br from-[#017233] to-[#01994d] text-white px-8 py-4 rounded-xl font-bold text-base hover:shadow-xl hover:scale-105 transition-all duration-300 shadow-lg"
+                    disabled={isSubmitting}
+                    className="w-full bg-gradient-to-br from-[#017233] to-[#01994d] text-white px-8 py-4 rounded-xl font-bold text-base hover:shadow-xl hover:scale-105 transition-all duration-300 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
                   >
-                    Send Message
+                    {isSubmitting ? (
+                      <>
+                        <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Sending...
+                      </>
+                    ) : (
+                      'Send Message'
+                    )}
                   </button>
                 </form>
               </div>
@@ -139,8 +187,7 @@ function ContactUs() {
                       <div>
                         <h4 className="font-bold text-gray-900 mb-1">Address</h4>
                         <p className="text-gray-600 leading-relaxed">
-                          123 Travel Street<br />
-                          Adventure City, AC 12345<br />
+                          Varanasi, Uttar Pradesh<br />
                           India
                         </p>
                       </div>
@@ -153,13 +200,8 @@ function ContactUs() {
                       <div>
                         <h4 className="font-bold text-gray-900 mb-1">Phone</h4>
                         <p className="text-gray-600">
-                          <a href="tel:+1234567890" className="hover:text-[#017233] transition-colors">
-                            +1 (234) 567-890
-                          </a>
-                        </p>
-                        <p className="text-gray-600">
-                          <a href="tel:+1234567891" className="hover:text-[#017233] transition-colors">
-                            +1 (234) 567-891
+                          <a href="tel:+918448801998" className="hover:text-[#017233] transition-colors">
+                            (+91) 8448801998
                           </a>
                         </p>
                       </div>

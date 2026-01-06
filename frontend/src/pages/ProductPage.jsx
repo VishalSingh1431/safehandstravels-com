@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom'
-import { useState, useEffect } from 'react'
-import { tripsAPI, enquiriesAPI } from '../config/api'
-import { Loader2, Calendar, Users, Mail, Phone, MessageSquare, Send, CheckCircle } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
+import { tripsAPI, enquiriesAPI, productPageSettingsAPI } from '../config/api'
+import { Loader2, Calendar, Users, Mail, Phone, MessageSquare, Send, CheckCircle, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useToast } from '../contexts/ToastContext'
 import SEO from '../components/SEO'
 import { getTripSchema, getBreadcrumbSchema } from '../utils/structuredData'
@@ -12,19 +12,51 @@ function ProductPage() {
   const toast = useToast()
   const [trip, setTrip] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [pageSettings, setPageSettings] = useState(null)
   const [expandedDay, setExpandedDay] = useState(null)
   const [activeTab, setActiveTab] = useState('Itinerary')
   const [numTravelers, setNumTravelers] = useState(1)
   const [selectedDate, setSelectedDate] = useState('Dec 13, 2025')
+  const [showEnquiryForm, setShowEnquiryForm] = useState(false)
+  const [enquiryData, setEnquiryData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    message: '',
+    selectedMonth: ''
+  })
+  const [errors, setErrors] = useState({})
+  const [submitted, setSubmitted] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [lightboxIndex, setLightboxIndex] = useState(0)
+  const [touchStart, setTouchStart] = useState(null)
+  const [touchEnd, setTouchEnd] = useState(null)
 
   useEffect(() => {
-    const fetchTrip = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true)
-        const data = await tripsAPI.getTripById(id)
-        setTrip(data)
+        const [tripResponse, settingsResponse] = await Promise.all([
+          tripsAPI.getTripById(id),
+          productPageSettingsAPI.getSettings()
+        ])
+        
+        const tripData = tripResponse.trip || tripResponse
+        setTrip(tripData)
+        setPageSettings(settingsResponse.settings)
+        
+        // Set default tab from settings
+        if (settingsResponse.settings?.displaySettings?.defaultTab) {
+          setActiveTab(settingsResponse.settings.displaySettings.defaultTab)
+        }
+        
+        // Set default date from settings
+        if (settingsResponse.settings?.bookingCard?.defaultDates?.[0]) {
+          setSelectedDate(settingsResponse.settings.bookingCard.defaultDates[0])
+        }
       } catch (error) {
-        console.error('Error fetching trip:', error)
+        console.error('Error fetching data:', error)
         toast.error('Failed to load trip details')
       } finally {
         setLoading(false)
@@ -32,9 +64,82 @@ function ProductPage() {
     }
 
     if (id) {
-      fetchTrip()
+      fetchData()
     }
   }, [id, toast])
+
+  // Get all gallery images for lightbox - moved before early returns
+  const getAllGalleryImages = useCallback(() => {
+    if (!trip) return []
+    
+    // We'll compute content here or use a safe fallback
+    const galleryImages = (trip.gallery && trip.gallery.length > 0) 
+      ? trip.gallery 
+      : [trip.imageUrl || trip.image].filter(Boolean)
+    
+    // Include main image if not already in gallery
+    const mainImage = trip.imageUrl || trip.image
+    if (mainImage && !galleryImages.includes(mainImage)) {
+      return [mainImage, ...galleryImages]
+    }
+    return galleryImages
+  }, [trip])
+
+  const handleNextImage = useCallback(() => {
+    const allImages = getAllGalleryImages()
+    if (allImages.length === 0) return
+    setLightboxIndex((prev) => (prev + 1) % allImages.length)
+  }, [getAllGalleryImages])
+
+  const handlePreviousImage = useCallback(() => {
+    const allImages = getAllGalleryImages()
+    if (allImages.length === 0) return
+    setLightboxIndex((prev) => (prev - 1 + allImages.length) % allImages.length)
+  }, [getAllGalleryImages])
+
+  // Touch handlers for swipe
+  const minSwipeDistance = 50
+
+  const onTouchStart = (e) => {
+    setTouchEnd(null)
+    setTouchStart(e.targetTouches[0].clientX)
+  }
+
+  const onTouchMove = (e) => {
+    setTouchEnd(e.targetTouches[0].clientX)
+  }
+
+  const onTouchEnd = useCallback(() => {
+    if (!touchStart || !touchEnd) return
+    const distance = touchStart - touchEnd
+    const isLeftSwipe = distance > minSwipeDistance
+    const isRightSwipe = distance < -minSwipeDistance
+
+    if (isLeftSwipe) {
+      handleNextImage()
+    }
+    if (isRightSwipe) {
+      handlePreviousImage()
+    }
+  }, [touchStart, touchEnd, handleNextImage, handlePreviousImage])
+
+  // Keyboard navigation for lightbox
+  useEffect(() => {
+    if (!lightboxOpen) return
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setLightboxOpen(false)
+      } else if (e.key === 'ArrowLeft') {
+        handlePreviousImage()
+      } else if (e.key === 'ArrowRight') {
+        handleNextImage()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [lightboxOpen, handleNextImage, handlePreviousImage])
 
   if (loading) {
     return (
@@ -446,6 +551,7 @@ function ProductPage() {
     ])
   ].filter(Boolean) : null
 
+
   const validateEnquiryForm = () => {
     const newErrors = {};
     
@@ -475,7 +581,7 @@ function ProductPage() {
       
       const monthName = enquiryData.selectedMonth 
         ? new Date(enquiryData.selectedMonth + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-        : 'Not specified';
+        : selectedDate || 'Not specified';
 
       await enquiriesAPI.createEnquiry({
         tripId: trip.id,
@@ -483,7 +589,7 @@ function ProductPage() {
         tripLocation: trip.location,
         tripPrice: trip.price,
         selectedMonth: monthName,
-        numberOfTravelers: enquiryData.numberOfTravelers,
+        numberOfTravelers: numTravelers,
         name: enquiryData.name.trim(),
         email: enquiryData.email.trim(),
         phone: enquiryData.phone.trim() || null,
@@ -492,6 +598,17 @@ function ProductPage() {
 
       setSubmitted(true);
       toast.success('Enquiry submitted successfully! We\'ll get back to you soon.');
+      setTimeout(() => {
+        setShowEnquiryForm(false);
+        setSubmitted(false);
+        setEnquiryData({
+          name: '',
+          email: '',
+          phone: '',
+          message: '',
+          selectedMonth: ''
+        });
+      }, 2000);
     } catch (error) {
       console.error('Error submitting enquiry:', error);
       toast.error(error.message || 'Failed to submit enquiry. Please try again.');
@@ -500,140 +617,234 @@ function ProductPage() {
     }
   };
 
+  const handleEnquiryInputChange = (e) => {
+    const { name, value } = e.target;
+    setEnquiryData(prev => ({ ...prev, [name]: value }));
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
   return (
     <>
       {trip && (
-        <SEO
-          title={tripTitle}
-          description={tripDescription}
-          keywords={`${trip.title}, ${trip.location}, travel, trip, adventure, ${trip.duration}, Safe Hands Travels, India travel`}
-          image={tripImage}
-          url={tripUrl}
-          type="article"
-          structuredData={structuredData}
-        />
-      )}
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white text-gray-900 font-sans">
-        {/* Hero Section with Video/YouTube */}
-        <div className="relative h-[70vh] md:h-[80vh] w-full overflow-hidden">
-        {(() => {
-          // Extract YouTube video ID from URL
-          const extractYouTubeId = (url) => {
-            if (!url) return null;
-            
-            // If it's already just an ID, return it
-            if (!url.includes('youtube.com') && !url.includes('youtu.be') && url.length === 11) {
-              return url;
-            }
-            
-            // Extract ID from YouTube URL
-            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-            const match = url.match(regExp);
-            return (match && match[2].length === 11) ? match[2] : null;
-          };
+        <>
+          <SEO
+            title={tripTitle}
+            description={tripDescription}
+            keywords={`${trip.title}, ${trip.location}, travel, trip, adventure, ${trip.duration}, Safe Hands Travels, India travel`}
+            image={tripImage}
+            url={tripUrl}
+            type="article"
+            structuredData={structuredData}
+          />
+          <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white text-gray-900 font-sans">
+        {/* Hero Section with Split Image Layout */}
+        {pageSettings?.sections?.find(s => s.id === 'hero')?.enabled && (
+        <div className="relative w-full bg-gray-50 py-8 md:py-12">
+          <div className="mx-auto w-full px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col lg:flex-row gap-3 sm:gap-4 md:gap-6 h-auto lg:h-[70vh]">
+              {/* Large Image on Left (50%) */}
+              <div className="w-full lg:w-1/2 h-[40vh] sm:h-[50vh] lg:h-full relative group">
+                <div className="relative w-full h-full rounded-xl sm:rounded-2xl md:rounded-3xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500">
+                  <img 
+                    src={trip.imageUrl || trip.image || (content.gallery && content.gallery[0]) || 'https://images.unsplash.com/photo-1501594907352-04cda38ebc29?auto=format&fit=crop&w=900&q=60'} 
+                    alt={trip.title}
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                  {/* Overlay with title */}
+                  <div className="absolute inset-0 flex items-end p-4 sm:p-6 md:p-8">
+                    <div className="text-white">
+                      <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold mb-1 sm:mb-2 drop-shadow-2xl tracking-tight">
+                        {trip.title}
+                      </h1>
+                      <p className="text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl font-light drop-shadow-lg opacity-95">
+                        {trip.location} {content.subtitle}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-          const videoUrl = trip.videoUrl || trip.video || content.video;
-          const youtubeId = extractYouTubeId(videoUrl);
-
-          if (youtubeId) {
-            // Use YouTube embed
-            return (
-              <iframe
-                src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&loop=1&playlist=${youtubeId}&controls=0&showinfo=0&rel=0&modestbranding=1&iv_load_policy=3`}
-                className="w-full h-full object-cover"
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                title={trip.title}
-              />
-            );
-          } else {
-            // Fallback to image
-            return (
-              <img 
-                src={trip.imageUrl || trip.image} 
-                alt={trip.title}
-                className="w-full h-full object-cover"
-              />
-            );
-          }
-        })()}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/70 flex items-center justify-center">
-          <div className="text-center text-white px-4 animate-fade-in">
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-4 drop-shadow-2xl tracking-tight">
-              {trip.title}
-            </h1>
-            <p className="text-xl md:text-2xl lg:text-3xl font-light drop-shadow-lg">
-              {trip.location} {content.subtitle}
-            </p>
-            <div className="mt-6 flex items-center justify-center gap-4 text-sm md:text-base">
-              <span className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
+              {/* Four Smaller Images on Right (25% each in 2x2 grid) */}
+              <div className="w-full lg:w-1/2 grid grid-cols-2 gap-3 sm:gap-4 md:gap-6 h-auto lg:h-full">
+                {(() => {
+                  // Get all gallery images - use content.gallery if available, otherwise use getAllGalleryImages
+                  const getImagesFromContent = () => {
+                    if (content && content.gallery && content.gallery.length > 0) {
+                      const galleryImages = content.gallery
+                      const mainImage = trip.imageUrl || trip.image
+                      if (mainImage && !galleryImages.includes(mainImage)) {
+                        return [mainImage, ...galleryImages]
+                      }
+                      return galleryImages
+                    }
+                    return getAllGalleryImages()
+                  }
+                  const allImages = getImagesFromContent()
+                  const totalImages = allImages.length
+                  
+                  // If more than 5 images, show only first 4, then "View More"
+                  // Otherwise, show up to 4 images (repeating if necessary)
+                  const shouldShowViewMore = totalImages > 5
+                  const imagesToShow = shouldShowViewMore 
+                    ? allImages.slice(0, 4)
+                    : (() => {
+                        const images = []
+                        for (let i = 0; i < 4; i++) {
+                          images.push(allImages[i % allImages.length] || 'https://images.unsplash.com/photo-1501594907352-04cda38ebc29?auto=format&fit=crop&w=900&q=60')
+                        }
+                        return images
+                      })()
+                  
+                  return (
+                    <>
+                      {imagesToShow.map((image, index) => {
+                        // Calculate the actual image index in the gallery
+                        const actualIndex = shouldShowViewMore 
+                          ? index 
+                          : (index % totalImages)
+                        
+                        return (
+                          <div 
+                            key={index}
+                            className="relative h-[20vh] sm:h-[25vh] md:h-[30vh] lg:h-full group overflow-hidden rounded-lg sm:rounded-xl md:rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer"
+                            onClick={() => {
+                              setLightboxIndex(actualIndex)
+                              setLightboxOpen(true)
+                            }}
+                          >
+                            <img 
+                              src={image} 
+                              alt={`${trip.title} gallery ${index + 1}`}
+                              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                            <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                          </div>
+                        )
+                      })}
+                      
+                      {/* View More Card - only show if more than 5 images */}
+                      {shouldShowViewMore && (
+                        <div 
+                          className="relative h-[20vh] sm:h-[25vh] md:h-[30vh] lg:h-full group overflow-hidden rounded-lg sm:rounded-xl md:rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer"
+                          onClick={() => {
+                            setLightboxIndex(4)
+                            setLightboxOpen(true)
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.querySelector('.view-more-overlay').classList.remove('opacity-0')
+                            e.currentTarget.querySelector('.view-more-overlay').classList.add('opacity-100')
+                            e.currentTarget.querySelector('img').classList.add('blur-sm', 'brightness-50')
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.querySelector('.view-more-overlay').classList.remove('opacity-100')
+                            e.currentTarget.querySelector('.view-more-overlay').classList.add('opacity-0')
+                            e.currentTarget.querySelector('img').classList.remove('blur-sm', 'brightness-50')
+                          }}
+                        >
+                          <img 
+                            src={allImages[4]} 
+                            alt={`${trip.title} gallery 5`}
+                            className="w-full h-full object-cover transition-all duration-500"
+                          />
+                          <div className="absolute inset-0 bg-black/40 view-more-overlay opacity-0 transition-opacity duration-500 flex items-center justify-center">
+                            <div className="text-center">
+                              <div className="bg-white/90 backdrop-blur-sm px-4 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl shadow-xl mb-2">
+                                <p className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-gray-900">View More</p>
+                              </div>
+                              <p className="text-white text-xs sm:text-sm md:text-base font-medium">
+                                +{totalImages - 5} more images
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )
+                })()}
+              </div>
+            </div>
+            
+            {/* Trip Info Badges */}
+            <div className="mt-4 sm:mt-6 flex flex-wrap items-center justify-center gap-2 sm:gap-4 text-xs sm:text-sm md:text-base">
+              <span className="bg-white backdrop-blur-sm px-3 sm:px-4 py-1.5 sm:py-2 rounded-full shadow-md border border-gray-200 text-gray-800 font-medium">
                 ⏱️ {trip.duration}
               </span>
-              <span className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
+              <span className="bg-white backdrop-blur-sm px-3 sm:px-4 py-1.5 sm:py-2 rounded-full shadow-md border border-gray-200 text-gray-800 font-medium">
                 📍 {trip.location}
               </span>
             </div>
+            
+            {/* Scroll indicator */}
+            <div className="mt-8 flex justify-center">
+              <div >
+                <div className="w-1 h-3  rounded-full"></div>
+              </div>
+            </div>
           </div>
         </div>
-        {/* Scroll indicator */}
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
-          <div className="w-6 h-10 border-2 border-white/50 rounded-full flex items-start justify-center p-2">
-            <div className="w-1 h-3 bg-white/50 rounded-full"></div>
-          </div>
-        </div>
-      </div>
+        )}
 
       {/* Main Content with Sidebar */}
-      <div className="w-full px-4 md:px-6 lg:px-8 -mt-20 relative z-10">
-        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
+      <div className="mx-auto w-full px-4 sm:px-6 lg:px-8 -mt-12 sm:-mt-16 md:-mt-20 relative z-10">
+        <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-8">
           {/* Main Content Area */}
           <div className="flex-1 min-w-0">
-            <div className="bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden">
-              <div className="p-6 md:p-8 lg:p-12">
+            <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-gray-200 overflow-hidden">
+              <div className="p-4 sm:p-6 md:p-8 lg:p-12">
                 {/* Trip Title */}
-                <div className="mb-8">
-                  <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
+                <div className="mb-6 sm:mb-8">
+                  <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-3 sm:mb-4">
                     {trip.title}
                   </h2>
-                  <p className="text-lg text-gray-600 leading-relaxed">
+                  {pageSettings?.sections?.find(s => s.id === 'intro')?.enabled && (
+                  <p className="text-sm sm:text-base md:text-lg text-gray-600 leading-relaxed">
                     {content.intro}
                   </p>
+                  )}
                 </div>
 
                 {/* Tabs Navigation */}
-                <div className="mb-8 flex flex-wrap gap-3 border-b border-gray-200 pb-4">
-                  {['Itinerary', 'Inclusion/Exclusion', 'Notes', 'Date & Costing'].map((tab) => (
-                    <button
-                      key={tab}
-                      onClick={() => setActiveTab(tab)}
-                      className={`px-6 py-3 rounded-full font-semibold text-sm transition-all duration-300 ${
-                        activeTab === tab
-                          ? 'bg-gradient-to-br from-[#017233] to-[#01994d] text-white shadow-lg'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:border hover:border-[#017233]/30'
-                      }`}
-                    >
-                      {tab}
-                    </button>
-                  ))}
-                </div>
+                {pageSettings?.tabs?.some(tab => tab.enabled) && (
+                  <div className="mb-6 sm:mb-8 flex flex-wrap gap-2 sm:gap-3 border-b border-gray-200 pb-3 sm:pb-4 overflow-x-auto">
+                    {pageSettings.tabs
+                      .filter(tab => tab.enabled)
+                      .sort((a, b) => a.order - b.order)
+                      .map((tab) => (
+                        <button
+                          key={tab.id}
+                          onClick={() => setActiveTab(tab.label)}
+                          className={`px-4 sm:px-6 py-2 sm:py-3 rounded-full font-semibold text-xs sm:text-sm transition-all duration-300 whitespace-nowrap ${
+                            activeTab === tab.label
+                              ? 'bg-gradient-to-br from-[#017233] to-[#01994d] text-white shadow-lg'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:border hover:border-[#017233]/30'
+                          }`}
+                        >
+                          {tab.label}
+                        </button>
+                      ))}
+                  </div>
+                )}
 
                 {/* Tab Content */}
                 <div className="space-y-8">
                   {/* Itinerary Tab */}
-                  {activeTab === 'Itinerary' && (
-                    <section className="bg-gradient-to-br from-[#017233]/5 to-white rounded-2xl shadow-lg p-8 md:p-10 border border-[#017233]/10">
-                      <div className="flex items-center gap-4 mb-6">
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#017233] to-[#01994d] flex items-center justify-center text-white text-xl font-bold shadow-lg">
+                  {activeTab === 'Itinerary' && pageSettings?.tabs?.find(t => t.id === 'itinerary')?.enabled && (
+                    <section className="bg-gradient-to-br from-[#017233]/5 to-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 md:p-8 lg:p-10 border border-[#017233]/10">
+                      <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-[#017233] to-[#01994d] flex items-center justify-center text-white text-lg sm:text-xl font-bold shadow-lg flex-shrink-0">
                           📅
                         </div>
-                        <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
+                        <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900">
                           Itinerary Breakdown
                         </h2>
                       </div>
               <div className="space-y-3">
                 {content.itinerary.map((day, index) => {
-                  const isExpanded = expandedDay === index
+                  const isExpanded = pageSettings?.displaySettings?.autoExpandItinerary ? true : expandedDay === index
                   // Split activities into points (by periods, then filter empty strings)
                   const activitiesPoints = typeof day.activities === 'string' 
                     ? day.activities.split(/[.!?]+/).filter(point => point.trim().length > 0).map(p => p.trim())
@@ -649,22 +860,22 @@ function ProductPage() {
                       {/* Clickable Header */}
                       <button
                         onClick={() => setExpandedDay(isExpanded ? null : index)}
-                        className="w-full flex items-center gap-4 px-6 py-5 text-left cursor-pointer focus:outline-none rounded-xl hover:bg-gray-50 transition-colors"
+                        className="w-full flex items-center gap-2 sm:gap-3 md:gap-4 px-4 sm:px-6 py-3 sm:py-4 md:py-5 text-left cursor-pointer focus:outline-none rounded-lg sm:rounded-xl hover:bg-gray-50 transition-colors"
                       >
                         <div className="flex-shrink-0">
-                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#017233] to-[#01994d] flex items-center justify-center text-white font-bold shadow-md">
+                          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-[#017233] to-[#01994d] flex items-center justify-center text-white text-sm sm:text-base font-bold shadow-md">
                             {index + 1}
                           </div>
                         </div>
-                        <div className="flex-1 flex items-center justify-between gap-4">
-                          <div>
-                            <h3 className="text-lg md:text-xl font-bold text-gray-900">
+                        <div className="flex-1 flex items-center justify-between gap-2 sm:gap-4 min-w-0">
+                          <div className="min-w-0 flex-1">
+                            <h3 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 truncate">
                               <span className="text-[#017233]">{day.day}:</span> {day.title}
                             </h3>
                           </div>
                           <div className="flex-shrink-0">
                             <svg
-                              className={`w-5 h-5 text-gray-400 transition-transform duration-300 ${isExpanded ? 'rotate-180 text-[#017233]' : ''}`}
+                              className={`w-4 h-4 sm:w-5 sm:h-5 text-gray-400 transition-transform duration-300 ${isExpanded ? 'rotate-180 text-[#017233]' : ''}`}
                               fill="none"
                               stroke="currentColor"
                               viewBox="0 0 24 24"
@@ -700,7 +911,7 @@ function ProductPage() {
                   )}
 
                   {/* Inclusion/Exclusion Tab */}
-                  {activeTab === 'Inclusion/Exclusion' && (
+                  {activeTab === 'Inclusion/Exclusion' && pageSettings?.tabs?.find(t => t.id === 'inclusion')?.enabled && (
                     <div className="grid md:grid-cols-2 gap-6">
               <section className="bg-gradient-to-br from-[#017233]/5 to-white rounded-2xl shadow-lg p-8 border border-[#017233]/10">
                 <div className="flex items-center gap-3 mb-6">
@@ -738,7 +949,7 @@ function ProductPage() {
                   )}
 
                   {/* Notes Tab */}
-                  {activeTab === 'Notes' && (
+                  {activeTab === 'Notes' && pageSettings?.tabs?.find(t => t.id === 'notes')?.enabled && (
                     <section className="bg-gradient-to-br from-[#017233]/5 via-white to-[#01994d]/5 border-l-4 border-[#017233] rounded-2xl shadow-lg p-8 md:p-10">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#017233] to-[#01994d] flex items-center justify-center text-white text-xl font-bold shadow-lg">
@@ -758,7 +969,7 @@ function ProductPage() {
                   )}
 
                   {/* Date & Costing Tab */}
-                  {activeTab === 'Date & Costing' && (
+                  {activeTab === 'Date & Costing' && pageSettings?.tabs?.find(t => t.id === 'costing')?.enabled && (
                     <section className="bg-gradient-to-br from-[#017233]/5 to-white rounded-2xl shadow-lg p-8 md:p-10 border border-[#017233]/10">
                       <div className="flex items-center gap-4 mb-6">
                         <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#017233] to-[#01994d] flex items-center justify-center text-white text-xl font-bold shadow-lg">
@@ -790,102 +1001,170 @@ function ProductPage() {
                     </section>
                   )}
 
-                  {/* Why Visit Section - Always Visible */}
-                  <section className="bg-gradient-to-br from-[#017233]/5 to-white rounded-2xl shadow-lg p-8 md:p-10 border border-[#017233]/10">
-                    <div className="flex items-center gap-4 mb-6">
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#017233] to-[#01994d] flex items-center justify-center text-white text-xl font-bold shadow-lg">
+                  {/* Why Visit Section */}
+                  {pageSettings?.sections?.find(s => s.id === 'whyVisit')?.enabled && (
+                  <section className="bg-gradient-to-br from-[#017233]/5 to-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 md:p-8 lg:p-10 border border-[#017233]/10">
+                    <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-[#017233] to-[#01994d] flex items-center justify-center text-white text-lg sm:text-xl font-bold shadow-lg flex-shrink-0">
                         ✨
                       </div>
-                      <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
+                      <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900">
                         Why Visit {trip.location}?
                       </h2>
                     </div>
-                    <ul className="grid md:grid-cols-2 gap-4">
+                    <ul className="grid sm:grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                       {content.whyVisit.map((reason, index) => (
                         <li 
                           key={index} 
-                          className="group flex items-start gap-4 bg-white rounded-xl p-5 shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-[#017233]/30"
+                          className="group flex items-start gap-3 sm:gap-4 bg-white rounded-lg sm:rounded-xl p-4 sm:p-5 shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-[#017233]/30"
                         >
-                          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-[#017233] to-[#01994d] flex items-center justify-center text-white font-bold shadow-lg group-hover:scale-110 transition-transform">
+                          <div className="flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-[#017233] to-[#01994d] flex items-center justify-center text-white text-sm sm:text-base font-bold shadow-lg group-hover:scale-110 transition-transform">
                             ✓
                           </div>
-                          <span className="text-gray-700 text-base leading-relaxed pt-1">{reason}</span>
+                          <span className="text-gray-700 text-sm sm:text-base leading-relaxed pt-0.5 sm:pt-1">{reason}</span>
                         </li>
                       ))}
                     </ul>
                   </section>
+                  )}
 
-                  {/* Gallery Section - Always Visible */}
-                  <section className="bg-gradient-to-br from-[#017233]/5 to-white rounded-2xl shadow-lg p-8 md:p-10 border border-[#017233]/10">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#017233] to-[#01994d] flex items-center justify-center text-white text-xl font-bold shadow-lg">
+                  {/* Gallery Section */}
+                  {pageSettings?.sections?.find(s => s.id === 'gallery')?.enabled && (
+                  <section className="bg-gradient-to-br from-[#017233]/5 to-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 md:p-8 lg:p-10 border border-[#017233]/10">
+              <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-[#017233] to-[#01994d] flex items-center justify-center text-white text-lg sm:text-xl font-bold shadow-lg flex-shrink-0">
                   📸
                 </div>
-                <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
+                <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900">
                   Gallery & Traveller Experiences
                 </h2>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                {content.gallery.map((image, index) => (
-                  <div 
-                    key={index} 
-                    className="aspect-square rounded-xl shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105 overflow-hidden group relative"
-                  >
-                    <img 
-                      src={image} 
-                      alt={`${trip.title} gallery ${index + 1}`}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-br from-[#017233]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                  </div>
-                ))}
-              </div>
-              {content.reviews && content.reviews.length > 0 && content.reviews.map((review, index) => (
-                <div key={index} className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#017233] to-[#01994d] flex items-center justify-center text-white font-bold">
-                      ★
+              <div className={`grid grid-cols-2 gap-2 sm:gap-3 md:gap-4 mb-6 sm:mb-8 ${
+                pageSettings?.displaySettings?.galleryColumns === 3 ? 'md:grid-cols-3' :
+                pageSettings?.displaySettings?.galleryColumns === 2 ? 'md:grid-cols-2' :
+                'md:grid-cols-4'
+              }`}>
+                {content.gallery.map((image, index) => {
+                  // Calculate the correct index in the full gallery (including main image)
+                  const getImagesForLightbox = () => {
+                    if (content && content.gallery && content.gallery.length > 0) {
+                      const galleryImages = [...content.gallery] // Create a copy
+                      const mainImage = trip.imageUrl || trip.image
+                      if (mainImage && !galleryImages.includes(mainImage)) {
+                        return [mainImage, ...galleryImages]
+                      }
+                      return galleryImages
+                    }
+                    return getAllGalleryImages()
+                  }
+                  
+                  return (
+                    <div 
+                      key={index} 
+                      className="aspect-square rounded-lg sm:rounded-xl shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105 overflow-hidden group relative cursor-pointer"
+                      onClick={() => {
+                        // Get all images for lightbox
+                        const allImages = getImagesForLightbox()
+                        // Find the index of this specific image in the full gallery
+                        let imageIndex = allImages.findIndex(img => img === image)
+                        // If not found, use the index from content.gallery and adjust if main image is prepended
+                        if (imageIndex === -1) {
+                          const mainImage = trip.imageUrl || trip.image
+                          if (mainImage && !content.gallery.includes(mainImage)) {
+                            imageIndex = index + 1 // +1 because main image is at index 0
+                          } else {
+                            imageIndex = index
+                          }
+                        }
+                        // Ensure index is valid
+                        if (imageIndex >= 0 && imageIndex < allImages.length) {
+                          setLightboxIndex(imageIndex)
+                          setLightboxOpen(true)
+                        }
+                      }}
+                    >
+                      <img 
+                        src={image} 
+                        alt={`${trip.title} gallery ${index + 1}`}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-br from-[#017233]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     </div>
-                    <h3 className="text-2xl font-bold text-gray-900">Traveller Reviews</h3>
-                  </div>
-                  <div className="flex gap-1 mb-4">
-                    {Array.from({ length: 5 }, (_, i) => (
-                      <span key={i} className={`text-2xl ${i < review.rating ? 'text-yellow-400' : 'text-gray-300'}`}>★</span>
-                    ))}
-                  </div>
-                  <p className="text-gray-700 italic text-lg leading-relaxed mb-4">"{review.text}"</p>
-                  <p className="text-sm text-gray-500 font-semibold">- {review.author}</p>
-                </div>
-              ))}
+                  )
+                })}
+              </div>
             </section>
+            )}
+
+            {/* Reviews Section - Separated from Gallery for visibility */}
+            {(pageSettings?.sections?.find(s => s.id === 'gallery')?.enabled || pageSettings?.sections?.find(s => s.id === 'reviews')?.enabled) && (
+            <section className="bg-gradient-to-br from-[#017233]/5 to-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 md:p-8 lg:p-10 border border-[#017233]/10">
+              <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-[#017233] to-[#01994d] flex items-center justify-center text-white text-lg sm:text-xl font-bold shadow-lg flex-shrink-0">
+                  ★
+                </div>
+                <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900">
+                  Traveller Reviews
+                </h2>
+              </div>
+
+              {content.reviews && content.reviews.length > 0 ? (
+                <div className="grid sm:grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                  {content.reviews
+                    .slice(0, pageSettings?.displaySettings?.maxReviewsDisplay || 10)
+                    .map((review, index) => (
+                    <div key={index} className="bg-white rounded-lg sm:rounded-xl shadow-md p-4 sm:p-6 border border-gray-200 hover:shadow-lg transition-all duration-300">
+                      <div className="flex gap-1 mb-2 sm:mb-3">
+                        {Array.from({ length: 5 }, (_, i) => (
+                          <span key={i} className={`text-base sm:text-lg md:text-xl ${i < review.rating ? 'text-yellow-400' : 'text-gray-300'}`}>★</span>
+                        ))}
+                      </div>
+                      <p className="text-gray-700 italic text-sm sm:text-base leading-relaxed mb-3 sm:mb-4">"{review.text}"</p>
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-bold text-xs sm:text-sm">
+                          {review.author.charAt(0)}
+                        </div>
+                        <p className="text-xs sm:text-sm font-bold text-gray-900">{review.author}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-6 sm:py-8">
+                  <p className="text-sm sm:text-base text-gray-500">No reviews yet. Be the first to review!</p>
+                </div>
+              )}
+            </section>
+            )}
 
             {/* FAQ Section Card */}
-            <section className="bg-gradient-to-br from-[#017233]/5 to-white rounded-2xl shadow-lg p-8 md:p-10 border border-[#017233]/10">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#017233] to-[#01994d] flex items-center justify-center text-white text-xl font-bold shadow-lg">
+            {pageSettings?.sections?.find(s => s.id === 'faq')?.enabled && (
+            <section className="bg-gradient-to-br from-[#017233]/5 to-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 md:p-8 lg:p-10 border border-[#017233]/10">
+              <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-[#017233] to-[#01994d] flex items-center justify-center text-white text-lg sm:text-xl font-bold shadow-lg flex-shrink-0">
                   ❓
                 </div>
-                <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
+                <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900">
                   Frequently Asked Questions
                 </h2>
               </div>
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {content.faq.map((faq, index) => (
                   <div 
                     key={index} 
-                    className="bg-white border border-gray-200 rounded-xl p-6 md:p-8 shadow-md hover:shadow-xl transition-all duration-300 group"
+                    className="bg-white border border-gray-200 rounded-lg sm:rounded-xl p-4 sm:p-6 md:p-8 shadow-md hover:shadow-xl transition-all duration-300 group"
                   >
-                    <div className="flex items-start gap-4">
-                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-[#017233] to-[#01994d] flex items-center justify-center text-white font-bold text-sm group-hover:scale-110 transition-transform">
+                    <div className="flex items-start gap-3 sm:gap-4">
+                      <div className="flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-[#017233] to-[#01994d] flex items-center justify-center text-white font-bold text-xs sm:text-sm group-hover:scale-110 transition-transform">
                         Q
                       </div>
-                      <div className="flex-1">
-                        <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-3 group-hover:text-[#017233] transition-colors">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 mb-2 sm:mb-3 group-hover:text-[#017233] transition-colors">
                           {faq.question}
                         </h3>
-                        <div className="flex items-start gap-3">
-                          <span className="text-[#017233] font-bold mt-1">A:</span>
-                          <p className="text-gray-700 leading-relaxed text-base md:text-lg">{faq.answer}</p>
+                        <div className="flex items-start gap-2 sm:gap-3">
+                          <span className="text-[#017233] font-bold mt-0.5 sm:mt-1 text-sm sm:text-base">A:</span>
+                          <p className="text-gray-700 leading-relaxed text-sm sm:text-base md:text-lg">{faq.answer}</p>
                         </div>
                       </div>
                     </div>
@@ -893,60 +1172,151 @@ function ProductPage() {
                 ))}
               </div>
             </section>
+            )}
                 </div>
               </div>
             </div>
           </div>
 
           {/* Fixed Booking Sidebar */}
-          <div className="lg:w-96 lg:flex-shrink-0">
+          {pageSettings?.bookingCard?.enabled && (
+          <div className="w-full lg:w-96 lg:flex-shrink-0">
             <div className="lg:sticky lg:top-24">
-              <div className="bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden">
-                <div className="p-6">
+              <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-gray-200 overflow-hidden">
+                <div className="p-4 sm:p-6">
                   {/* Trip Starts From */}
-                  <div className="mb-6">
-                    <h3 className="text-sm font-semibold text-gray-600 mb-3">Trip Starts From</h3>
-                    <div className="flex items-baseline gap-2 mb-1">
-                      <span className="text-4xl font-bold text-[#017233]">{trip.price}</span>
-                      {trip.oldPrice && (
+                  {pageSettings?.bookingCard?.showPrice && (
+                  <div className="mb-4 sm:mb-6">
+                    <h3 className="text-xs sm:text-sm font-semibold text-gray-600 mb-2 sm:mb-3">Trip Starts From</h3>
+                    <div className="flex flex-wrap items-baseline gap-2 mb-1">
+                      <span className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#017233]">{trip.price}</span>
+                      {trip.oldPrice && pageSettings?.displaySettings?.showOldPrice && (
                         <>
-                          <span className="text-lg text-gray-400 line-through">{trip.oldPrice}</span>
-                          <span className="text-sm text-red-600 font-semibold">₹ 2,000 Off</span>
+                          <span className="text-sm sm:text-base md:text-lg text-gray-400 line-through">{trip.oldPrice}</span>
+                          {pageSettings?.displaySettings?.showDiscountBadge && (
+                            <span className="text-xs sm:text-sm text-red-600 font-semibold">₹ 2,000 Off</span>
+                          )}
                         </>
                       )}
                     </div>
-                    <p className="text-sm text-gray-600">Per Person</p>
+                    <p className="text-xs sm:text-sm text-gray-600">Per Person</p>
                   </div>
+                  )}
 
                   {/* Trip Dates */}
-                  <div className="mb-6 pb-6 border-b border-gray-200">
-                    <h3 className="text-sm font-semibold text-gray-600 mb-3 flex items-center gap-2">
-                      <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                      Trip Dates
+                  {pageSettings?.bookingCard?.showDates && (
+                  <div className="mb-4 sm:mb-6 pb-4 sm:pb-6 border-b border-gray-200">
+                    <h3 className="text-xs sm:text-sm font-semibold text-gray-600 mb-2 sm:mb-3 flex items-center gap-2">
+                      <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
+                      Select Travel Date
                     </h3>
-                    <select 
-                      value={selectedDate}
-                      onChange={(e) => setSelectedDate(e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-[#017233] focus:ring-2 focus:ring-[#017233]/20 outline-none mb-3"
-                    >
-                      <option value="Dec 13, 2025">Dec 13, 2025</option>
-                      <option value="Jan 10, 2026">Jan 10, 2026</option>
-                      <option value="Feb 14, 2026">Feb 14, 2026</option>
-                    </select>
-                    <div className="flex items-center justify-between bg-gray-50 rounded-lg p-3">
-                      <div>
-                        <p className="font-semibold text-gray-900">{selectedDate}</p>
-                        <p className="text-sm text-gray-600">Starting {trip.price} /Person</p>
-                      </div>
-                      <svg className="w-5 h-5 text-[#017233]" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
+                    <div className="mb-3">
+                      <input
+                        type="date"
+                        value={(() => {
+                          // Convert selectedDate (e.g., "Dec 13, 2025") to YYYY-MM-DD format
+                          if (selectedDate && selectedDate.includes(',')) {
+                            try {
+                              const date = new Date(selectedDate)
+                              if (!isNaN(date.getTime())) {
+                                return date.toISOString().split('T')[0]
+                              }
+                            } catch (e) {
+                              // If conversion fails, use today's date
+                            }
+                          }
+                          // If it's already in YYYY-MM-DD format, use it
+                          if (selectedDate && selectedDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                            return selectedDate
+                          }
+                          // Default to today or first available date
+                          const defaultDates = pageSettings?.bookingCard?.defaultDates || []
+                          if (defaultDates.length > 0) {
+                            try {
+                              const date = new Date(defaultDates[0])
+                              if (!isNaN(date.getTime())) {
+                                return date.toISOString().split('T')[0]
+                              }
+                            } catch (e) {}
+                          }
+                          // Fallback to today
+                          return new Date().toISOString().split('T')[0]
+                        })()}
+                        onChange={(e) => {
+                          const dateValue = e.target.value
+                          if (dateValue) {
+                            // Convert YYYY-MM-DD to readable format
+                            const date = new Date(dateValue)
+                            const formattedDate = date.toLocaleDateString('en-US', { 
+                              month: 'short', 
+                              day: 'numeric', 
+                              year: 'numeric' 
+                            })
+                            setSelectedDate(formattedDate)
+                          }
+                        }}
+                        min={new Date().toISOString().split('T')[0]}
+                        className="w-full px-3 sm:px-4 py-2 sm:py-3 border-2 border-gray-300 rounded-lg focus:border-[#017233] focus:ring-2 focus:ring-[#017233]/20 outline-none text-sm sm:text-base text-gray-900 font-medium cursor-pointer hover:border-[#017233]/50 transition-colors"
+                        style={{
+                          colorScheme: 'light'
+                        }}
+                      />
                     </div>
+                    <div className="flex items-center justify-between bg-gradient-to-r from-[#017233]/5 to-[#01994d]/5 rounded-lg p-3 sm:p-4 border border-[#017233]/20">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-gray-900 text-sm sm:text-base truncate">{selectedDate}</p>
+                        <p className="text-xs sm:text-sm text-gray-600 mt-1">Starting from {trip.price} /Person</p>
+                      </div>
+                      <div className="flex-shrink-0 ml-2">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-[#017233] to-[#01994d] flex items-center justify-center text-white shadow-md">
+                          <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                    {/* Available Dates List (Optional) */}
+                    {pageSettings?.bookingCard?.defaultDates && pageSettings.bookingCard.defaultDates.length > 0 && (
+                      <div className="mt-3">
+                        <p className="text-xs text-gray-500 mb-2">Other available dates:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {pageSettings.bookingCard.defaultDates.slice(0, 3).map((date, index) => {
+                            // Convert date string to YYYY-MM-DD if needed
+                            let dateValue = date
+                            if (date.includes(',')) {
+                              try {
+                                const d = new Date(date)
+                                if (!isNaN(d.getTime())) {
+                                  dateValue = d.toISOString().split('T')[0]
+                                }
+                              } catch (e) {}
+                            }
+                            return (
+                              <button
+                                key={index}
+                                onClick={() => {
+                                  const d = new Date(dateValue)
+                                  const formattedDate = d.toLocaleDateString('en-US', { 
+                                    month: 'short', 
+                                    day: 'numeric', 
+                                    year: 'numeric' 
+                                  })
+                                  setSelectedDate(formattedDate)
+                                }}
+                                className="text-xs px-3 py-1.5 bg-gray-100 hover:bg-[#017233] hover:text-white rounded-full transition-colors text-gray-700 font-medium"
+                              >
+                                {date}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
+                  )}
 
                   {/* No. of Travellers */}
+                  {pageSettings?.bookingCard?.showTravelers && (
                   <div className="mb-6 pb-6 border-b border-gray-200">
                     <h3 className="text-sm font-semibold text-gray-600 mb-3 flex items-center gap-2">
                       <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -955,17 +1325,17 @@ function ProductPage() {
                       No. of Travellers
                     </h3>
                     <div className="flex items-center gap-4">
-                      <button
-                        onClick={() => setNumTravelers(Math.max(1, numTravelers - 1))}
-                        className="w-10 h-10 rounded-lg border-2 border-gray-300 flex items-center justify-center hover:border-[#017233] hover:bg-[#017233] hover:text-white transition-colors"
-                      >
+                    <button
+                      onClick={() => setNumTravelers(Math.max(pageSettings?.bookingCard?.minTravelers || 1, numTravelers - 1))}
+                      className="w-10 h-10 rounded-lg border-2 border-gray-300 flex items-center justify-center hover:border-[#017233] hover:bg-[#017233] hover:text-white transition-colors"
+                    >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
                         </svg>
                       </button>
                       <span className="text-2xl font-bold text-gray-900 w-12 text-center">{numTravelers}</span>
                       <button
-                        onClick={() => setNumTravelers(numTravelers + 1)}
+                        onClick={() => setNumTravelers(Math.min(pageSettings?.bookingCard?.maxTravelers || 20, numTravelers + 1))}
                         className="w-10 h-10 rounded-lg border-2 border-gray-300 flex items-center justify-center hover:border-[#017233] hover:bg-[#017233] hover:text-white transition-colors"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -974,17 +1344,35 @@ function ProductPage() {
                       </button>
                     </div>
                   </div>
+                  )}
 
                   {/* Send Enquiry Button */}
-                  <button className="w-full bg-gradient-to-br from-[#017233] to-[#01994d] text-white px-6 py-4 rounded-xl font-bold text-base hover:shadow-xl hover:scale-105 transition-all duration-300 shadow-lg mb-4">
+                  {pageSettings?.bookingCard?.showEnquiryButton && (
+                  <button 
+                    onClick={() => {
+                      setEnquiryData({
+                        name: '',
+                        email: '',
+                        phone: '',
+                        message: '',
+                        selectedMonth: selectedDate
+                      })
+                      setErrors({})
+                      setSubmitted(false)
+                      setShowEnquiryForm(true)
+                    }}
+                    className="w-full bg-gradient-to-br from-[#017233] to-[#01994d] text-white px-6 py-4 rounded-xl font-bold text-base hover:shadow-xl hover:scale-105 transition-all duration-300 shadow-lg mb-4"
+                  >
                     Send Enquiry
                   </button>
+                  )}
 
                   {/* WhatsApp Contact */}
+                  {pageSettings?.bookingCard?.showWhatsApp && (
                   <div className="text-center">
                     <p className="text-sm text-gray-600 mb-2">Any Doubt?</p>
                     <a
-                      href="https://wa.me/1234567890"
+                      href={`https://wa.me/${(pageSettings?.bookingCard?.whatsappNumber || '+918448801998').replace(/[^0-9]/g, '')}`}
                       className="inline-flex items-center gap-2 text-[#017233] font-semibold hover:text-[#01994d] transition-colors"
                     >
                       <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -993,15 +1381,20 @@ function ProductPage() {
                       WhatsApp
                     </a>
                   </div>
+                  )}
                 </div>
               </div>
             </div>
           </div>
+          )}
+
         </div>
+      </div>
       </div>
 
       {/* Call to Action Card */}
-      <div className="w-full px-4 md:px-6 lg:px-8 pb-16">
+      {pageSettings?.cta?.enabled && (
+      <div className="mx-auto w-full px-4 sm:px-6 lg:px-8 pb-16">
           <section className="relative bg-gradient-to-br from-[#017233] via-[#01994d] to-[#017233] text-white p-10 md:p-12 rounded-3xl text-center shadow-2xl overflow-hidden border-4 border-white">
             {/* Decorative elements */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32"></div>
@@ -1009,21 +1402,288 @@ function ProductPage() {
             
             <div className="relative z-10">
               <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 drop-shadow-lg">
-                Ready to Embark on This Adventure?
+                {pageSettings?.cta?.heading || 'Ready to Embark on This Adventure?'}
               </h2>
-              <p className="text-lg md:text-xl mb-8 opacity-95">Book your spot now and create memories that last a lifetime!</p>
+              <p className="text-lg md:text-xl mb-8 opacity-95">
+                {pageSettings?.cta?.description || 'Book your spot now and create memories that last a lifetime!'}
+              </p>
               <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
                 <div className="text-center bg-white/10 backdrop-blur-sm rounded-xl px-6 py-4 border border-white/20">
                   <p className="text-sm opacity-90 mb-1">Starting from</p>
                   <p className="text-4xl md:text-5xl font-bold">{trip.price}</p>
-                  <p className="text-sm opacity-75 mt-1 line-through">{trip.oldPrice}</p>
+                  {trip.oldPrice && pageSettings?.displaySettings?.showOldPrice && (
+                    <p className="text-sm opacity-75 mt-1 line-through">{trip.oldPrice}</p>
+                  )}
                 </div>
               </div>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {/* Enquiry Form Modal */}
+      {showEnquiryForm && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto my-4">
+            <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between z-10 shadow-sm">
+              <h2 className="text-2xl font-bold text-gray-900">Send Enquiry</h2>
+              <button
+                onClick={() => {
+                  setShowEnquiryForm(false);
+                  setSubmitted(false);
+                  setErrors({});
+                }}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                aria-label="Close"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {submitted ? (
+              <div className="p-8 text-center">
+                <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Enquiry Submitted!</h3>
+                <p className="text-gray-600">We'll get back to you soon.</p>
+              </div>
+            ) : (
+              <form onSubmit={handleEnquirySubmit} className="p-6 space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={enquiryData.name}
+                    onChange={handleEnquiryInputChange}
+                    required
+                    className={`w-full px-4 py-2 border-2 rounded-lg focus:ring-2 focus:ring-[#017233] focus:border-[#017233] outline-none ${
+                      errors.name ? 'border-red-500' : 'border-gray-200'
+                    }`}
+                    placeholder="Enter your name"
+                  />
+                  {errors.name && <p className="mt-1 text-sm text-red-500">{errors.name}</p>}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Email <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={enquiryData.email}
+                    onChange={handleEnquiryInputChange}
+                    required
+                    className={`w-full px-4 py-2 border-2 rounded-lg focus:ring-2 focus:ring-[#017233] focus:border-[#017233] outline-none ${
+                      errors.email ? 'border-red-500' : 'border-gray-200'
+                    }`}
+                    placeholder="Enter your email"
+                  />
+                  {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email}</p>}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={enquiryData.phone}
+                    onChange={handleEnquiryInputChange}
+                    className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#017233] focus:border-[#017233] outline-none"
+                    placeholder="Enter your phone number (optional)"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Preferred Travel Month
+                  </label>
+                  <input
+                    type="month"
+                    name="selectedMonth"
+                    value={enquiryData.selectedMonth}
+                    onChange={handleEnquiryInputChange}
+                    className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#017233] focus:border-[#017233] outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Number of Travelers
+                  </label>
+                  <div className="flex items-center gap-4">
+                    <button
+                      type="button"
+                      onClick={() => setNumTravelers(Math.max(pageSettings?.bookingCard?.minTravelers || 1, numTravelers - 1))}
+                      className="w-10 h-10 rounded-lg border-2 border-gray-300 flex items-center justify-center hover:border-[#017233] hover:bg-[#017233] hover:text-white transition-colors"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                      </svg>
+                    </button>
+                    <span className="text-2xl font-bold text-gray-900 w-12 text-center">{numTravelers}</span>
+                    <button
+                      type="button"
+                      onClick={() => setNumTravelers(Math.min(pageSettings?.bookingCard?.maxTravelers || 20, numTravelers + 1))}
+                      className="w-10 h-10 rounded-lg border-2 border-gray-300 flex items-center justify-center hover:border-[#017233] hover:bg-[#017233] hover:text-white transition-colors"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Message
+                  </label>
+                  <textarea
+                    name="message"
+                    value={enquiryData.message}
+                    onChange={handleEnquiryInputChange}
+                    rows={4}
+                    className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#017233] focus:border-[#017233] outline-none"
+                    placeholder="Any specific requirements or questions? (optional)"
+                  />
+                </div>
+
+                <div className="flex gap-4 pt-4">
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="flex-1 bg-gradient-to-br from-[#017233] to-[#01994d] text-white px-6 py-3 rounded-xl font-bold hover:shadow-xl transition-all duration-300 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {submitting ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        Submitting...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-5 h-5" />
+                        Submit Enquiry
+                      </>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowEnquiryForm(false);
+                      setErrors({});
+                    }}
+                    className="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-300 transition-all"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
             )}
           </div>
-        </section>
-      </div>
-    </div>
+        </div>
+      )}
+
+      {/* Full-Screen Image Lightbox Gallery */}
+      {lightboxOpen && (
+        <div 
+          className="fixed inset-0 bg-black/95 backdrop-blur-sm z-[300] flex items-center justify-center p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setLightboxOpen(false)
+            }
+          }}
+        >
+          {/* Close Button */}
+          <button
+            onClick={() => setLightboxOpen(false)}
+            className="absolute top-4 right-4 md:top-8 md:right-8 z-50 w-12 h-12 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white transition-all duration-300 hover:scale-110"
+            aria-label="Close gallery"
+          >
+            <X className="w-6 h-6" />
+          </button>
+
+          {/* Previous Button */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              handlePreviousImage()
+            }}
+            className="absolute left-4 md:left-8 z-50 w-12 h-12 md:w-14 md:h-14 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white transition-all duration-300 hover:scale-110"
+            aria-label="Previous image"
+          >
+            <ChevronLeft className="w-6 h-6 md:w-8 md:h-8" />
+          </button>
+
+          {/* Next Button */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              handleNextImage()
+            }}
+            className="absolute right-4 md:right-8 z-50 w-12 h-12 md:w-14 md:h-14 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white transition-all duration-300 hover:scale-110"
+            aria-label="Next image"
+          >
+            <ChevronRight className="w-6 h-6 md:w-8 md:h-8" />
+          </button>
+
+          {/* Image Container with Swipe Support */}
+          <div
+            className="relative w-full h-full max-w-7xl max-h-[90vh] flex items-center justify-center"
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {(() => {
+              // Use content.gallery if available, otherwise use getAllGalleryImages
+              const getImagesForLightbox = () => {
+                if (content && content.gallery && content.gallery.length > 0) {
+                  const galleryImages = content.gallery
+                  const mainImage = trip.imageUrl || trip.image
+                  if (mainImage && !galleryImages.includes(mainImage)) {
+                    return [mainImage, ...galleryImages]
+                  }
+                  return galleryImages
+                }
+                return getAllGalleryImages()
+              }
+              const allImages = getImagesForLightbox()
+              const currentImage = allImages[lightboxIndex]
+              
+              return (
+                <div className="relative w-full h-full flex flex-col items-center justify-center">
+                  {/* Main Image */}
+                  <img
+                    src={currentImage}
+                    alt={`${trip.title} gallery image ${lightboxIndex + 1}`}
+                    className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
+                  />
+                  
+                  {/* Image Counter */}
+                  <div className="mt-4 bg-white/10 backdrop-blur-sm px-6 py-2 rounded-full">
+                    <p className="text-white text-sm md:text-base font-medium">
+                      {lightboxIndex + 1} / {allImages.length}
+                    </p>
+                  </div>
+                </div>
+              )
+            })()}
+          </div>
+
+          {/* Keyboard Navigation Hint */}
+          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full">
+            <p className="text-white text-xs md:text-sm opacity-75">
+              Use arrow keys or swipe to navigate • ESC to close
+            </p>
+          </div>
+        </div>
+      )}
+        </>
+      )}
     </>
   )
 }

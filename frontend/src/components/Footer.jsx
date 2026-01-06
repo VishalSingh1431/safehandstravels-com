@@ -8,8 +8,8 @@ function Footer() {
           <div className="absolute bottom-0 right-0 w-96 h-96 bg-white rounded-full translate-x-1/2 translate-y-1/2"></div>
         </div>
         
-        <div className="mx-auto w-full max-w-7xl px-4 md:px-6 lg:px-8 py-12 md:py-16 relative z-10">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 md:px-8 py-8 sm:py-12 md:py-16 relative z-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 md:gap-12">
             {/* Company Info */}
             <div className="space-y-4">
               <div className="flex items-center gap-3">
@@ -150,12 +150,12 @@ function Footer() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="mt-12 pt-8 border-t border-white/20">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-white/90 text-sm">
+        <div className="mt-8 sm:mt-12 pt-6 sm:pt-8 border-t border-white/20 px-4 sm:px-6 md:px-8">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4">
+            <p className="text-white/90 text-xs sm:text-sm text-center sm:text-left">
               © {new Date().getFullYear()} Safe Hands Travels. All rights reserved.
             </p>
-            <div className="flex gap-6 text-sm">
+            <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-xs sm:text-sm">
               <a href="#" className="text-white/90 hover:text-white transition-colors hover:underline">
                 Privacy Policy
               </a>
@@ -176,7 +176,7 @@ function Footer() {
       href="https://wa.me/918448801998"
       target="_blank"
       rel="noopener noreferrer"
-      className="fixed bottom-6 right-6 z-50 group"
+      className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 group"
       aria-label="Contact us on WhatsApp"
     >
       <div className="relative">
@@ -185,9 +185,9 @@ function Footer() {
         <div className="absolute inset-0 bg-[#25D366] rounded-full animate-pulse opacity-50"></div>
         
         {/* Main button with zoom effect */}
-        <div className="relative w-16 h-16 bg-gradient-to-br from-[#25D366] to-[#128C7E] rounded-full flex items-center justify-center shadow-2xl transition-transform duration-300 group-hover:scale-110 group-active:scale-95">
+        <div className="relative w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-gradient-to-br from-[#25D366] to-[#128C7E] rounded-full flex items-center justify-center shadow-2xl transition-transform duration-300 group-hover:scale-110 group-active:scale-95">
           <svg
-            className="w-8 h-8 text-white"
+            className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-white"
             fill="currentColor"
             viewBox="0 0 24 24"
             xmlns="http://www.w3.org/2000/svg"

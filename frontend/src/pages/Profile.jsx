@@ -195,9 +195,9 @@ const Profile = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-50">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
+          <Loader2 className="w-12 h-12 animate-spin text-[#017233] mx-auto mb-4" />
           <p className="text-gray-600">Loading profile...</p>
         </div>
       </div>
@@ -209,44 +209,44 @@ const Profile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-white py-6 sm:py-8 md:py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-black bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-black bg-gradient-to-r from-[#017233] via-[#01994d] to-[#00C853] bg-clip-text text-transparent mb-2">
             My Profile
           </h1>
-          <p className="text-gray-600">Manage your account information and preferences</p>
+          <p className="text-sm sm:text-base text-gray-600">Manage your account information and preferences</p>
         </div>
 
         {/* Profile Card */}
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
           {/* Profile Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-8 py-12 relative">
-            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+          <div className="bg-gradient-to-r from-[#017233] via-[#01994d] to-[#00C853] px-4 sm:px-6 md:px-8 py-6 sm:py-8 md:py-12 relative">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
               {/* Avatar */}
               <div className="relative">
                 {user.picture ? (
                   <img
                     src={user.picture}
                     alt={user.name || user.email}
-                    className="w-32 h-32 rounded-full border-4 border-white shadow-lg object-cover"
+                    className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full border-4 border-white shadow-lg object-cover"
                   />
                 ) : (
-                  <div className="w-32 h-32 rounded-full border-4 border-white shadow-lg bg-gradient-to-br from-blue-400 to-purple-400 flex items-center justify-center">
-                    <User className="w-16 h-16 text-white" />
+                  <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full border-4 border-white shadow-lg bg-gradient-to-br from-[#01994d] to-[#00C853] flex items-center justify-center">
+                    <User className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 text-white" />
                   </div>
                 )}
               </div>
 
               {/* User Info */}
-              <div className="flex-1 text-center sm:text-left">
-                <h2 className="text-3xl font-bold text-white mb-2">
+              <div className="flex-1 text-center sm:text-left min-w-0">
+                <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-2 truncate">
                   {user.name || 'User'}
                 </h2>
-                <div className="flex items-center justify-center sm:justify-start gap-2 text-white/90 mb-4">
-                  <Mail className="w-5 h-5" />
-                  <span>{user.email}</span>
+                <div className="flex items-center justify-center sm:justify-start gap-2 text-white/90 mb-3 sm:mb-4">
+                  <Mail className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                  <span className="text-sm sm:text-base truncate">{user.email}</span>
                 </div>
                 {user.role && (
                   <span className={`inline-block px-3 py-1 backdrop-blur-sm text-white rounded-full text-sm font-semibold ${
@@ -266,38 +266,38 @@ const Profile = () => {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
                 {!isEditing ? (
                   <button
                     onClick={() => setIsEditing(true)}
-                    className="px-6 py-3 bg-white text-blue-600 rounded-xl font-bold hover:bg-blue-50 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center gap-2"
+                    className="px-4 sm:px-6 py-2 sm:py-3 bg-white text-[#017233] rounded-lg sm:rounded-xl font-bold hover:bg-green-50 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 text-sm sm:text-base"
                   >
-                    <Edit2 className="w-5 h-5" />
+                    <Edit2 className="w-4 h-4 sm:w-5 sm:h-5" />
                     Edit Profile
                   </button>
                 ) : (
-                  <div className="flex gap-3">
+                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
                     <button
                       onClick={handleCancel}
                       disabled={saving}
-                      className="px-6 py-3 bg-white/20 backdrop-blur-sm text-white rounded-xl font-bold hover:bg-white/30 transition-all duration-300 flex items-center gap-2 disabled:opacity-50"
+                      className="px-4 sm:px-6 py-2 sm:py-3 bg-white/20 backdrop-blur-sm text-white rounded-lg sm:rounded-xl font-bold hover:bg-white/30 transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 text-sm sm:text-base"
                     >
-                      <X className="w-5 h-5" />
+                      <X className="w-4 h-4 sm:w-5 sm:h-5" />
                       Cancel
                     </button>
                     <button
                       onClick={handleSave}
                       disabled={saving}
-                      className="px-6 py-3 bg-white text-blue-600 rounded-xl font-bold hover:bg-blue-50 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center gap-2 disabled:opacity-50"
+                      className="px-4 sm:px-6 py-2 sm:py-3 bg-white text-[#017233] rounded-lg sm:rounded-xl font-bold hover:bg-green-50 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 disabled:opacity-50 text-sm sm:text-base"
                     >
                       {saving ? (
                         <>
-                          <Loader2 className="w-5 h-5 animate-spin" />
+                          <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
                           Saving...
                         </>
                       ) : (
                         <>
-                          <Save className="w-5 h-5" />
+                          <Save className="w-4 h-4 sm:w-5 sm:h-5" />
                           Save Changes
                         </>
                       )}
@@ -309,8 +309,8 @@ const Profile = () => {
           </div>
 
           {/* Profile Details */}
-          <div className="p-8">
-            <div className="space-y-6">
+          <div className="p-4 sm:p-6 md:p-8">
+            <div className="space-y-4 sm:space-y-6">
               {/* Name Field */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -323,10 +323,10 @@ const Profile = () => {
                     value={formData.name}
                     onChange={handleInputChange}
                     placeholder="Enter your full name"
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-300"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border-2 border-gray-200 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-[#017233] focus:border-[#017233] outline-none transition-all duration-300 text-sm sm:text-base"
                   />
                 ) : (
-                  <div className="px-4 py-3 bg-gray-50 rounded-xl text-gray-900">
+                  <div className="px-3 sm:px-4 py-2 sm:py-3 bg-gray-50 rounded-lg sm:rounded-xl text-gray-900 text-sm sm:text-base">
                     {user.name || 'Not set'}
                   </div>
                 )}
@@ -334,41 +334,41 @@ const Profile = () => {
 
               {/* Email Field (Read-only) */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
                   Email Address
                 </label>
-                <div className="px-4 py-3 bg-gray-50 rounded-xl text-gray-600 flex items-center gap-2">
-                  <Mail className="w-5 h-5 text-gray-400" />
-                  <span>{user.email}</span>
+                <div className="px-3 sm:px-4 py-2 sm:py-3 bg-gray-50 rounded-lg sm:rounded-xl text-gray-600 flex items-center gap-2 text-sm sm:text-base">
+                  <Mail className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 flex-shrink-0" />
+                  <span className="truncate">{user.email}</span>
                 </div>
                 <p className="mt-1 text-xs text-gray-500">Email cannot be changed</p>
               </div>
 
               {/* Phone Field */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
                   Phone Number
                 </label>
                 {isEditing ? (
                   <div>
                     <div className="flex items-center gap-2">
-                      <Phone className="w-5 h-5 text-gray-400" />
+                      <Phone className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 flex-shrink-0" />
                       <input
                         type="tel"
                         name="phone"
                         value={formData.phone}
                         onChange={handleInputChange}
                         placeholder="Enter your phone number"
-                        className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-300"
+                        className="flex-1 px-3 sm:px-4 py-2 sm:py-3 border-2 border-gray-200 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-[#017233] focus:border-[#017233] outline-none transition-all duration-300 text-sm sm:text-base"
                       />
                     </div>
                     {errors.phone && (
-                      <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
+                      <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.phone}</p>
                     )}
                   </div>
                 ) : (
-                  <div className="px-4 py-3 bg-gray-50 rounded-xl text-gray-900 flex items-center gap-2">
-                    <Phone className="w-5 h-5 text-gray-400" />
+                  <div className="px-3 sm:px-4 py-2 sm:py-3 bg-gray-50 rounded-lg sm:rounded-xl text-gray-900 flex items-center gap-2 text-sm sm:text-base">
+                    <Phone className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 flex-shrink-0" />
                     <span>{user.phone || 'Not set'}</span>
                   </div>
                 )}
@@ -376,7 +376,7 @@ const Profile = () => {
 
               {/* Bio Field */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
                   Bio
                 </label>
                 {isEditing ? (
@@ -388,11 +388,11 @@ const Profile = () => {
                       placeholder="Tell us about yourself..."
                       rows={4}
                       maxLength={500}
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-300 resize-none"
+                      className="w-full px-3 sm:px-4 py-2 sm:py-3 border-2 border-gray-200 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-[#017233] focus:border-[#017233] outline-none transition-all duration-300 resize-none text-sm sm:text-base"
                     />
                     <div className="flex justify-between items-center mt-1">
                       {errors.bio && (
-                        <p className="text-sm text-red-600">{errors.bio}</p>
+                        <p className="text-xs sm:text-sm text-red-600">{errors.bio}</p>
                       )}
                       <p className="text-xs text-gray-500 ml-auto">
                         {formData.bio.length}/500 characters
@@ -400,7 +400,7 @@ const Profile = () => {
                     </div>
                   </div>
                 ) : (
-                  <div className="px-4 py-3 bg-gray-50 rounded-xl text-gray-900 min-h-[100px]">
+                  <div className="px-3 sm:px-4 py-2 sm:py-3 bg-gray-50 rounded-lg sm:rounded-xl text-gray-900 min-h-[80px] sm:min-h-[100px] text-sm sm:text-base">
                     {user.bio || 'No bio added yet'}
                   </div>
                 )}
@@ -448,7 +448,7 @@ const Profile = () => {
                           fetchUsers();
                         }
                       }}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-all duration-300 flex items-center gap-2"
+                      className="px-4 py-2 bg-gradient-to-r from-[#017233] to-[#01994d] text-white rounded-lg font-semibold hover:from-[#015a28] hover:to-[#017233] transition-all duration-300 flex items-center gap-2 shadow-lg hover:shadow-xl"
                     >
                       {showUserManagement ? 'Hide' : 'Show'} Users
                     </button>
@@ -470,7 +470,7 @@ const Profile = () => {
                                 fetchUsers();
                               }
                             }}
-                            className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-300"
+                            className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#017233] focus:border-[#017233] outline-none transition-all duration-300"
                           />
                         </div>
                       </div>
@@ -478,7 +478,7 @@ const Profile = () => {
                       {/* Users List */}
                       {loadingUsers ? (
                         <div className="flex items-center justify-center py-8">
-                          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                          <Loader2 className="w-8 h-8 animate-spin text-[#017233]" />
                         </div>
                       ) : users.length === 0 ? (
                         <div className="text-center py-8 text-gray-500">
@@ -501,7 +501,7 @@ const Profile = () => {
                                         className="w-10 h-10 rounded-full object-cover"
                                       />
                                     ) : (
-                                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-400 flex items-center justify-center">
+                                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#01994d] to-[#00C853] flex items-center justify-center">
                                         <User className="w-6 h-6 text-white" />
                                       </div>
                                     )}

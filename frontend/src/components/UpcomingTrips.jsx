@@ -15,7 +15,7 @@ const filters = [
   'Kerala Backwaters'
 ]
 
-function UpcomingTrips() {
+function UpcomingTrips({ searchQuery = '' }) {
   const [activeFilter, setActiveFilter] = useState('All')
   const [trips, setTrips] = useState([])
   const [loading, setLoading] = useState(true)
@@ -23,6 +23,20 @@ function UpcomingTrips() {
   useEffect(() => {
     fetchTrips()
   }, [])
+
+  // Update filter when search query changes
+  useEffect(() => {
+    if (searchQuery.trim()) {
+      // Try to match search query with a filter
+      const matchedFilter = filters.find(filter => 
+        filter.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        searchQuery.toLowerCase().includes(filter.toLowerCase())
+      )
+      if (matchedFilter && matchedFilter !== 'All') {
+        setActiveFilter(matchedFilter)
+      }
+    }
+  }, [searchQuery])
 
   const fetchTrips = async () => {
     try {
@@ -38,9 +52,26 @@ function UpcomingTrips() {
   }
 
   const visibleTrips = useMemo(() => {
-    if (activeFilter === 'All') return trips
-    return trips.filter((trip) => trip.location === activeFilter)
-  }, [activeFilter, trips])
+    let filtered = trips
+
+    // Apply location filter
+    if (activeFilter !== 'All') {
+      filtered = filtered.filter((trip) => trip.location === activeFilter)
+    }
+
+    // Apply search query filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase()
+      filtered = filtered.filter((trip) => 
+        trip.title?.toLowerCase().includes(query) ||
+        trip.location?.toLowerCase().includes(query) ||
+        trip.subtitle?.toLowerCase().includes(query) ||
+        trip.intro?.toLowerCase().includes(query)
+      )
+    }
+
+    return filtered
+  }, [activeFilter, trips, searchQuery])
 
   return (
     <section className="w-full bg-gradient-to-b from-gray-50 to-white py-12 md:py-16">
@@ -56,7 +87,7 @@ function UpcomingTrips() {
                     ✈️
                   </div>
                   <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900">
-                    Popular Trips
+                    {searchQuery.trim() ? `Search Results for "${searchQuery}"` : 'Popular Trips'}
                   </h2>
                 </div>
                 <button
@@ -87,11 +118,25 @@ function UpcomingTrips() {
             </div>
 
             {/* Trips Grid */}
-            <div className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 items-stretch p-4 md:p-5 lg:p-6">
-              {visibleTrips.slice(0, 16).map((trip) => (
-                <TripCard key={trip.id} trip={trip} />
-              ))}
-            </div>
+            {loading ? (
+              <div className="flex justify-center items-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-[#017233]" />
+              </div>
+            ) : visibleTrips.length > 0 ? (
+              <div className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 items-stretch p-4 md:p-5 lg:p-6">
+                {visibleTrips.slice(0, 16).map((trip) => (
+                  <TripCard key={trip.id} trip={trip} />
+                ))}
+              </div>
+            ) : (
+              <div className="p-8 md:p-12 text-center">
+                <p className="text-gray-500 text-lg">
+                  {searchQuery.trim() 
+                    ? `No trips found matching "${searchQuery}"` 
+                    : 'No trips available at the moment.'}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>

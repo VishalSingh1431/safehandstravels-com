@@ -57,9 +57,9 @@ function BannerSlider() {
   }
 
   return (
-    <section className="w-full bg-gray-50 py-8">
+    <section className="w-full bg-gray-50 py-6 sm:py-8">
       <div className="mx-auto w-full px-4 sm:px-6 lg:px-8">
-        <div className="relative h-64 sm:h-80 md:h-96 lg:h-[500px] rounded-2xl overflow-hidden shadow-xl">
+        <div className="relative h-48 sm:h-64 md:h-80 lg:h-96 xl:h-[500px] rounded-xl sm:rounded-2xl overflow-hidden shadow-xl">
           {bannerImages.map((banner, index) => (
             <div
               key={banner.id}
@@ -73,11 +73,11 @@ function BannerSlider() {
                 className="w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-transparent"></div>
-              <div className="absolute inset-0 flex flex-col items-start justify-center px-8 md:px-12 lg:px-16 text-white">
-                <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 max-w-2xl">
+              <div className="absolute inset-0 flex flex-col items-start justify-center px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 text-white">
+                <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold mb-2 sm:mb-3 md:mb-4 max-w-2xl">
                   {banner.title}
                 </h2>
-                <p className="text-lg md:text-xl lg:text-2xl max-w-xl">
+                <p className="text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl max-w-xl">
                   {banner.subtitle}
                 </p>
               </div>
@@ -87,19 +87,19 @@ function BannerSlider() {
           {/* Navigation Arrows */}
           <button
             onClick={goToPrevious}
-            className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-900 rounded-full p-2 transition-all z-10"
+            className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-900 rounded-full p-1.5 sm:p-2 transition-all z-10"
             aria-label="Previous slide"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
           <button
             onClick={goToNext}
-            className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-900 rounded-full p-2 transition-all z-10"
+            className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-900 rounded-full p-1.5 sm:p-2 transition-all z-10"
             aria-label="Next slide"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </button>

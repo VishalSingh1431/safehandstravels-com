@@ -1,7 +1,7 @@
 function DestinationCard({ destination }) {
   return (
     <div className="group flex flex-col items-center cursor-pointer relative z-0">
-      <div className="relative w-32 h-32 sm:w-36 sm:h-36 md:w-40 md:h-40 rounded-full overflow-hidden shadow-sm transition-all duration-300 group-hover:scale-110 group-hover:shadow-md mb-3 ring-2 ring-transparent group-hover:ring-[#017233]/20 z-10">
+      <div className="relative w-32 h-32 sm:w-36 sm:h-36 md:w-40 md:h-40 rounded-full overflow-hidden shadow-sm transition-all duration-300 group-hover:scale-110 group-hover:shadow-md group-hover:shadow-[#017233]/30 mb-3 ring-2 ring-transparent group-hover:ring-[#017233]/50 z-10">
         <img
           src={destination.image}
           alt={destination.name}

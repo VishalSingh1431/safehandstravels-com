@@ -16,6 +16,9 @@ import AdminCertificates from './pages/AdminCertificates'
 import AdminDestinations from './pages/AdminDestinations'
 import AdminReviews from './pages/AdminReviews'
 import AdminWrittenReviews from './pages/AdminWrittenReviews'
+import AdminEnquiries from './pages/AdminEnquiries'
+import AdminProductPageSettings from './pages/AdminProductPageSettings'
+import AdminDrivers from './pages/AdminDrivers'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import './App.css'
@@ -45,6 +48,9 @@ function App() {
               <Route path="/admin/destinations" element={<AdminDestinations />} />
               <Route path="/admin/reviews" element={<AdminReviews />} />
               <Route path="/admin/written-reviews" element={<AdminWrittenReviews />} />
+              <Route path="/admin/enquiries" element={<AdminEnquiries />} />
+              <Route path="/admin/product-page-settings" element={<AdminProductPageSettings />} />
+              <Route path="/admin/drivers" element={<AdminDrivers />} />
             </Routes>
           </main>
           <Footer />

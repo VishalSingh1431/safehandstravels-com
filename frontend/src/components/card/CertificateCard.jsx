@@ -1,13 +1,19 @@
 import { useState } from 'react'
+import { ChevronDown, ChevronUp } from 'lucide-react'
 
 function CertificateCard({ certificate, currentIndex, onIndexChange }) {
+  const [isExpanded, setIsExpanded] = useState(false)
   const goToSlide = (index) => {
     onIndexChange(certificate.id, index)
   }
 
+  // Check if description is long enough to need truncation
+  const description = certificate.description || ''
+  const shouldTruncate = description.length > 150 // Adjust threshold as needed
+
   return (
-    <div className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
-      <div className="relative h-64 md:h-72 overflow-hidden rounded-t-2xl">
+    <div className="bg-white rounded-2xl shadow-lg border-2 border-gray-200/50 overflow-hidden hover:border-[#017233]/50 hover:shadow-[0_20px_50px_rgba(1,114,51,0.3)] transition-all duration-300 flex flex-col h-full">
+      <div className="relative h-64 md:h-72 overflow-hidden rounded-t-2xl flex-shrink-0">
         {/* Main Image Display */}
         {certificate.images.map((image, index) => (
           <div
@@ -62,11 +68,33 @@ function CertificateCard({ certificate, currentIndex, onIndexChange }) {
           })}
         </div>
       </div>
-      <div className="p-6">
-        <h3 className="text-xl font-bold text-gray-900 mb-2">
+      <div className="p-6 flex flex-col flex-grow min-h-[140px]">
+        <h3 className="text-xl font-bold text-gray-900 mb-3 flex-shrink-0">
           {certificate.title}
         </h3>
-        <p className="text-gray-600">{certificate.description}</p>
+        <div className="flex-grow flex flex-col">
+          <p className={`text-gray-600 ${!isExpanded && shouldTruncate ? 'line-clamp-3' : ''}`}>
+            {description}
+          </p>
+          {shouldTruncate && (
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="mt-2 flex items-center gap-1 text-[#017233] font-semibold text-sm hover:text-[#015a26] transition-colors self-start flex-shrink-0"
+            >
+              {isExpanded ? (
+                <>
+                  <span>Read less</span>
+                  <ChevronUp className="w-4 h-4" />
+                </>
+              ) : (
+                <>
+                  <span>Read more</span>
+                  <ChevronDown className="w-4 h-4" />
+                </>
+              )}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   )

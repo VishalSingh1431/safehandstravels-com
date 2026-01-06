@@ -1,4 +1,4 @@
-import pool from '../config/database.js';
+import pool, { queryWithRetry } from '../config/database.js';
 
 /**
  * Review Model - PostgreSQL operations
@@ -11,9 +11,9 @@ class Review {
     try {
       const query = `
         INSERT INTO reviews (
-          name, rating, location, review, avatar, avatar_public_id, status, created_by
+          name, rating, location, review, avatar, avatar_public_id, type, video_url, video_public_id, status, created_by
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         RETURNING *
       `;
 
@@ -24,6 +24,9 @@ class Review {
         data.review,
         data.avatar || null,
         data.avatarPublicId || null,
+        data.type || 'video',
+        data.videoUrl || null,
+        data.videoPublicId || null,
         data.status || 'active',
         data.createdBy || null,
       ];
@@ -79,7 +82,7 @@ class Review {
         values.push(filters.offset);
       }
 
-      const result = await pool.query(query, values);
+      const result = await queryWithRetry(() => pool.query(query, values));
       return result.rows.map(row => this.mapRowToReview(row));
     } catch (error) {
       console.error('Review.findAll error:', error);
@@ -103,6 +106,9 @@ class Review {
         review: data.review,
         avatar: 'avatar',
         avatarPublicId: 'avatar_public_id',
+        type: data.type,
+        videoUrl: 'video_url',
+        videoPublicId: 'video_public_id',
         status: data.status,
       };
 
@@ -162,6 +168,9 @@ class Review {
       review: row.review,
       avatar: row.avatar,
       avatarPublicId: row.avatar_public_id,
+      type: row.type || 'text',
+      videoUrl: row.video_url,
+      videoPublicId: row.video_public_id,
       status: row.status,
       createdBy: row.created_by,
       createdAt: row.created_at,

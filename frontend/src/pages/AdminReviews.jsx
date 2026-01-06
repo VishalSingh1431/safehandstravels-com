@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Edit2, Trash2, Loader2, X, Save, Image as ImageIcon, Search, Star } from 'lucide-react';
+import { Plus, Edit2, Trash2, Loader2, X, Save, Image as ImageIcon, Search, Star, Video } from 'lucide-react';
 import { reviewsAPI, uploadAPI } from '../config/api';
 import { useToast } from '../contexts/ToastContext';
 import { authAPI } from '../config/api';
@@ -23,6 +23,9 @@ const AdminReviews = () => {
     review: '',
     avatar: '',
     avatarPublicId: '',
+    type: 'video',
+    videoUrl: '',
+    videoPublicId: '',
     status: 'active',
   });
 
@@ -67,17 +70,28 @@ const AdminReviews = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleFileUpload = async (file) => {
+  const handleFileUpload = async (file, type = 'image') => {
     try {
       setUploading(true);
-      const result = await uploadAPI.uploadImage(file);
+      let result;
       
-      setFormData(prev => ({
-        ...prev,
-        avatar: result.url,
-        avatarPublicId: result.public_id
-      }));
-      toast.success('Avatar uploaded successfully!');
+      if (type === 'video') {
+        result = await uploadAPI.uploadVideo(file);
+        setFormData(prev => ({
+          ...prev,
+          videoUrl: result.url,
+          videoPublicId: result.public_id
+        }));
+        toast.success('Video uploaded successfully!');
+      } else {
+        result = await uploadAPI.uploadImage(file);
+        setFormData(prev => ({
+          ...prev,
+          avatar: result.url,
+          avatarPublicId: result.public_id
+        }));
+        toast.success('Avatar uploaded successfully!');
+      }
     } catch (error) {
       console.error('Error uploading file:', error);
       toast.error(error.message || 'Failed to upload file');
@@ -88,6 +102,12 @@ const AdminReviews = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!formData.videoUrl) {
+      toast.error('Please upload a video');
+      return;
+    }
+    
     try {
       if (editingReview) {
         await reviewsAPI.updateReview(editingReview.id, formData);
@@ -114,6 +134,9 @@ const AdminReviews = () => {
       review: review.review || '',
       avatar: review.avatar || '',
       avatarPublicId: review.avatarPublicId || '',
+      type: 'video',
+      videoUrl: review.videoUrl || '',
+      videoPublicId: review.videoPublicId || '',
       status: review.status || 'active',
     });
     setShowForm(true);
@@ -142,6 +165,9 @@ const AdminReviews = () => {
       review: '',
       avatar: '',
       avatarPublicId: '',
+      type: 'video',
+      videoUrl: '',
+      videoPublicId: '',
       status: 'active',
     });
     setEditingReview(null);
@@ -257,14 +283,49 @@ const AdminReviews = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Review *</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Video *</label>
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+                    <input
+                      type="file"
+                      accept="video/*"
+                      onChange={(e) => e.target.files[0] && handleFileUpload(e.target.files[0], 'video')}
+                      className="hidden"
+                      id="video-upload"
+                      required={!formData.videoUrl}
+                    />
+                    <label
+                      htmlFor="video-upload"
+                      className="px-3 sm:px-4 py-2 bg-purple-100 text-purple-700 rounded-lg font-semibold hover:bg-purple-200 transition-colors cursor-pointer flex items-center gap-2 text-sm sm:text-base"
+                    >
+                      {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Video className="w-4 h-4" />}
+                      {formData.videoUrl ? 'Change Video' : 'Upload Video'}
+                    </label>
+                    {formData.videoUrl && (
+                      <div className="flex items-center gap-2">
+                        <video
+                          src={formData.videoUrl}
+                          controls
+                          className="w-32 h-20 object-cover rounded-lg"
+                        >
+                          Your browser does not support the video tag.
+                        </video>
+                      </div>
+                    )}
+                  </div>
+                  {!formData.videoUrl && (
+                    <p className="text-xs text-red-500 mt-1">Video is required</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Review Text</label>
                   <textarea
                     name="review"
                     value={formData.review}
                     onChange={handleInputChange}
-                    required
                     rows={4}
                     className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                    placeholder="Optional review text"
                   />
                 </div>
 
@@ -350,7 +411,12 @@ const AdminReviews = () => {
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-gray-900 truncate mb-1">{rev.name}</h3>
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-semibold text-gray-900 truncate">{rev.name}</h3>
+                            <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">
+                              Video
+                            </span>
+                          </div>
                           <p className="text-sm text-gray-600 mb-1">{rev.location}</p>
                           <div className="flex items-center gap-1 mb-2">
                             {[...Array(5)].map((_, i) => (
@@ -391,6 +457,7 @@ const AdminReviews = () => {
                   <tr>
                     <th className="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700">Avatar</th>
                     <th className="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700">Name</th>
+                    <th className="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700">Type</th>
                     <th className="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700">Rating</th>
                     <th className="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700">Location</th>
                     <th className="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700">Review</th>
@@ -400,7 +467,7 @@ const AdminReviews = () => {
                 <tbody className="divide-y divide-gray-200">
                   {filteredReviews.length === 0 ? (
                     <tr>
-                      <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
+                      <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
                         No reviews found
                       </td>
                     </tr>
@@ -422,6 +489,11 @@ const AdminReviews = () => {
                         </td>
                         <td className="px-4 lg:px-6 py-3 lg:py-4">
                           <span className="font-semibold text-gray-900 text-sm sm:text-base">{rev.name}</span>
+                        </td>
+                        <td className="px-4 lg:px-6 py-3 lg:py-4">
+                          <span className="px-2 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">
+                            Video
+                          </span>
                         </td>
                         <td className="px-4 lg:px-6 py-3 lg:py-4">
                           <div className="flex items-center gap-1">

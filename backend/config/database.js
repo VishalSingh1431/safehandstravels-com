@@ -80,7 +80,7 @@ const pool = new Pool({
   max: process.env.NODE_ENV === 'production' ? 30 : 20, // More connections in production
   min: process.env.NODE_ENV === 'production' ? 5 : 2, // Keep minimum connections alive
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 10000,
+  connectionTimeoutMillis: 20000, // Increased to 20 seconds for Aiven
   allowExitOnIdle: false, // Keep pool alive
 });
 
@@ -95,6 +95,40 @@ pool.on('error', (err) => {
   console.error('Error message:', err.message);
   // Don't exit on error - let the app handle it gracefully
 });
+
+// Helper function to retry queries on connection errors
+export const queryWithRetry = async (queryFn, maxRetries = 3, retryDelay = 1000) => {
+  let lastError;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await queryFn();
+    } catch (error) {
+      lastError = error;
+      
+      // Check if it's a connection error that we should retry
+      const isConnectionError = 
+        error.code === 'ECONNRESET' ||
+        error.code === 'ETIMEDOUT' ||
+        error.code === 'ENOTFOUND' ||
+        error.code === 'ECONNREFUSED' ||
+        error.message?.includes('Connection terminated') ||
+        error.message?.includes('connection timeout') ||
+        error.message?.includes('Connection terminated unexpectedly');
+      
+      if (isConnectionError && attempt < maxRetries) {
+        console.warn(`⚠️  Database connection error (attempt ${attempt}/${maxRetries}), retrying in ${retryDelay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, retryDelay * attempt));
+        continue;
+      }
+      
+      // If not a connection error or max retries reached, throw immediately
+      throw error;
+    }
+  }
+  
+  throw lastError;
+};
 
 // Test database connection function
 export const testConnection = async () => {
@@ -341,12 +375,50 @@ export const initializeDatabase = async () => {
         review TEXT NOT NULL,
         avatar TEXT,
         avatar_public_id TEXT,
+        type VARCHAR(50) DEFAULT 'video' CHECK (type IN ('text', 'video')),
+        video_url TEXT,
+        video_public_id TEXT,
         status VARCHAR(50) DEFAULT 'active' CHECK (status IN ('active', 'draft', 'archived')),
         created_by INTEGER REFERENCES users(id),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+
+    // Add missing columns if they don't exist (for existing reviews table)
+    const typeColumnCheck = await pool.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'reviews' AND column_name = 'type'
+    `);
+    if (typeColumnCheck.rows.length === 0) {
+      await pool.query(`
+        ALTER TABLE reviews 
+        ADD COLUMN type VARCHAR(50) DEFAULT 'video' 
+        CHECK (type IN ('text', 'video'))
+      `);
+      console.log('✅ Added missing "type" column to reviews table');
+    }
+
+    const videoUrlColumnCheck = await pool.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'reviews' AND column_name = 'video_url'
+    `);
+    if (videoUrlColumnCheck.rows.length === 0) {
+      await pool.query(`ALTER TABLE reviews ADD COLUMN video_url TEXT`);
+      console.log('✅ Added missing "video_url" column to reviews table');
+    }
+
+    const videoPublicIdColumnCheck = await pool.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'reviews' AND column_name = 'video_public_id'
+    `);
+    if (videoPublicIdColumnCheck.rows.length === 0) {
+      await pool.query(`ALTER TABLE reviews ADD COLUMN video_public_id TEXT`);
+      console.log('✅ Added missing "video_public_id" column to reviews table');
+    }
 
     // Create written_reviews table if it doesn't exist
     await pool.query(`
@@ -367,6 +439,56 @@ export const initializeDatabase = async () => {
       )
     `);
 
+    // Create drivers table if it doesn't exist
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS drivers (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        car VARCHAR(255) NOT NULL,
+        experience VARCHAR(255),
+        photo_url TEXT,
+        photo_public_id TEXT,
+        status VARCHAR(50) DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
+        display_order INTEGER DEFAULT 0,
+        five_driver BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Add five_driver column if it doesn't exist (for existing tables)
+    const fiveDriverColumnCheck = await pool.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'drivers' AND column_name = 'five_driver'
+    `);
+    if (fiveDriverColumnCheck.rows.length === 0) {
+      await pool.query(`ALTER TABLE drivers ADD COLUMN five_driver BOOLEAN DEFAULT FALSE`);
+      console.log('✅ Added missing "five_driver" column to drivers table');
+    }
+
+    // Create car_booking_settings table if it doesn't exist
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS car_booking_settings (
+        id SERIAL PRIMARY KEY,
+        setting_key VARCHAR(255) UNIQUE NOT NULL,
+        setting_value JSONB,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create product_page_settings table if it doesn't exist
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS product_page_settings (
+        id INTEGER PRIMARY KEY DEFAULT 1,
+        settings_data JSONB NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT single_row CHECK (id = 1)
+      )
+    `);
+
     // Create indexes for better query performance
     await pool.query(`
       CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
@@ -384,6 +506,8 @@ export const initializeDatabase = async () => {
       CREATE INDEX IF NOT EXISTS idx_destinations_status ON destinations(status);
       CREATE INDEX IF NOT EXISTS idx_reviews_status ON reviews(status);
       CREATE INDEX IF NOT EXISTS idx_written_reviews_status ON written_reviews(status);
+      CREATE INDEX IF NOT EXISTS idx_drivers_status ON drivers(status);
+      CREATE INDEX IF NOT EXISTS idx_drivers_display_order ON drivers(display_order);
     `);
 
     // Create function to update updated_at timestamp
@@ -450,6 +574,30 @@ export const initializeDatabase = async () => {
       DROP TRIGGER IF EXISTS update_written_reviews_updated_at ON written_reviews;
       CREATE TRIGGER update_written_reviews_updated_at
       BEFORE UPDATE ON written_reviews
+      FOR EACH ROW
+      EXECUTE FUNCTION update_updated_at_column();
+    `);
+
+    await pool.query(`
+      DROP TRIGGER IF EXISTS update_drivers_updated_at ON drivers;
+      CREATE TRIGGER update_drivers_updated_at
+      BEFORE UPDATE ON drivers
+      FOR EACH ROW
+      EXECUTE FUNCTION update_updated_at_column();
+    `);
+
+    await pool.query(`
+      DROP TRIGGER IF EXISTS update_car_booking_settings_updated_at ON car_booking_settings;
+      CREATE TRIGGER update_car_booking_settings_updated_at
+      BEFORE UPDATE ON car_booking_settings
+      FOR EACH ROW
+      EXECUTE FUNCTION update_updated_at_column();
+    `);
+
+    await pool.query(`
+      DROP TRIGGER IF EXISTS update_product_page_settings_updated_at ON product_page_settings;
+      CREATE TRIGGER update_product_page_settings_updated_at
+      BEFORE UPDATE ON product_page_settings
       FOR EACH ROW
       EXECUTE FUNCTION update_updated_at_column();
     `);

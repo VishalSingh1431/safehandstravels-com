@@ -1,4 +1,4 @@
-function VideoCard({ video }) {
+function VideoCard({ video, isTall = false }) {
   // Extract YouTube video ID from URL or use direct ID
   const getYouTubeId = (urlOrId) => {
     if (!urlOrId) return null;
@@ -18,8 +18,8 @@ function VideoCard({ video }) {
   const embedUrl = youtubeId ? `https://www.youtube.com/embed/${youtubeId}?rel=0&modestbranding=1` : null;
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 group">
-      <div className="relative h-48 md:h-56 overflow-hidden rounded-t-2xl">
+    <div className="bg-white rounded-2xl shadow-lg border-2 border-gray-200/50 overflow-hidden hover:border-[#017233]/50 hover:shadow-[0_20px_50px_rgba(1,114,51,0.3)] transition-all duration-300 group h-full">
+      <div className={`relative overflow-hidden rounded-t-2xl ${isTall ? 'h-96 md:h-[500px]' : 'h-48 md:h-56'}`}>
         {embedUrl ? (
           <iframe
             src={embedUrl}

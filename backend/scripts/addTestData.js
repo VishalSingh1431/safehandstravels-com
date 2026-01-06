@@ -85,7 +85,7 @@ const testDestinations = [
   }
 ];
 
-// Test Reviews
+// Test Reviews (Video Reviews)
 const testReviews = [
   {
     name: 'Rajesh Kumar',
@@ -94,6 +94,9 @@ const testReviews = [
     review: 'Amazing experience! The Varanasi Spiritual Journey was well-organized and the guide was very knowledgeable. The Ganga Aarti was mesmerizing. Highly recommended!',
     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
     avatarPublicId: '',
+    type: 'video',
+    videoUrl: '/video/Slider.mp4',
+    videoPublicId: '',
     status: 'active'
   },
   {
@@ -103,6 +106,9 @@ const testReviews = [
     review: 'Excellent service from start to finish. The Golden Triangle with Varanasi tour covered all major attractions. Hotels were comfortable and transportation was smooth.',
     avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80',
     avatarPublicId: '',
+    type: 'video',
+    videoUrl: '/video/Slider.mp4',
+    videoPublicId: '',
     status: 'active'
   },
   {
@@ -112,6 +118,9 @@ const testReviews = [
     review: 'The Heritage Walk tour was fantastic! Learned so much about Varanasi\'s culture and history. The cooking class was a highlight. Great value for money.',
     avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80',
     avatarPublicId: '',
+    type: 'video',
+    videoUrl: '/video/Slider.mp4',
+    videoPublicId: '',
     status: 'active'
   },
   {
@@ -121,6 +130,9 @@ const testReviews = [
     review: 'Good tour experience. The day trip to Varanasi and Sarnath was well-planned. The guide was friendly and informative. Would book again for longer trips.',
     avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=400&q=80',
     avatarPublicId: '',
+    type: 'video',
+    videoUrl: '/video/Slider.mp4',
+    videoPublicId: '',
     status: 'active'
   },
   {
@@ -130,6 +142,21 @@ const testReviews = [
     review: 'Perfect photography tour! Got amazing shots of the ghats and temples. The photography guide was professional and helped me capture stunning images. Worth every rupee!',
     avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=400&q=80',
     avatarPublicId: '',
+    type: 'video',
+    videoUrl: '/video/Slider.mp4',
+    videoPublicId: '',
+    status: 'active'
+  },
+  {
+    name: 'Anjali Mehta',
+    rating: 5,
+    location: 'Hyderabad, Telangana',
+    review: 'Incredible spiritual journey! The Ganga Aarti ceremony was breathtaking. Our guide made the entire experience meaningful and memorable. Highly recommend this tour!',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+    avatarPublicId: '',
+    type: 'video',
+    videoUrl: '/video/Slider.mp4',
+    videoPublicId: '',
     status: 'active'
   }
 ];

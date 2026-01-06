@@ -94,6 +94,17 @@ const Navbar = () => {
   const adminDropdownRef = useRef(null);
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Set initial search query from URL if on home page
+  useEffect(() => {
+    if (location.pathname === '/') {
+      const urlParams = new URLSearchParams(location.search);
+      const urlSearch = urlParams.get('search');
+      if (urlSearch) {
+        setSearchQuery(urlSearch);
+      }
+    }
+  }, [location]);
+
   const checkAuthStatus = () => {
     const token = localStorage.getItem('token');
     const userData = localStorage.getItem('user');
@@ -162,15 +173,15 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="w-full border-b border-gray-100 bg-white shadow-sm">
+    <nav className="w-full border-b border-gray-100/50 bg-white/80 backdrop-blur-xl shadow-sm sticky top-0 z-50 transition-all duration-300">
       <div className="mx-auto w-full px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-4 py-4 lg:flex-row lg:items-center lg:justify-between lg:gap-6 lg:min-h-[80px]">
           <div className="flex items-center justify-between gap-4 lg:justify-start lg:flex-shrink-0">
-            <Link to="/" className="flex-shrink-0">
+            <Link to="/" className="flex-shrink-0 group">
               <img
                 src="/images/Logo.webp"
                 alt="Capture A Trip"
-                className="h-12 w-auto object-contain"
+                className="h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
                 loading="lazy"
               />
             </Link>
@@ -178,21 +189,21 @@ const Navbar = () => {
             <button
               type="button"
               onClick={toggleMobileMenu}
-              className="lg:hidden p-2 rounded-md text-gray-700 hover:text-[#017233] hover:bg-gray-100 transition-all"
+              className="lg:hidden p-2.5 rounded-xl text-gray-700 hover:text-[#017233] hover:bg-gradient-to-br hover:from-green-50 hover:to-emerald-50 transition-all duration-300 shadow-sm hover:shadow-md"
               aria-label="Toggle menu"
             >
               {isMobileMenuOpen ? (
-                <X className="w-6 h-6" />
+                <X className="w-6 h-6 transition-transform duration-300 rotate-90" />
               ) : (
-                <Menu className="w-6 h-6" />
+                <Menu className="w-6 h-6 transition-transform duration-300" />
               )}
             </button>
           </div>
 
-          <form onSubmit={handleSearch} className="flex w-full flex-1 items-center gap-3 rounded-full border border-gray-200 px-5 py-2 text-sm text-gray-500 lg:max-w-xl xl:max-w-2xl">
+          <form onSubmit={handleSearch} className="flex w-full flex-1 items-center gap-2 sm:gap-3 rounded-full border border-gray-200/60 bg-white/60 backdrop-blur-sm px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 text-xs sm:text-sm text-gray-500 lg:max-w-xl xl:max-w-2xl shadow-sm hover:shadow-md hover:border-[#017233]/30 transition-all duration-300 focus-within:border-[#017233]/50 focus-within:bg-white/80 focus-within:shadow-lg">
             <svg
               viewBox="0 0 24 24"
-              className="h-5 w-5 text-gray-500 flex-shrink-0"
+              className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500 flex-shrink-0 transition-colors duration-300 group-focus-within:text-[#017233]"
               aria-hidden="true"
             >
               <path
@@ -205,18 +216,18 @@ const Navbar = () => {
               placeholder="Search your trip..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full border-none bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400"
+              className="w-full border-none bg-transparent text-xs sm:text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:placeholder:text-gray-300 transition-colors"
             />
           </form>
 
           <div className="hidden lg:flex flex-wrap items-center justify-end gap-3 text-sm font-semibold text-gray-900 lg:flex-shrink-0">
             <a
               href="tel:+918448801998"
-              className="flex items-center gap-2 whitespace-nowrap text-gray-900 transition-colors hover:text-[#017233]"
+              className="flex items-center gap-2 whitespace-nowrap text-gray-900 transition-all duration-300 hover:text-[#017233] px-3 py-2 rounded-lg hover:bg-gradient-to-br hover:from-green-50 hover:to-emerald-50 hover:shadow-sm"
             >
               <svg
                 viewBox="0 0 24 24"
-                className="h-5 w-5 text-gray-900"
+                className="h-5 w-5 text-gray-900 transition-transform duration-300 hover:rotate-12"
                 aria-hidden="true"
               >
                 <path
@@ -235,47 +246,68 @@ const Navbar = () => {
                         e.stopPropagation();
                         setIsAdminDropdownOpen(!isAdminDropdownOpen);
                       }}
-                      className="flex items-center gap-1 px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-xl transition-all duration-300 shadow-lg"
+                      className="flex items-center gap-1 px-4 py-2 text-sm font-semibold text-[#017233] bg-gradient-to-br from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 border border-[#017233]/20 hover:border-[#017233]/40 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md hover:scale-105 active:scale-95"
                     >
                       Admin Panel
-                      <ChevronDown className={`w-4 h-4 transition-transform ${isAdminDropdownOpen ? 'rotate-180' : ''}`} />
+                      <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isAdminDropdownOpen ? 'rotate-180' : ''}`} />
                     </button>
                     {isAdminDropdownOpen && (
-                      <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-2xl border border-gray-200 py-2 z-[100]">
+                      <div className="absolute right-0 mt-2 w-56 bg-white/95 backdrop-blur-xl rounded-xl shadow-2xl border border-gray-200/50 py-2 z-[100] animate-fade-in">
                         <Link
                           to="/admin/trips"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg mx-2"
                           onClick={() => setIsAdminDropdownOpen(false)}
                         >
                           🎒 Manage Trips
                         </Link>
                         <Link
                           to="/admin/certificates"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg mx-2"
                           onClick={() => setIsAdminDropdownOpen(false)}
                         >
                           📜 Manage Certificates
                         </Link>
                         <Link
                           to="/admin/destinations"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg mx-2"
                           onClick={() => setIsAdminDropdownOpen(false)}
                         >
                           🌍 Manage Destinations
                         </Link>
                         <Link
                           to="/admin/reviews"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg mx-2"
                           onClick={() => setIsAdminDropdownOpen(false)}
                         >
                           ⭐ Manage Reviews
                         </Link>
                         <Link
                           to="/admin/written-reviews"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg mx-2"
                           onClick={() => setIsAdminDropdownOpen(false)}
                         >
                           ✍️ Manage Written Reviews
+                        </Link>
+                        <Link
+                          to="/admin/enquiries"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg mx-2"
+                          onClick={() => setIsAdminDropdownOpen(false)}
+                        >
+                          📧 Manage Enquiries
+                        </Link>
+                        <Link
+                          to="/admin/product-page-settings"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg mx-2"
+                          onClick={() => setIsAdminDropdownOpen(false)}
+                        >
+                          ⚙️ Product Page Settings
+                        </Link>
+                        <Link
+                          to="/admin/drivers"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg mx-2"
+                          onClick={() => setIsAdminDropdownOpen(false)}
+                        >
+                          🚗 Manage Drivers & Car Booking
                         </Link>
                       </div>
                     )}
@@ -283,15 +315,15 @@ const Navbar = () => {
                 )}
                 <Link
                   to="/profile"
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-gray-900 transition-colors hover:text-[#017233]"
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-gray-900 transition-all duration-300 hover:text-[#017233] rounded-lg hover:bg-gradient-to-br hover:from-green-50 hover:to-emerald-50 hover:shadow-sm"
                 >
-                  <User className="w-4 h-4" />
+                  <User className="w-4 h-4 transition-transform duration-300 hover:scale-110" />
                   <span>{user?.name || user?.email || 'User'}</span>
                 </Link>
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="rounded-full bg-black px-5 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                  className="rounded-full bg-gradient-to-r from-gray-900 to-black px-5 py-2 text-sm font-semibold text-white transition-all duration-300 hover:shadow-lg hover:scale-105 active:scale-95 hover:from-gray-800 hover:to-gray-900"
                 >
                   Logout
                 </button>
@@ -299,7 +331,7 @@ const Navbar = () => {
             ) : (
               <Link
                 to="/login"
-                className="rounded-full bg-black px-5 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                className="rounded-full bg-gradient-to-r from-gray-900 to-black px-5 py-2 text-sm font-semibold text-white transition-all duration-300 hover:shadow-lg hover:scale-105 active:scale-95 hover:from-gray-800 hover:to-gray-900"
               >
                 Login
               </Link>
@@ -308,7 +340,7 @@ const Navbar = () => {
         </div>
 
         {/* Desktop Menu Items */}
-        <div className="hidden lg:flex flex-wrap items-center gap-x-6 xl:gap-x-8 gap-y-3 text-sm font-semibold text-gray-900 pb-2">
+        <div className="hidden lg:flex flex-wrap items-center justify-center gap-x-6 xl:gap-x-8 gap-y-3 text-sm font-semibold text-gray-900 pb-2">
           {menuItems.map((item) => {
             const IconComponent = item.Icon;
             const isCarBooking = item.label === 'Car Booking';
@@ -340,11 +372,13 @@ const Navbar = () => {
                 <Link
                   key={item.label}
                   to="/car-rentals"
-                  className={`flex items-center gap-1.5 whitespace-nowrap transition-colors ${
-                    isActive ? 'text-[#017233]' : 'hover:text-[#017233]'
+                  className={`flex items-center gap-1.5 whitespace-nowrap transition-all duration-300 px-3 py-2 rounded-lg ${
+                    isActive 
+                      ? 'text-[#017233] bg-gradient-to-br from-green-50 to-emerald-50 shadow-sm' 
+                      : 'hover:text-[#017233] hover:bg-gradient-to-br hover:from-green-50/50 hover:to-emerald-50/50'
                   }`}
                 >
-                  <span className="flex-shrink-0">
+                  <span className="flex-shrink-0 transition-transform duration-300 hover:scale-110">
                     <IconComponent />
                   </span>
                   <span>{item.label}</span>
@@ -357,26 +391,16 @@ const Navbar = () => {
                 <Link
                   key={item.label}
                   to={route}
-                  className={`flex items-center gap-1.5 whitespace-nowrap transition-colors ${
-                    isCategoryActive ? 'text-[#017233]' : 'hover:text-[#017233]'
+                  className={`flex items-center gap-1.5 whitespace-nowrap transition-all duration-300 px-3 py-2 rounded-lg ${
+                    isCategoryActive 
+                      ? 'text-[#017233] bg-gradient-to-br from-green-50 to-emerald-50 shadow-sm' 
+                      : 'hover:text-[#017233] hover:bg-gradient-to-br hover:from-green-50/50 hover:to-emerald-50/50'
                   }`}
                 >
-                  <span className="flex-shrink-0">
+                  <span className="flex-shrink-0 transition-transform duration-300 hover:scale-110">
                     <IconComponent />
                   </span>
                   <span>{item.label}</span>
-                  {item.hasDropdown && (
-                    <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
-                      <path
-                        d="M7 10l5 5 5-5"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  )}
                 </Link>
               );
             }
@@ -385,24 +409,12 @@ const Navbar = () => {
               <button
                 key={item.label}
                 type="button"
-                className="flex items-center gap-1.5 whitespace-nowrap transition-colors hover:text-[#017233]"
+                className="flex items-center gap-1.5 whitespace-nowrap transition-all duration-300 px-3 py-2 rounded-lg hover:text-[#017233] hover:bg-gradient-to-br hover:from-green-50/50 hover:to-emerald-50/50"
               >
-                <span className="flex-shrink-0">
+                <span className="flex-shrink-0 transition-transform duration-300 hover:scale-110">
                   <IconComponent />
                 </span>
                 <span>{item.label}</span>
-                {item.hasDropdown && (
-                  <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
-                    <path
-                      d="M7 10l5 5 5-5"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                )}
               </button>
             );
           })}
@@ -410,7 +422,7 @@ const Navbar = () => {
 
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
-          <div className="lg:hidden border-t border-gray-200 pt-4 space-y-4">
+          <div className="lg:hidden border-t border-gray-200/50 pt-4 space-y-4 animate-fade-in bg-white/95 backdrop-blur-sm rounded-b-2xl -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 pb-4 shadow-lg">
             {/* Mobile Phone & Login */}
             <div className="flex flex-col gap-3">
               <a
@@ -434,7 +446,7 @@ const Navbar = () => {
                 <>
                   {(user?.role === 'admin' || user?.role === 'main_admin') && (
                     <div className="mb-2 space-y-1">
-                      <div className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 rounded-xl">
+                      <div className="px-4 py-2 text-sm font-semibold text-[#017233] bg-gradient-to-br from-green-50 to-emerald-50 border border-[#017233]/20 rounded-xl">
                         Admin Panel
                       </div>
                       <Link
@@ -472,6 +484,27 @@ const Navbar = () => {
                       >
                         ✍️ Manage Written Reviews
                       </Link>
+                      <Link
+                        to="/admin/enquiries"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-colors"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        📧 Manage Enquiries
+                      </Link>
+                      <Link
+                        to="/admin/product-page-settings"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-colors"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        ⚙️ Product Page Settings
+                      </Link>
+                      <Link
+                        to="/admin/drivers"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-colors"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        🚗 Manage Drivers & Car Booking
+                      </Link>
                     </div>
                   )}
                   <div className="pt-2 border-t border-gray-200 mt-2">
@@ -489,7 +522,7 @@ const Navbar = () => {
                         handleLogout();
                         setIsMobileMenuOpen(false);
                       }}
-                      className="w-full mt-2 rounded-full bg-black px-5 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90 text-left"
+                      className="w-full mt-2 rounded-full bg-gradient-to-r from-gray-900 to-black px-5 py-2 text-sm font-semibold text-white transition-all duration-300 hover:shadow-lg hover:scale-[1.02] active:scale-95 text-center"
                     >
                       Logout
                     </button>
@@ -498,7 +531,7 @@ const Navbar = () => {
               ) : (
                 <Link
                   to="/login"
-                  className="rounded-full bg-black px-5 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90 text-center"
+                  className="rounded-full bg-gradient-to-r from-gray-900 to-black px-5 py-2 text-sm font-semibold text-white transition-all duration-300 hover:shadow-lg hover:scale-[1.02] active:scale-95 text-center"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   Login
@@ -560,18 +593,6 @@ const Navbar = () => {
                         <IconComponent />
                       </span>
                       <span>{item.label}</span>
-                      {item.hasDropdown && (
-                        <svg viewBox="0 0 24 24" className="h-4 w-4 ml-auto" aria-hidden="true">
-                          <path
-                            d="M7 10l5 5 5-5"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                      )}
                     </Link>
                   );
                 }
@@ -587,18 +608,6 @@ const Navbar = () => {
                       <IconComponent />
                     </span>
                     <span>{item.label}</span>
-                    {item.hasDropdown && (
-                      <svg viewBox="0 0 24 24" className="h-4 w-4 ml-auto" aria-hidden="true">
-                        <path
-                          d="M7 10l5 5 5-5"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    )}
                   </button>
                 );
               })}

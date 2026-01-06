@@ -107,6 +107,20 @@ router.put('/:id', verifyToken, verifyAdmin, async (req, res) => {
       }
     }
 
+    // If new video uploaded or type changed from video to text, delete old video
+    if (existingReview.videoPublicId) {
+      const typeChanged = updateData.type && updateData.type !== existingReview.type;
+      const videoChanged = updateData.videoUrl && updateData.videoUrl !== existingReview.videoUrl;
+      
+      if (typeChanged || videoChanged) {
+        try {
+          await deleteFile(existingReview.videoPublicId, 'video');
+        } catch (err) {
+          console.error('Error deleting old video:', err);
+        }
+      }
+    }
+
     const review = await Review.update(id, updateData);
 
     res.json({
@@ -138,6 +152,15 @@ router.delete('/:id', verifyToken, verifyAdmin, async (req, res) => {
         await deleteFile(review.avatarPublicId, 'image');
       } catch (err) {
         console.error('Error deleting avatar:', err);
+      }
+    }
+
+    // Delete associated video from Cloudinary
+    if (review.videoPublicId) {
+      try {
+        await deleteFile(review.videoPublicId, 'video');
+      } catch (err) {
+        console.error('Error deleting video:', err);
       }
     }
 

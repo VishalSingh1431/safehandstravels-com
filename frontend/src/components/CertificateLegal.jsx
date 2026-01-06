@@ -265,7 +265,7 @@ function CertificateLegal() {
             {certificates.map((certificate, index) => (
               <div
                 key={certificate.id}
-                className="flex-shrink-0 snap-start"
+                className="flex-shrink-0 snap-start flex"
                 style={{
                   width: cardWidth > 0 ? `${cardWidth}px` : '100%',
                   minWidth: cardWidth > 0 ? `${cardWidth}px` : '100%',

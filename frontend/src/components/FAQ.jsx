@@ -45,23 +45,26 @@ function FAQ() {
   return (
     <section className="w-full bg-gradient-to-b from-gray-50 to-white py-12 md:py-16">
       <div className="mx-auto w-full px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-12 text-center">
-          <div className="flex items-center justify-center gap-4 mb-6">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#017233] to-[#01994d] flex items-center justify-center text-white text-xl font-bold shadow-lg">
-              ❓
+        {/* Main Card Container */}
+        <div className="bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden">
+          <div className="p-6 md:p-8 lg:p-12">
+            {/* Header */}
+            <div className="mb-8">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#017233] to-[#01994d] flex items-center justify-center text-white text-xl font-bold shadow-lg">
+                  ❓
+                </div>
+                <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900">
+                  Frequently Asked Questions
+                </h2>
+              </div>
+              <p className="text-lg text-gray-600 max-w-2xl">
+                Find answers to common questions about our travel services, booking process, and policies.
+              </p>
             </div>
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900">
-              Frequently Asked Questions
-            </h2>
-          </div>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Find answers to common questions about our travel services, booking process, and policies.
-          </p>
-        </div>
 
-        {/* FAQ Items */}
-        <div className="max-w-4xl mx-auto space-y-4">
+            {/* FAQ Items */}
+            <div className="space-y-4">
           {faqs.map((faq, index) => (
             <div
               key={index}
@@ -107,30 +110,32 @@ function FAQ() {
           ))}
         </div>
 
-        {/* Additional Help */}
-        <div className="mt-12 text-center">
-          <p className="text-gray-600 mb-4">
-            Still have questions? We're here to help!
-          </p>
-          <a
-            href="#contact"
-            className="inline-flex items-center gap-2 bg-gradient-to-br from-[#017233] to-[#01994d] text-white px-8 py-3 rounded-xl font-bold hover:shadow-xl hover:scale-105 transition-all duration-300 shadow-lg"
-          >
-            Contact Us
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M17 8l4 4m0 0l-4 4m4-4H3"
-              />
-            </svg>
-          </a>
+            {/* Additional Help */}
+            <div className="mt-12 text-center">
+              <p className="text-gray-600 mb-4">
+                Still have questions? We're here to help!
+              </p>
+              <a
+                href="#contact"
+                className="inline-flex items-center gap-2 bg-gradient-to-br from-[#017233] to-[#01994d] text-white px-8 py-3 rounded-xl font-bold hover:shadow-xl hover:scale-105 transition-all duration-300 shadow-lg"
+              >
+                Contact Us
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 8l4 4m0 0l-4 4m4-4H3"
+                  />
+                </svg>
+              </a>
+            </div>
+          </div>
         </div>
       </div>
     </section>

@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Safe Hands Travels - Your Trusted Travel Partner | VaranasiHub</title>
+    <meta name="description" content="Discover amazing travel experiences with Safe Hands Travels. Explore destinations across India, book adventure trips, spiritual journeys, Himalayan escapes, beach breaks, and wellness retreats.">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    animation: {
+                        'snake-slide': 'snake-slide 0.8s ease-in-out',
+                        'fade-in': 'fade-in 0.6s ease-out',
+                        'slide-up': 'slide-up 0.8s ease-out',
+                        'scale-in': 'scale-in 0.4s ease-out',
+                        'scroll': 'scroll 30s linear infinite',
+                    },
+                    keyframes: {
+                        'snake-slide': {
+                            '0%': { left: '-50%', opacity: '0' },
+                            '50%': { opacity: '1' },
+                            '100%': { left: '150%', opacity: '0' },
+                        },
+                        'fade-in': {
+                            'from': { opacity: '0', transform: 'translateY(20px)' },
+                            'to': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        'slide-up': {
+                            'from': { opacity: '0', transform: 'translateY(30px)' },
+                            'to': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        'scale-in': {
+                            'from': { opacity: '0', transform: 'scale(0.95)' },
+                            'to': { opacity: '1', transform: 'scale(1)' },
+                        },
+                        'scroll': {
+                            '0%': { transform: 'translateX(0)' },
+                            '100%': { transform: 'translateX(-50%)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        
+        /* Custom Styles from index.css */
+        .snake-overlay {
+            position: absolute;
+            left: -50%;
+            top: 0;
+            height: 100%;
+            width: 50%;
+            background: linear-gradient(to right, transparent, rgba(1, 114, 51, 0.2), transparent);
+            transform: skewX(-12deg);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .group:hover .snake-overlay {
+            opacity: 1;
+            animation: snake-slide 0.8s ease-in-out;
+        }
+
+        .perspective-1000 {
+            perspective: 1000px;
+            perspective-origin: center center;
+        }
+
+        /* Snake Border Animation */
+        .snake-border-card {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Hiding scrollbar for certificate slider */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-white text-gray-900 overflow-x-hidden">
+
+    <!-- Navbar -->
+    <nav class="w-full border-b border-gray-100/50 bg-white/80 backdrop-blur-xl shadow-sm sticky top-0 z-50 transition-all duration-300">
+        <div class="mx-auto w-full px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col gap-4 py-4 lg:flex-row lg:items-center lg:justify-between lg:gap-6 lg:min-h-[80px]">
+                <div class="flex items-center justify-between gap-4 lg:justify-start lg:flex-shrink-0">
+                    <a href="#" class="flex-shrink-0 group">
+                        <!-- Assuming logo is at /frontend/public/images/Logo.webp, we use relative path for static file structure -->
+                        <img src="./frontend/public/images/Logo.webp" alt="Capture A Trip" class="h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105">
+                    </a>
+                    <!-- Mobile Menu Button -->
+                    <button type="button" onclick="toggleMobileMenu()" class="lg:hidden p-2.5 rounded-xl text-gray-700 hover:text-[#017233] hover:bg-gradient-to-br hover:from-green-50 hover:to-emerald-50 transition-all duration-300 shadow-sm hover:shadow-md">
+                        <svg id="menu-icon" class="w-6 h-6 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                        <svg id="close-icon" class="w-6 h-6 transition-transform duration-300 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+
+                <form onsubmit="return false;" class="flex w-full flex-1 items-center gap-3 rounded-full border border-gray-200/60 bg-white/60 backdrop-blur-sm px-5 py-2.5 text-sm text-gray-500 lg:max-w-xl xl:max-w-2xl shadow-sm hover:shadow-md hover:border-[#017233]/30 transition-all duration-300 focus-within:border-[#017233]/50 focus-within:bg-white/80 focus-within:shadow-lg">
+                    <svg viewBox="0 0 24 24" class="h-5 w-5 text-gray-500 flex-shrink-0 transition-colors duration-300 group-focus-within:text-[#017233]" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27a6 6 0 1 0-.71.71l.27.28v.79L20 21.5 21.5 20l-5.5-6zM10 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10z" fill="currentColor"/></svg>
+                    <input type="search" placeholder="Search your trip..." class="w-full border-none bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:placeholder:text-gray-300 transition-colors">
+                </form>
+
+                <div class="hidden lg:flex flex-wrap items-center justify-end gap-3 text-sm font-semibold text-gray-900 lg:flex-shrink-0">
+                    <a href="tel:+918448801998" class="flex items-center gap-2 whitespace-nowrap text-gray-900 transition-all duration-300 hover:text-[#017233] px-3 py-2 rounded-lg hover:bg-gradient-to-br hover:from-green-50 hover:to-emerald-50 hover:shadow-sm">
+                        <svg viewBox="0 0 24 24" class="h-5 w-5 text-gray-900 transition-transform duration-300 hover:rotate-12"><path d="M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 .97-.26 11.36 11.36 0 0 0 3.57.57 1 1 0 0 1 1 1v3.61a1 1 0 0 1-1 1A16 16 0 0 1 3 5a1 1 0 0 1 1-1h3.61a1 1 0 0 1 1 1 11.36 11.36 0 0 0 .57 3.57 1 1 0 0 1-.26.97z" fill="currentColor"/></svg>
+                        <span>(+91) 8448801998</span>
+                    </a>
+                    <a href="#" class="rounded-full bg-gradient-to-r from-gray-900 to-black px-5 py-2 text-sm font-semibold text-white transition-all duration-300 hover:shadow-lg hover:scale-105 active:scale-95 hover:from-gray-800 hover:to-gray-900">Login</a>
+                </div>
+            </div>
+
+            <!-- Desktop Menu Items -->
+            <div class="hidden lg:flex flex-wrap items-center justify-center gap-x-6 xl:gap-x-8 gap-y-3 text-sm font-semibold text-gray-900 pb-2" id="desktop-menu">
+                <!-- Populated by JS -->
+            </div>
+            
+            <!-- Mobile Menu -->
+            <div id="mobile-menu" class="lg:hidden hidden border-t border-gray-200/50 pt-4 space-y-4 animate-fade-in bg-white/95 backdrop-blur-sm rounded-b-2xl -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 pb-4 shadow-lg">
+                 <!-- Populated by JS -->
+                 <div class="flex flex-col gap-3">
+                    <a href="tel:+918448801998" class="flex items-center gap-2 text-sm font-semibold text-gray-900 transition-colors hover:text-[#017233]">
+                        <svg viewBox="0 0 24 24" class="h-5 w-5 text-gray-900"><path d="M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 .97-.26 11.36 11.36 0 0 0 3.57.57 1 1 0 0 1 1 1v3.61a1 1 0 0 1-1 1A16 16 0 0 1 3 5a1 1 0 0 1 1-1h3.61a1 1 0 0 1 1 1 11.36 11.36 0 0 0 .57 3.57 1 1 0 0 1-.26.97z" fill="currentColor"/></svg>
+                        <span>(+91) 8448801998</span>
+                    </a>
+                    <a href="#" class="rounded-full bg-gradient-to-r from-gray-900 to-black px-5 py-2 text-sm font-semibold text-white transition-all duration-300 hover:shadow-lg hover:scale-[1.02] active:scale-95 text-center">Login</a>
+                 </div>
+                 <div class="flex flex-col gap-3 border-t border-gray-200 pt-4" id="mobile-menu-items">
+                     <!-- Populated by JS -->
+                 </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Video -->
+    <section class="w-full bg-gradient-to-b from-gray-900 via-gray-800 to-black relative overflow-hidden">
+        <div class="w-full px-0 pb-10 pt-0 relative">
+            <div class="w-full relative">
+                <div class="relative h-[90vh] w-full">
+                    <video class="h-full w-full object-cover" autoplay muted loop playsinline poster="https://images.unsplash.com/photo-1500048993953-d23a436266cf?auto=format&fit=crop&w=1600&q=60">
+                        <source src="frontend/public/video/Slider.mp4" type="video/mp4" />
+                        <!-- Fallback video if local is not present -->
+                        <source src="https://assets.mixkit.co/videos/preview/mixkit-mountain-landscape-in-winter-26079-large.mp4" type="video/mp4">
+                    </video>
+                    <div class="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/60"></div>
+                    <div class="absolute inset-0 bg-gradient-to-r from-black/10 via-transparent to-black/10"></div>
+                </div>
+                
+                <div class="absolute bottom-10 left-1/2 transform -translate-x-1/2 w-full max-w-4xl px-4 z-10 animate-fade-in">
+                    <form onsubmit="return false;" class="flex items-center gap-3 rounded-2xl border-2 border-white/20 bg-white/10 backdrop-blur-xl px-6 py-4 shadow-2xl transition-all duration-300 hover:bg-white/15 hover:border-[#017233]/50 focus-within:bg-white/20 focus-within:border-[#017233]">
+                        <svg viewBox="0 0 24 24" class="h-6 w-6 text-white/80 flex-shrink-0" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27a6 6 0 1 0-.71.71l.27.28v.79L20 21.5 21.5 20l-5.5-6zM10 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10z" fill="currentColor"/></svg>
+                        <input type="search" placeholder="Search your trip destination..." class="w-full border-none bg-transparent text-base text-white outline-none placeholder:text-white/60 focus:placeholder:text-white/40 transition-colors">
+                        <button type="submit" class="rounded-full bg-gradient-to-r from-[#017233] to-[#01994d] px-6 py-2.5 text-sm font-semibold text-white transition-all duration-300 hover:from-[#01994d] hover:to-[#01b35a] hover:shadow-lg hover:shadow-[#017233]/50 hover:scale-105 active:scale-95 whitespace-nowrap">Search</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Upcoming Trips -->
+    <section class="w-full bg-gradient-to-b from-gray-50 to-white py-12 md:py-16">
+        <div class="mx-auto w-full px-4 sm:px-6 lg:px-8">
+            <div class="bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden">
+                <div>
+                    <div class="p-4 md:p-5 lg:p-6 pb-0 mb-8">
+                        <div class="flex items-center justify-between gap-4 mb-6 flex-wrap">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center text-white text-xl font-bold shadow-lg">✈️</div>
+                                <h2 class="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900">Popular Trips</h2>
+                            </div>
+                            <button class="rounded-full border-2 border-[#017233] bg-white text-[#017233] px-6 py-2 text-sm font-semibold transition-all duration-300 whitespace-nowrap hover:bg-[#017233] hover:text-white shadow-md hover:shadow-lg">See All</button>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-3" id="filters-container">
+                            <!-- Filters populated by JS -->
+                        </div>
+                    </div>
+                    <div class="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 items-stretch p-4 md:p-5 lg:p-6" id="trips-grid">
+                        <!-- Trips populated by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Explore Destinations -->
+    <section class="w-full bg-gradient-to-b from-gray-50 to-white py-12 md:py-16 overflow-x-hidden overflow-y-visible">
+        <div class="mx-auto w-full px-4 sm:px-6 lg:px-8">
+            <div class="mb-8">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center text-white text-xl font-bold shadow-lg">🌍</div>
+                    <h2 class="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900">Explore Destinations</h2>
+                </div>
+            </div>
+            <div class="relative py-8">
+                <div class="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-white via-gray-50/80 to-transparent z-10 pointer-events-none"></div>
+                <div class="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-white via-gray-50/80 to-transparent z-10 pointer-events-none"></div>
+                <div class="overflow-x-hidden overflow-y-visible">
+                    <div class="flex gap-6 md:gap-8 animate-scroll py-4" id="destinations-marquee">
+                        <!-- Destinations populated by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Banner Slider -->
+    <section class="w-full bg-gray-50 py-8">
+        <div class="mx-auto w-full px-4 sm:px-6 lg:px-8">
+            <div class="relative h-64 sm:h-80 md:h-96 lg:h-[500px] rounded-2xl overflow-hidden shadow-xl" id="banner-slider">
+                <!-- Banners populated by JS -->
+                <!-- Controls -->
+                <button onclick="prevBanner()" class="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-900 rounded-full p-2 transition-all z-10">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+                </button>
+                <button onclick="nextBanner()" class="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-900 rounded-full p-2 transition-all z-10">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+                </button>
+                <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10" id="banner-dots"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Branding Partners -->
+    <section class="w-full bg-white py-6 md:py-8 border-b border-gray-100">
+        <div class="mx-auto w-full px-4 sm:px-6 lg:px-8">
+            <div class="relative overflow-hidden">
+                <div class="flex animate-scroll items-center" id="partners-marquee">
+                    <!-- Partners populated by JS -->
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Vibe With Us -->
+    <section class="w-full bg-gradient-to-b from-white to-gray-50 py-12 md:py-16">
+        <div class="mx-auto w-full px-4 sm:px-6 lg:px-8">
+            <div class="mb-8 md:mb-12 text-center">
+                <h2 class="text-4xl md:text-5xl font-bold text-gray-900 mb-2">Vibe with Us</h2>
+                <p class="text-gray-600 text-lg">Experience the world through our lens</p>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6" id="videos-grid">
+                <!-- Videos populated by JS -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Reviews -->
+    <section class="w-full bg-gradient-to-b from-gray-50 to-white py-12 md:py-16">
+        <div class="mx-auto w-full px-4 sm:px-6 lg:px-8">
+            <div class="bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden">
+                <div class="p-6 md:p-8 lg:p-12">
+                    <div class="mb-8">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-12 h-12 rounded-full bg-gradient-to-br from-[#017233] to-[#01994d] flex items-center justify-center text-white text-xl font-bold shadow-lg">⭐</div>
+                            <h2 class="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900">Traveller Reviews</h2>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="reviews-grid">
+                        <!-- Reviews populated by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Written Reviews -->
+    <section class="w-full bg-gradient-to-b from-white to-gray-50 py-12 md:py-16">
+        <div class="mx-auto w-full px-4 sm:px-6 lg:px-8">
+            <div class="bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden">
+                <div class="p-6 md:p-8 lg:p-12">
+                    <div class="mb-8">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center text-white text-xl font-bold shadow-lg">✍️</div>
+                            <h2 class="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900">Written Reviews</h2>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6" id="written-reviews-grid">
+                        <!-- Written Reviews populated by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="w-full bg-gradient-to-b from-gray-50 to-white py-12 md:py-16">
+        <div class="mx-auto w-full px-4 sm:px-6 lg:px-8">
+            <div class="bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden">
+                <div class="p-6 md:p-8 lg:p-12">
+                     <div class="mb-8">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-12 h-12 rounded-full bg-gradient-to-br from-[#017233] to-[#01994d] flex items-center justify-center text-white text-xl font-bold shadow-lg">❓</div>
+                            <h2 class="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900">Frequently Asked Questions</h2>
+                        </div>
+                    </div>
+                    <div class="space-y-4" id="faq-container">
+                        <!-- FAQs populated by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Certificate & Legal -->
+    <section class="w-full bg-white py-12">
+       <div class="mx-auto w-full px-4 sm:px-6 lg:px-8">
+            <div class="mb-8">
+                <h2 class="text-4xl md:text-5xl font-bold text-gray-900">Certificate & Legal</h2>
+            </div>
+             <div class="relative">
+                <div class="flex gap-6 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-4 hide-scrollbar" id="certificates-slider">
+                    <!-- Certificates by JS -->
+                </div>
+             </div>
+       </div>
+    </section>
+
+    <!-- Contact Us -->
+    <section id="contact" class="w-full bg-gradient-to-b from-white to-gray-50 py-12 md:py-16">
+        <div class="mx-auto w-full px-4 sm:px-6 lg:px-8">
+            <div class="bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden">
+                <div class="p-6 md:p-8 lg:p-12">
+                    <div class="mb-8">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-12 h-12 rounded-full bg-gradient-to-br from-[#017233] to-[#01994d] flex items-center justify-center text-white text-xl font-bold shadow-lg">📧</div>
+                            <h2 class="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900">Contact Us</h2>
+                        </div>
+                        <p class="text-lg text-gray-600 max-w-2xl">Have questions? Reach out to us!</p>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+                        <div class="bg-gradient-to-br from-blue-50 to-white rounded-2xl shadow-lg p-6 md:p-8 border border-blue-100">
+                             <h3 class="text-2xl font-bold text-gray-900 mb-6">Send us a Message</h3>
+                             <form onsubmit="alert('Thank you! This is a demo static site.'); return false;" class="space-y-6">
+                                 <div>
+                                     <label class="block text-sm font-semibold text-gray-700 mb-2">Full Name</label>
+                                     <input type="text" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-[#017233] outline-none" placeholder="Enter your full name">
+                                 </div>
+                                 <button type="submit" class="w-full bg-gradient-to-br from-[#017233] to-[#01994d] text-white px-8 py-4 rounded-xl font-bold hover:shadow-xl transition-all">Send Message</button>
+                             </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="w-full bg-gradient-to-br from-[#017233] via-[#01994d] to-[#00C853] text-white relative overflow-hidden">
+        <div class="mx-auto w-full max-w-7xl px-4 md:px-6 lg:px-8 py-12 md:py-16 relative z-10">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12">
+                 <div class="space-y-4">
+                     <div class="flex items-center gap-3">
+                         <div class="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white text-xl font-bold shadow-lg border-2 border-white/30">✈️</div>
+                         <h3 class="text-xl font-bold text-white drop-shadow-lg">Safe Hands Travels</h3>
+                     </div>
+                     <p class="text-white/90 leading-relaxed">Your trusted partner for unforgettable travel experiences.</p>
+                 </div>
+                 <!-- Quick Links -->
+                 <div>
+                     <h4 class="text-lg font-bold mb-4 text-white drop-shadow-md">Quick Links</h4>
+                     <ul class="space-y-3">
+                         <li><a href="#" class="text-white/90 hover:text-white hover:underline">Home</a></li>
+                         <li><a href="#" class="text-white/90 hover:text-white hover:underline">Destinations</a></li>
+                     </ul>
+                 </div>
+            </div>
+            <div class="mt-12 pt-8 border-t border-white/20">
+                <p class="text-white/90 text-sm">© 2024 Safe Hands Travels. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts for Data and Logic -->
+    <script>
+        // --- Data ---
+        const trips = [
+          { id: 1, title: 'Living Root Bridges & Caves', location: 'Meghalaya', duration: '6 days', price: '₹22,999', oldPrice: '₹24,999', image: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=900&q=60', freebies: true, category: 'all-india' },
+          { id: 2, title: 'White Spiti Winter Expedition', location: 'Spiti Valley', duration: '7 days', price: '₹18,999', oldPrice: '₹20,999', image: 'https://images.unsplash.com/photo-1523906630133-f6934a1ab6c8?auto=format&fit=crop&w=900&q=60', freebies: true, category: 'himalayan' },
+          { id: 3, title: 'Riverside Retreat & Treks', location: 'Tirthan Valley', duration: '4 days', price: '₹18,499', oldPrice: '₹19,999', image: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=900&q=60', freebies: false, category: 'himalayan' },
+          { id: 4, title: 'Paragliding & Peaks', location: 'Himachal Pradesh', duration: '5 days', price: '₹21,999', oldPrice: '₹23,999', image: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=900&q=60', freebies: true, category: 'himalayan' },
+          { id: 5, title: 'Toy Train & Colonial Charm', location: 'Shimla', duration: '3 days', price: '₹16,499', oldPrice: '₹17,999', image: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=60', freebies: false, category: 'himalayan' },
+          { id: 6, title: 'Ghats & Ganga Aarti Experience', location: 'Varanasi', duration: '2 days', price: '₹14,999', oldPrice: '₹15,999', image: 'https://images.unsplash.com/photo-1504351873408-0b3fb7ba72d0?auto=format&fit=crop&w=900&q=60', freebies: false, category: 'spiritual' },
+          { id: 7, title: 'Yoga by the Ganges', location: 'Rishikesh', duration: '3 days', price: '₹17,999', oldPrice: '₹19,499', image: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=900&q=60', freebies: true, category: 'wellness' },
+          { id: 8, title: 'Backwater Houseboat Escape', location: 'Kerala Backwaters', duration: '4 days', price: '₹23,999', oldPrice: '₹25,999', image: 'https://images.unsplash.com/photo-1515023115689-589c33041d3c?auto=format&fit=crop&w=900&q=60', freebies: true, category: 'beach' }
+        ];
+
+        const destinations = [
+             { id: 1, name: 'Himachal', image: 'https://images.unsplash.com/photo-1579600164963-35f9919c67a7?auto=format&fit=crop&w=900&q=60' },
+             { id: 2, name: 'Uttarakhand', image: 'https://images.unsplash.com/photo-1588893968277-2268a7374b32?auto=format&fit=crop&w=900&q=60' },
+             { id: 3, name: 'Kerala', image: 'https://images.unsplash.com/photo-1593693397690-362cb9666fc2?auto=format&fit=crop&w=900&q=60' },
+             { id: 4, name: 'Rajasthan', image: 'https://images.unsplash.com/photo-1477587458883-47145ed94245?auto=format&fit=crop&w=900&q=60' },
+             { id: 5, name: 'Kashmir', image: 'https://images.unsplash.com/photo-1566837945700-30057527ade0?auto=format&fit=crop&w=900&q=60' },
+             { id: 6, name: 'Goa', image: 'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?auto=format&fit=crop&w=900&q=60' }
+        ];
+
+        const bannerImages = [
+            { id: 1, image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1600&q=60', title: 'Discover Amazing Destinations', subtitle: 'Explore the world with us' },
+            { id: 2, image: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=1600&q=60', title: 'Unforgettable Adventures', subtitle: 'Create memories that last forever' }
+        ];
+
+        const videos = [
+           { id: 1, title: 'Adventure Awaits', poster: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=800&q=60' },
+           { id: 2, title: 'Mountain Views', poster: 'https://images.unsplash.com/photo-1464822759843-d0f9c0d5c51d?auto=format&fit=crop&w=800&q=60' },
+           { id: 3, title: 'Beach Paradise', poster: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=60' }
+        ];
+
+        const reviews = [
+            { id: 1, name: "Rahul S.", location: "Delhi", rating: 5, review: "Great experience with Safe Hands Travels! The trip to Manali was well organized and the team was very supportive.", avatar: "https://ui-avatars.com/api/?name=Rahul+S&background=017233&color=fff" },
+            { id: 2, name: "Priya M.", location: "Mumbai", rating: 5, review: "Loved the Kerala trip. Houseboat experience was magical. Highly recommend!", avatar: "https://ui-avatars.com/api/?name=Priya+M&background=017233&color=fff" },
+            { id: 3, name: "Amit K.", location: "Bangalore", rating: 4, review: "Good coordination and nice hotels. Driver was polite. Spiti valley is a must visit.", avatar: "https://ui-avatars.com/api/?name=Amit+K&background=017233&color=fff" }
+        ];
+        
+        const writtenReviews = [
+            { id: 1, name: "Sneha G.", location: "Pune", date: "2 days ago", rating: 5, title: "Memorable Trip", review: "We booked a family trip to Rajasthan. Everything was perfect from hotels to transport.", avatar: "https://ui-avatars.com/api/?name=Sneha+G&background=017233&color=fff" },
+            { id: 2, name: "Vikram R.", location: "Hyderabad", date: "1 week ago", rating: 5, title: "Excellent Service", review: "The team is very professional. They customized the itinerary as per our needs.", avatar: "https://ui-avatars.com/api/?name=Vikram+R&background=017233&color=fff" }
+        ];
+
+        const faqs = [
+            { question: "What travel services do you offer?", answer: "We offer adventure tours, group packages, custom itineraries, and more." },
+            { question: "How do I book a trip?", answer: "You can book directly through our website or contact us." },
+            { question: "Cancellation policy?", answer: "Policies vary by trip. Generally free cancellation 30 days prior." }
+        ];
+
+        const certificates = [
+            { id: 1, title: "Tourism Dept Recognized", description: "Recognized by the Ministry of Tourism, Govt of India.", images: ["https://images.unsplash.com/photo-1557426272-fc759fdf7a8d?auto=format&fit=crop&w=800&q=60"] },
+            { id: 2, title: "Best Tour Operator 2023", description: "Awarded best tour operator in North India.", images: ["https://images.unsplash.com/photo-1567427018141-0584cfcbf1b8?auto=format&fit=crop&w=800&q=60"] }
+        ];
+
+        // --- Logic ---
+
+        // Mobile Menu
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            const menuIcon = document.getElementById('menu-icon');
+            const closeIcon = document.getElementById('close-icon');
+            
+            menu.classList.toggle('hidden');
+            menuIcon.classList.toggle('hidden');
+            closeIcon.classList.toggle('hidden');
+        }
+
+        // Render Menu Items
+        const menuItems = [
+            { label: 'All India Trips' }, { label: 'Spiritual Trails' }, { label: 'Car Booking' },
+            { label: 'Himalayan Escapes' }, { label: 'Beach & Island Breaks' }, { label: 'Wellness Retreats' }
+        ];
+        
+        function renderMenu() {
+            const desktopContainer = document.getElementById('desktop-menu');
+            const mobileContainer = document.getElementById('mobile-menu-items');
+            
+            menuItems.forEach(item => {
+                // Desktop
+                desktopContainer.innerHTML += `
+                    <a href="#" class="flex items-center gap-1.5 whitespace-nowrap transition-all duration-300 px-3 py-2 rounded-lg hover:text-[#017233] hover:bg-gradient-to-br hover:from-green-50/50 hover:to-emerald-50/50">
+                        <span>${item.label}</span>
+                    </a>
+                `;
+                // Mobile
+                mobileContainer.innerHTML += `
+                    <a href="#" class="flex items-center gap-1.5 text-sm font-semibold text-gray-900 transition-colors hover:text-[#017233]">
+                        <span>${item.label}</span>
+                    </a>
+                `;
+            });
+        }
+        renderMenu();
+
+        // Render Trips
+        function renderTrips(filter = 'All') {
+            const grid = document.getElementById('trips-grid');
+            grid.innerHTML = '';
+            
+            const filteredTrips = filter === 'All' ? trips : trips.filter(t => t.location === filter);
+            
+            filteredTrips.slice(0, 8).forEach(trip => {
+                grid.innerHTML += `
+                    <a href="#" class="group relative flex flex-col h-full overflow-hidden rounded-2xl shadow-lg border-2 border-gray-200/50 transition-all duration-300 hover:border-[#017233]/50 hover:shadow-xl cursor-pointer">
+                        <div class="relative h-40 sm:h-44 w-full overflow-hidden">
+                            <img src="${trip.image}" alt="${trip.title}" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                            ${trip.freebies ? '<span class="absolute left-3 top-3 rounded-full bg-gradient-to-br from-[#017233] to-[#01994d] px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-lg">Free Goodies 🎁</span>' : ''}
+                        </div>
+                        <div class="flex flex-col gap-2 p-4">
+                            <span class="bg-gray-100 px-2 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wide text-gray-500 w-fit">⏱️ ${trip.duration}</span>
+                            <h3 class="text-base font-bold text-gray-900 line-clamp-2 group-hover:text-[#017233] transition-colors leading-tight">${trip.title}</h3>
+                            <p class="text-sm text-gray-600 font-medium">${trip.location}</p>
+                            <div class="flex items-center gap-2 flex-wrap pt-1.5 border-t border-gray-200">
+                                <span class="text-lg font-bold text-gray-900">${trip.price}</span>
+                                <span class="text-xs text-gray-400 line-through">${trip.oldPrice}</span>
+                            </div>
+                        </div>
+                    </a>
+                `;
+            });
+        }
+        // Filters
+        const filters = ['All', 'Meghalaya', 'Spiti Valley', 'Himachal Pradesh', 'Kerala Backwaters'];
+        const filtersContainer = document.getElementById('filters-container');
+        filters.forEach(f => {
+            const btn = document.createElement('button');
+            btn.className = "rounded-full border px-4 py-2 text-sm font-medium transition-all duration-300 whitespace-nowrap shadow-md hover:shadow-lg border-gray-200 text-gray-700 hover:border-[#017233] hover:text-[#017233] bg-white";
+            btn.innerText = f;
+            btn.onclick = () => { renderTrips(f); };
+            filtersContainer.appendChild(btn);
+        });
+        renderTrips();
+
+        // Render Destinations
+        const destMarquee = document.getElementById('destinations-marquee');
+        // Duplicate for marquee effect
+        [...destinations, ...destinations, ...destinations].forEach(d => {
+            destMarquee.innerHTML += `
+                <div class="flex-shrink-0 px-2 cursor-pointer group flex flex-col items-center">
+                    <div class="relative w-32 h-32 rounded-full overflow-hidden shadow-sm transition-all duration-300 group-hover:scale-110 mb-3 ring-2 ring-transparent group-hover:ring-[#017233]/50">
+                        <img src="${d.image}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-115" />
+                    </div>
+                    <h3 class="text-sm font-semibold text-gray-900 group-hover:text-[#017233]">${d.name}</h3>
+                </div>
+            `;
+        });
+
+        // Banner Slider
+        let currentBanner = 0;
+        function renderBanner() {
+            const container = document.getElementById('banner-slider');
+            const dots = document.getElementById('banner-dots');
+            
+            // Remove old slides (keep buttons)
+            Array.from(container.children).forEach(c => {
+                if(c.tagName === 'DIV' && !c.id) c.remove();
+            });
+            dots.innerHTML = '';
+
+            bannerImages.forEach((b, i) => {
+                const slide = document.createElement('div');
+                slide.className = `absolute inset-0 transition-opacity duration-1000 ${i === currentBanner ? 'opacity-100' : 'opacity-0'}`;
+                slide.innerHTML = `
+                    <img src="${b.image}" class="w-full h-full object-cover" />
+                    <div class="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-transparent"></div>
+                    <div class="absolute inset-0 flex flex-col items-start justify-center px-8 text-white">
+                        <h2 class="text-3xl font-bold mb-4">${b.title}</h2>
+                        <p class="text-xl">${b.subtitle}</p>
+                    </div>
+                `;
+                container.insertBefore(slide, container.firstChild); // Insert before buttons
+
+                const dot = document.createElement('button');
+                dot.className = `h-2 rounded-full transition-all ${i === currentBanner ? 'w-8 bg-white' : 'w-2 bg-white/50'}`;
+                dot.onclick = () => { currentBanner = i; renderBanner(); };
+                dots.appendChild(dot);
+            });
+        }
+        function nextBanner() { currentBanner = (currentBanner + 1) % bannerImages.length; renderBanner(); }
+        function prevBanner() { currentBanner = (currentBanner - 1 + bannerImages.length) % bannerImages.length; renderBanner(); }
+        renderBanner();
+        setInterval(nextBanner, 5000);
+
+        // Render Vibe Videos (Mock)
+        document.getElementById('videos-grid').innerHTML = videos.map(v => `
+            <div class="bg-white rounded-2xl shadow-lg border-2 border-gray-200/50 overflow-hidden h-64 md:h-80 relative group">
+                <img src="${v.poster}" class="w-full h-full object-cover" />
+                <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex items-end p-4">
+                    <h3 class="text-white font-semibold">${v.title}</h3>
+                </div>
+            </div>
+        `).join('');
+
+        // Render Reviews
+        document.getElementById('reviews-grid').innerHTML = reviews.map(r => `
+            <div class="bg-white rounded-2xl shadow-xl border border-gray-200 p-6">
+                <div class="flex items-center gap-4 mb-4">
+                    <img src="${r.avatar}" class="w-14 h-14 rounded-full" />
+                    <div>
+                        <h3 class="font-bold text-gray-900">${r.name}</h3>
+                        <p class="text-sm text-gray-500">${r.location}</p>
+                    </div>
+                </div>
+                <div class="flex text-yellow-400 mb-2">${'★'.repeat(r.rating)}</div>
+                <p class="text-gray-700 text-sm line-clamp-3">${r.review}</p>
+            </div>
+        `).join('');
+
+        // Render Written Reviews
+        document.getElementById('written-reviews-grid').innerHTML = writtenReviews.map(r => `
+             <div class="bg-gradient-to-br from-teal-50 to-white rounded-2xl shadow-lg p-6 border-2 border-teal-100/50">
+                 <div class="flex items-start gap-4 mb-4">
+                     <img src="${r.avatar}" class="w-12 h-12 rounded-full" />
+                     <div>
+                         <h3 class="font-bold text-gray-900">${r.name}</h3>
+                         <span class="text-xs text-gray-400">${r.date}</span>
+                     </div>
+                 </div>
+                 <h4 class="font-bold text-gray-900 mb-2">${r.title}</h4>
+                 <p class="text-gray-700 text-sm">${r.review}</p>
+             </div>
+        `).join('');
+
+        // Render FAQs
+        const faqContainer = document.getElementById('faq-container');
+        faqs.forEach((f, i) => {
+            faqContainer.innerHTML += `
+                <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+                    <button onclick="toggleFaq(${i})" class="w-full px-6 py-5 flex items-center justify-between text-left font-bold text-gray-900">
+                        ${f.question}
+                        <span>▼</span>
+                    </button>
+                    <div id="faq-ans-${i}" class="hidden px-6 pb-5 text-gray-600">
+                        ${f.answer}
+                    </div>
+                </div>
+            `;
+        });
+        function toggleFaq(i) {
+            document.getElementById(`faq-ans-${i}`).classList.toggle('hidden');
+        }
+
+        // Render Certificates
+        document.getElementById('certificates-slider').innerHTML = certificates.map(c => `
+            <div class="flex-shrink-0 snap-start w-64 md:w-72 bg-white rounded-2xl shadow-lg border-2 border-gray-200/50 overflow-hidden">
+                <div class="h-48 overflow-hidden">
+                    <img src="${c.images[0]}" class="w-full h-full object-cover">
+                </div>
+                <div class="p-6">
+                    <h3 class="font-bold text-gray-900 mb-2">${c.title}</h3>
+                    <p class="text-gray-600 text-sm line-clamp-3">${c.description}</p>
+                </div>
+            </div>
+        `).join('');
+
+    </script>
+</body>
+</html>

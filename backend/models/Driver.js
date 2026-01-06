@@ -1,70 +1,74 @@
-import pool, { queryWithRetry } from '../config/database.js';
+import pool from '../config/database.js';
 
 /**
- * Destination Model - PostgreSQL operations
+ * Driver Model - PostgreSQL operations
  */
-class Destination {
+class Driver {
   /**
-   * Create a new destination
+   * Create a new driver
    */
   static async create(data) {
     try {
       const query = `
-        INSERT INTO destinations (
-          name, image, image_public_id, status, created_by
+        INSERT INTO drivers (
+          name, car, experience, photo_url, photo_public_id, status, display_order, five_driver
         )
-        VALUES ($1, $2, $3, $4, $5)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         RETURNING *
       `;
 
       const values = [
         data.name,
-        data.image || null,
-        data.imagePublicId || null,
+        data.car,
+        data.experience,
+        data.photoUrl || null,
+        data.photoPublicId || null,
         data.status || 'active',
-        data.createdBy || null,
+        data.displayOrder || 0,
+        data.fiveDriver || false,
       ];
 
       const result = await pool.query(query, values);
-      return this.mapRowToDestination(result.rows[0]);
+      return this.mapRowToDriver(result.rows[0]);
     } catch (error) {
-      console.error('Destination.create error:', error);
+      console.error('Driver.create error:', error);
       throw error;
     }
   }
 
   /**
-   * Find destination by ID
+   * Find driver by ID
    */
   static async findById(id) {
     try {
-      const query = 'SELECT * FROM destinations WHERE id = $1';
+      const query = 'SELECT * FROM drivers WHERE id = $1';
       const result = await pool.query(query, [id]);
-      return result.rows.length > 0 ? this.mapRowToDestination(result.rows[0]) : null;
+      return result.rows.length > 0 ? this.mapRowToDriver(result.rows[0]) : null;
     } catch (error) {
-      console.error('Destination.findById error:', error);
+      console.error('Driver.findById error:', error);
       throw error;
     }
   }
 
   /**
-   * Get all destinations (with optional filters)
+   * Get all drivers (with optional filters)
    */
   static async findAll(filters = {}) {
     try {
-      let query = 'SELECT * FROM destinations WHERE 1=1';
+      let query = 'SELECT * FROM drivers WHERE 1=1';
       const values = [];
       let paramCount = 1;
 
       if (filters.status) {
         query += ` AND status = $${paramCount++}`;
         values.push(filters.status);
-      } else if (!filters.includeDraft) {
+      } else if (!filters.includeInactive) {
+        // By default, only show active drivers unless includeInactive is true
         query += ` AND status = $${paramCount++}`;
         values.push('active');
       }
 
-      query += ' ORDER BY created_at DESC';
+      query += ' ORDER BY display_order ASC, created_at DESC';
 
       if (filters.limit) {
         query += ` LIMIT $${paramCount++}`;
@@ -76,16 +80,16 @@ class Destination {
         values.push(filters.offset);
       }
 
-      const result = await queryWithRetry(() => pool.query(query, values));
-      return result.rows.map(row => this.mapRowToDestination(row));
+      const result = await pool.query(query, values);
+      return result.rows.map(row => this.mapRowToDriver(row));
     } catch (error) {
-      console.error('Destination.findAll error:', error);
+      console.error('Driver.findAll error:', error);
       throw error;
     }
   }
 
   /**
-   * Update destination
+   * Update driver
    */
   static async update(id, data) {
     try {
@@ -95,9 +99,13 @@ class Destination {
 
       const fields = {
         name: data.name,
-        image: 'image',
-        imagePublicId: 'image_public_id',
+        car: data.car,
+        experience: data.experience,
+        photoUrl: 'photo_url',
+        photoPublicId: 'photo_public_id',
         status: data.status,
+        displayOrder: 'display_order',
+        fiveDriver: 'five_driver',
       };
 
       for (const [key, value] of Object.entries(fields)) {
@@ -114,51 +122,55 @@ class Destination {
 
       values.push(id);
       const query = `
-        UPDATE destinations 
+        UPDATE drivers 
         SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP
         WHERE id = $${paramCount}
         RETURNING *
       `;
 
       const result = await pool.query(query, values);
-      return this.mapRowToDestination(result.rows[0]);
+      return this.mapRowToDriver(result.rows[0]);
     } catch (error) {
-      console.error('Destination.update error:', error);
+      console.error('Driver.update error:', error);
       throw error;
     }
   }
 
   /**
-   * Delete destination
+   * Delete driver
    */
   static async delete(id) {
     try {
-      const query = 'DELETE FROM destinations WHERE id = $1 RETURNING *';
+      const query = 'DELETE FROM drivers WHERE id = $1 RETURNING *';
       const result = await pool.query(query, [id]);
-      return result.rows.length > 0 ? this.mapRowToDestination(result.rows[0]) : null;
+      return result.rows.length > 0 ? this.mapRowToDriver(result.rows[0]) : null;
     } catch (error) {
-      console.error('Destination.delete error:', error);
+      console.error('Driver.delete error:', error);
       throw error;
     }
   }
 
   /**
-   * Map database row to destination object
+   * Map database row to driver object
    */
-  static mapRowToDestination(row) {
+  static mapRowToDriver(row) {
     if (!row) return null;
 
     return {
       id: row.id,
       name: row.name,
-      image: row.image,
-      imagePublicId: row.image_public_id,
+      car: row.car,
+      experience: row.experience,
+      photoUrl: row.photo_url,
+      photoPublicId: row.photo_public_id,
       status: row.status,
-      createdBy: row.created_by,
+      displayOrder: row.display_order,
+      fiveDriver: row.five_driver || false,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
     };
   }
 }
 
-export default Destination;
+export default Driver;
+
