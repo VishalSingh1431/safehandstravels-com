@@ -346,6 +346,13 @@ const Navbar = () => {
                         >
                           🤝 Manage Branding Partners
                         </Link>
+                        <Link
+                          to="/admin/hotel-partners"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg mx-2 hover:scale-105 active:scale-95"
+                          onClick={() => setIsAdminDropdownOpen(false)}
+                        >
+                          🏨 Manage Hotel Partners
+                        </Link>
                       </div>
                     )}
                   </div>
@@ -618,6 +625,13 @@ const Navbar = () => {
                         onClick={() => setIsMobileMenuOpen(false)}
                       >
                         🤝 Manage Branding Partners
+                      </Link>
+                      <Link
+                        to="/admin/hotel-partners"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        🏨 Manage Hotel Partners
                       </Link>
                     </div>
                   )}

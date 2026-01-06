@@ -24,6 +24,7 @@ import vibeVideosRoutes from './routes/vibeVideos.js';
 import faqsRoutes from './routes/faqs.js';
 import bannersRoutes from './routes/banners.js';
 import brandingPartnersRoutes from './routes/brandingPartners.js';
+import hotelPartnersRoutes from './routes/hotelPartners.js';
 
 // Load .env from backend directory (works even when run from different directory)
 const __filename = fileURLToPath(import.meta.url);
@@ -124,6 +125,7 @@ app.use('/api/vibe-videos', vibeVideosRoutes);
 app.use('/api/faqs', faqsRoutes);
 app.use('/api/banners', bannersRoutes);
 app.use('/api/branding-partners', brandingPartnersRoutes);
+app.use('/api/hotel-partners', hotelPartnersRoutes);
 
 // 404 handler
 app.use((req, res) => {

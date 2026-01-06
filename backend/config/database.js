@@ -755,6 +755,31 @@ export const initializeDatabase = async () => {
       EXECUTE FUNCTION update_updated_at_column();
     `);
 
+    // Create hotel_partners table if it doesn't exist
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS hotel_partners (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        logo_url TEXT,
+        logo_public_id TEXT,
+        link TEXT,
+        display_order INTEGER DEFAULT 0,
+        status VARCHAR(50) DEFAULT 'active' CHECK (status IN ('active', 'draft', 'archived')),
+        created_by INTEGER REFERENCES users(id),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create trigger for hotel_partners updated_at
+    await pool.query(`
+      DROP TRIGGER IF EXISTS update_hotel_partners_updated_at ON hotel_partners;
+      CREATE TRIGGER update_hotel_partners_updated_at
+      BEFORE UPDATE ON hotel_partners
+      FOR EACH ROW
+      EXECUTE FUNCTION update_updated_at_column();
+    `);
+
     console.log('✅ Database tables initialized');
   } catch (error) {
     console.error('❌ Error initializing database:', error);

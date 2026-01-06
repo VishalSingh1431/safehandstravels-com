@@ -33,6 +33,7 @@ import AdminTravellerReviews from './pages/AdminTravellerReviews'
 import AdminFAQs from './pages/AdminFAQs'
 import AdminBanners from './pages/AdminBanners'
 import AdminBrandingPartners from './pages/AdminBrandingPartners'
+import AdminHotelPartners from './pages/AdminHotelPartners'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import './App.css'
@@ -80,6 +81,7 @@ function App() {
               <Route path="/admin/faqs" element={<AdminFAQs />} />
               <Route path="/admin/banners" element={<AdminBanners />} />
               <Route path="/admin/branding-partners" element={<AdminBrandingPartners />} />
+              <Route path="/admin/hotel-partners" element={<AdminHotelPartners />} />
             </Routes>
           </main>
           <Footer />

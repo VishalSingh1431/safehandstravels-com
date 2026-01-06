@@ -692,4 +692,45 @@ export const brandingPartnersAPI = {
   },
 };
 
+// Hotel Partners API functions
+export const hotelPartnersAPI = {
+  getAllPartners: async () => {
+    return apiCall('/hotel-partners', {
+      method: 'GET',
+    });
+  },
+
+  getAllPartnersAdmin: async () => {
+    return apiCall('/hotel-partners/admin', {
+      method: 'GET',
+    });
+  },
+
+  getPartnerById: async (id) => {
+    return apiCall(`/hotel-partners/${id}`, {
+      method: 'GET',
+    });
+  },
+
+  createPartner: async (partner) => {
+    return apiCall('/hotel-partners', {
+      method: 'POST',
+      body: JSON.stringify(partner),
+    });
+  },
+
+  updatePartner: async (id, partner) => {
+    return apiCall(`/hotel-partners/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(partner),
+    });
+  },
+
+  deletePartner: async (id) => {
+    return apiCall(`/hotel-partners/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
 export default API_BASE_URL;
