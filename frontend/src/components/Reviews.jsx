@@ -5,6 +5,7 @@ import { reviewsAPI } from '../config/api'
 function Reviews() {
   const [reviews, setReviews] = useState([])
   const [loading, setLoading] = useState(true)
+  const [showAll, setShowAll] = useState(false)
 
   useEffect(() => {
     fetchReviews()
@@ -62,20 +63,23 @@ function Reviews() {
 
             {/* Reviews Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {reviews.map((review) => (
+              {(showAll ? reviews : reviews.slice(0, 6)).map((review) => (
                 <ReviewCard key={review.id} review={review} />
               ))}
             </div>
 
-            {/* See All Button */}
-            <div className="mt-8 flex justify-center">
-              <button
-                type="button"
-                className="bg-gradient-to-br from-[#017233] to-[#01994d] text-white px-8 py-3 rounded-xl font-bold text-base hover:shadow-xl hover:scale-105 transition-all duration-300 shadow-lg"
-              >
-                See All Reviews
-              </button>
-            </div>
+            {/* Show All / Show Less Button */}
+            {reviews.length > 6 && (
+              <div className="mt-8 flex justify-center">
+                <button
+                  type="button"
+                  onClick={() => setShowAll(!showAll)}
+                  className="bg-gradient-to-br from-[#017233] to-[#01994d] text-white px-8 py-3 rounded-xl font-bold text-base hover:shadow-xl hover:scale-105 transition-all duration-300 shadow-lg"
+                >
+                  {showAll ? 'Show Less' : 'Show All Reviews'}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

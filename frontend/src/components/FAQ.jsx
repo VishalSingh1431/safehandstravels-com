@@ -1,42 +1,35 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { faqsAPI } from '../config/api'
+import { Loader2 } from 'lucide-react'
 
 function FAQ() {
   const [openIndex, setOpenIndex] = useState(null)
+  const [faqs, setFaqs] = useState([])
+  const [loading, setLoading] = useState(true)
 
-  const faqs = [
-    {
-      question: "What travel services do you offer?",
-      answer: "We offer a wide range of travel services including adventure tours, group travel packages, custom itineraries, travel insurance, and 24/7 customer support. Whether you're looking for a solo adventure or a group trip, we have something for everyone."
-    },
-    {
-      question: "How do I book a trip?",
-      answer: "Booking a trip is easy! Simply browse our upcoming trips, select your preferred destination, and click on the trip to view details. You can then proceed to book directly through our website or contact us for personalized assistance."
-    },
-    {
-      question: "What is your cancellation policy?",
-      answer: "Our cancellation policy varies depending on the type of trip and timing. Generally, cancellations made 30 days or more before departure receive a full refund minus processing fees. Cancellations made 15-30 days before receive a 50% refund. For specific details, please refer to your booking confirmation or contact our support team."
-    },
-    {
-      question: "Do you provide travel insurance?",
-      answer: "Yes, we offer comprehensive travel insurance options to protect your investment. Our travel insurance covers trip cancellation, medical emergencies, baggage loss, and other travel-related incidents. You can add travel insurance during the booking process or contact us for more information."
-    },
-    {
-      question: "Can I customize my travel itinerary?",
-      answer: "Absolutely! We specialize in creating custom itineraries tailored to your preferences, budget, and travel style. Simply contact us with your requirements, and our travel experts will work with you to design the perfect trip."
-    },
-    {
-      question: "What payment methods do you accept?",
-      answer: "We accept various payment methods including credit cards, debit cards, bank transfers, and digital wallets. Payment plans are also available for select trips. All transactions are secure and encrypted for your safety."
-    },
-    {
-      question: "Do you offer group discounts?",
-      answer: "Yes, we offer special discounts for group bookings! Groups of 5 or more typically receive a 10% discount, and groups of 10 or more can receive up to 15% off. Contact us for group booking inquiries and custom group packages."
-    },
-    {
-      question: "What should I do if I have an emergency during my trip?",
-      answer: "We provide 24/7 emergency support for all our travelers. You'll receive an emergency contact number before your trip departure. Our team is available around the clock to assist with any emergencies, medical issues, or travel disruptions you may encounter."
+  useEffect(() => {
+    fetchFAQs()
+  }, [])
+
+  const fetchFAQs = async () => {
+    try {
+      setLoading(true)
+      const response = await faqsAPI.getAllFAQs()
+      // Sort by display order
+      const sortedFAQs = (response.faqs || []).sort((a, b) => {
+        const orderA = a.displayOrder || 0
+        const orderB = b.displayOrder || 0
+        if (orderA !== orderB) return orderA - orderB
+        return a.id - b.id
+      })
+      setFaqs(sortedFAQs)
+    } catch (error) {
+      console.error('Error fetching FAQs:', error)
+      setFaqs([])
+    } finally {
+      setLoading(false)
     }
-  ]
+  }
 
   const toggleFAQ = (index) => {
     setOpenIndex(openIndex === index ? null : index)
@@ -64,10 +57,15 @@ function FAQ() {
             </div>
 
             {/* FAQ Items */}
-            <div className="space-y-4">
-          {faqs.map((faq, index) => (
+            {loading ? (
+              <div className="flex justify-center items-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-[#017233]" />
+              </div>
+            ) : faqs.length > 0 ? (
+              <div className="space-y-4">
+                {faqs.map((faq, index) => (
             <div
-              key={index}
+              key={faq.id || index}
               className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden transition-all duration-300 hover:shadow-xl"
             >
               <button
@@ -109,6 +107,11 @@ function FAQ() {
             </div>
           ))}
         </div>
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-gray-500 text-lg">No FAQs available at the moment.</p>
+              </div>
+            )}
 
             {/* Additional Help */}
             <div className="mt-12 text-center">

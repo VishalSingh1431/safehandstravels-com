@@ -14,11 +14,11 @@ class Trip {
           title, location, duration, price, old_price, image_url, video_url,
           video_public_id, image_public_id, gallery, gallery_public_ids,
           subtitle, intro, why_visit, itinerary, included, not_included,
-          notes, faq, reviews, slug, status, created_by
+          notes, faq, reviews, category, is_popular, slug, status, created_by
         )
         VALUES (
           $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
-          $16, $17, $18, $19, $20, $21, $22, $23
+          $16, $17, $18, $19, $20, $21, $22, $23, $24, $25
         )
         RETURNING *
       `;
@@ -44,6 +44,8 @@ class Trip {
         JSON.stringify(data.notes || []),
         JSON.stringify(data.faq || []),
         JSON.stringify(data.reviews || []),
+        JSON.stringify(data.category || []),
+        data.isPopular || false,
         data.slug || this.generateSlug(data.title),
         data.status || 'active',
         data.createdBy || null,
@@ -137,39 +139,43 @@ class Trip {
       const values = [];
       let paramCount = 1;
 
-      const fields = {
-        title: data.title,
-        location: data.location,
-        duration: data.duration,
-        price: data.price,
+      // Map frontend field names to database column names
+      const fieldMapping = {
+        title: 'title',
+        location: 'location',
+        duration: 'duration',
+        price: 'price',
         oldPrice: 'old_price',
         imageUrl: 'image_url',
         videoUrl: 'video_url',
         videoPublicId: 'video_public_id',
         imagePublicId: 'image_public_id',
-        gallery: data.gallery,
+        gallery: 'gallery',
         galleryPublicIds: 'gallery_public_ids',
-        subtitle: data.subtitle,
-        intro: data.intro,
+        subtitle: 'subtitle',
+        intro: 'intro',
         whyVisit: 'why_visit',
-        itinerary: data.itinerary,
-        included: data.included,
+        itinerary: 'itinerary',
+        included: 'included',
         notIncluded: 'not_included',
-        notes: data.notes,
-        faq: data.faq,
-        reviews: data.reviews,
-        slug: data.slug,
-        status: data.status,
+        notes: 'notes',
+        faq: 'faq',
+        reviews: 'reviews',
+        category: 'category',
+        isPopular: 'is_popular',
+        slug: 'slug',
+        status: 'status',
       };
 
-      for (const [key, value] of Object.entries(fields)) {
-        if (value !== undefined && data[key] !== undefined) {
-          const dbKey = typeof value === 'string' ? value : key;
-          if (['gallery', 'galleryPublicIds', 'whyVisit', 'itinerary', 'included', 'notIncluded', 'notes', 'faq', 'reviews'].includes(key)) {
-            updates.push(`${dbKey} = $${paramCount++}`);
+      // JSON fields that need to be stringified
+      const jsonFields = ['gallery', 'galleryPublicIds', 'whyVisit', 'itinerary', 'included', 'notIncluded', 'notes', 'faq', 'reviews', 'category'];
+
+      for (const [key, dbColumn] of Object.entries(fieldMapping)) {
+        if (data[key] !== undefined) {
+          updates.push(`${dbColumn} = $${paramCount++}`);
+          if (jsonFields.includes(key)) {
             values.push(JSON.stringify(data[key]));
           } else {
-            updates.push(`${dbKey} = $${paramCount++}`);
             values.push(data[key]);
           }
         }
@@ -251,6 +257,8 @@ class Trip {
       notes: Array.isArray(row.notes) ? row.notes : (row.notes ? JSON.parse(row.notes) : []),
       faq: Array.isArray(row.faq) ? row.faq : (row.faq ? JSON.parse(row.faq) : []),
       reviews: Array.isArray(row.reviews) ? row.reviews : (row.reviews ? JSON.parse(row.reviews) : []),
+      category: Array.isArray(row.category) ? row.category : (row.category ? JSON.parse(row.category) : []),
+      isPopular: row.is_popular || false,
       slug: row.slug,
       status: row.status,
       createdBy: row.created_by,
