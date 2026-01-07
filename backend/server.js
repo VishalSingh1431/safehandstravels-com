@@ -265,18 +265,68 @@ if (buildPath) {
   console.error('   1. Run: cd frontend && npm run build');
   console.error('   2. Upload the frontend/dist folder to your server');
   console.error('   3. Ensure it\'s in the correct location relative to server.js');
+  console.error('');
+  console.error('💡 QUICK FIX: Upload frontend/dist folder to the same directory as server.js');
+  console.error('   Then the path will be: ' + join(__dirname, 'dist'));
   
-  // Fallback: Show helpful message on root route
+  // Fallback: Show helpful message on root route with upload instructions
   app.get('/', (req, res) => {
+    const uploadInstructions = `
+      <div style="max-width: 800px; margin: 0 auto; padding: 20px;">
+        <h2>📦 Manual Upload Instructions:</h2>
+        <ol>
+          <li>On your local machine, go to: <code>frontend/dist</code></li>
+          <li>Zip the entire <code>dist</code> folder</li>
+          <li>Go to Hostinger → File Manager</li>
+          <li>Navigate to where <code>server.js</code> is located</li>
+          <li>Upload and extract the <code>dist</code> folder there</li>
+          <li>Restart Node.js app in Hostinger panel</li>
+        </ol>
+        <p><strong>Expected structure after upload:</strong></p>
+        <pre style="background: #f5f5f5; padding: 10px; border-radius: 5px;">
+${join(__dirname, 'server.js')}
+${join(__dirname, 'dist')}
+${join(__dirname, 'dist', 'index.html')}
+        </pre>
+      </div>
+    `;
+    
     res.status(503).send(`
+      <!DOCTYPE html>
       <html>
-        <head><title>Frontend Not Found</title></head>
-        <body style="font-family: Arial; padding: 40px; text-align: center;">
-          <h1>⚠️ React Frontend Not Found</h1>
-          <p>The frontend build folder (frontend/dist) was not found on the server.</p>
-          <p>Please check the server logs for the exact paths that were checked.</p>
-          <p><strong>API is running:</strong> <a href="/api/health">/api/health</a></p>
-          <p><strong>Debug paths:</strong> <a href="/api/debug/paths">/api/debug/paths</a></p>
+        <head>
+          <title>Frontend Not Found</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 40px; background: #f9f9f9; }
+            .container { max-width: 900px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+            h1 { color: #d32f2f; }
+            code { background: #f5f5f5; padding: 2px 6px; border-radius: 3px; }
+            pre { background: #f5f5f5; padding: 15px; border-radius: 5px; overflow-x: auto; }
+            a { color: #1976d2; text-decoration: none; }
+            a:hover { text-decoration: underline; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1>⚠️ React Frontend Not Found</h1>
+            <p>The frontend build folder (<code>frontend/dist</code>) was not found on the server.</p>
+            
+            <h3>🔍 Debug Information:</h3>
+            <ul>
+              <li><strong>Server location:</strong> <code>${__dirname}</code></li>
+              <li><strong>Working directory:</strong> <code>${process.cwd()}</code></li>
+              <li><strong>Check debug endpoint:</strong> <a href="/api/debug/paths" target="_blank">/api/debug/paths</a></li>
+              <li><strong>API health:</strong> <a href="/api/health" target="_blank">/api/health</a></li>
+            </ul>
+            
+            ${uploadInstructions}
+            
+            <h3>📝 Alternative: Build on Server</h3>
+            <p>If you have terminal access on Hostinger, you can build directly on the server:</p>
+            <pre>cd frontend
+npm install
+npm run build</pre>
+          </div>
         </body>
       </html>
     `);
