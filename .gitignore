@@ -18,10 +18,11 @@ lerna-debug.log*
 .env*.local
 
 # Build outputs
-dist/
+# dist/ - removed to allow frontend/dist in git
 dist-ssr/
 build/
 *.tsbuildinfo
+!frontend/dist/
 
 # Logs
 logs/

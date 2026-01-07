@@ -1,0 +1,26 @@
+# robots.txt for Safe Hands Travels / VaranasiHub
+
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /login
+Disallow: /signup
+Disallow: /profile
+
+# Allow important pages
+Allow: /
+Allow: /trip/
+Allow: /all-india-trips
+Allow: /spiritual-trips
+Allow: /himalayan-escapes
+Allow: /beach-island-breaks
+Allow: /wellness-retreats
+Allow: /car-rentals
+
+# Sitemap
+Sitemap: https://varanasihub.com/sitemap.xml
+
+# Crawl-delay (optional, be nice to servers)
+Crawl-delay: 1
+
