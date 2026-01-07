@@ -210,19 +210,23 @@ let buildPath = possibleBuildPaths.find(p => {
   return exists;
 });
 
-// If not found in common paths, try recursive search
+// If not found in common paths, try recursive search (with increased depth for Hostinger)
 if (!buildPath) {
-  console.log('🔍 Searching recursively for dist folder...');
+  console.log('🔍 Searching recursively for dist folder (increased depth for Hostinger)...');
   const searchPaths = [
     __dirname,
     join(__dirname, '..'),
+    join(__dirname, '..', '..'),
     process.cwd(),
     join(process.cwd(), '..'),
+    join(process.cwd(), '.builds'),
+    join(process.cwd(), 'public_html'),
   ];
   
   for (const searchPath of searchPaths) {
     if (fs.existsSync(searchPath)) {
-      const found = findDistFolder(searchPath);
+      console.log(`🔍 Searching in: ${searchPath}`);
+      const found = findDistFolder(searchPath, 5); // Increased depth to 5 for Hostinger structure
       if (found) {
         console.log(`✅ Found build recursively at: ${found}`);
         buildPath = found;
