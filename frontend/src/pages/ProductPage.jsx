@@ -643,130 +643,97 @@ function ProductPage() {
         {pageSettings?.sections?.find(s => s.id === 'hero')?.enabled && (
         <div className="relative w-full bg-gray-50 py-8 md:py-12">
           <div className="mx-auto w-full px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-col lg:flex-row gap-3 sm:gap-4 md:gap-6 h-auto lg:h-[70vh]">
-              {/* Large Image on Left (50%) */}
-              <div className="w-full lg:w-1/2 h-[40vh] sm:h-[50vh] lg:h-full relative group">
-                <div className="relative w-full h-full rounded-xl sm:rounded-2xl md:rounded-3xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500">
-                  <img 
-                    src={trip.imageUrl || trip.image || (content.gallery && content.gallery[0]) || 'https://images.unsplash.com/photo-1501594907352-04cda38ebc29?auto=format&fit=crop&w=900&q=60'} 
-                    alt={trip.title}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                  {/* Overlay with title */}
-                  <div className="absolute inset-0 flex items-end p-4 sm:p-6 md:p-8">
-                    <div className="text-white">
-                      <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold mb-1 sm:mb-2 drop-shadow-2xl tracking-tight">
-                        {trip.title}
-                      </h1>
-                      <p className="text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl font-light drop-shadow-lg opacity-95">
-                        {trip.location} {content.subtitle}
-                      </p>
+            {(() => {
+              // Get all gallery images - use content.gallery if available, otherwise use getAllGalleryImages
+              const getImagesFromContent = () => {
+                if (content && content.gallery && content.gallery.length > 0) {
+                  const galleryImages = content.gallery
+                  const mainImage = trip.imageUrl || trip.image
+                  if (mainImage && !galleryImages.includes(mainImage)) {
+                    return [mainImage, ...galleryImages]
+                  }
+                  return galleryImages
+                }
+                return getAllGalleryImages()
+              }
+              const allImages = getImagesFromContent()
+              const totalImages = allImages.length
+              const hasMoreThanFive = totalImages > 5
+              const remainingImages = hasMoreThanFive ? totalImages - 5 : 0
+              
+              // Get images to display: first 5 images
+              const imagesToDisplay = allImages.slice(0, 5)
+              
+              return (
+                <div className="flex flex-col lg:flex-row gap-3 sm:gap-4 md:gap-6 h-auto lg:h-[70vh]">
+                  {/* Large Image on Left (50%) - Desktop, First Image - Mobile */}
+                  <div 
+                    className="w-full lg:w-1/2 h-[40vh] sm:h-[50vh] lg:h-full relative group cursor-pointer"
+                    onClick={() => {
+                      setLightboxIndex(0)
+                      setLightboxOpen(true)
+                    }}
+                  >
+                    <div className="relative w-full h-full rounded-xl sm:rounded-2xl md:rounded-3xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500">
+                      <img 
+                        src={imagesToDisplay[0] || trip.imageUrl || trip.image || 'https://images.unsplash.com/photo-1501594907352-04cda38ebc29?auto=format&fit=crop&w=900&q=60'} 
+                        alt={trip.title}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                      {/* Overlay with title */}
+                      <div className="absolute inset-0 flex items-end p-4 sm:p-6 md:p-8 pointer-events-none">
+                        <div className="text-white">
+                          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold mb-1 sm:mb-2 drop-shadow-2xl tracking-tight">
+                            {trip.title}
+                          </h1>
+                          <p className="text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl font-light drop-shadow-lg opacity-95">
+                            {trip.location} {content.subtitle}
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
 
-              {/* Four Smaller Images on Right (25% each in 2x2 grid) */}
-              <div className="w-full lg:w-1/2 grid grid-cols-2 gap-3 sm:gap-4 md:gap-6 h-auto lg:h-full">
-                {(() => {
-                  // Get all gallery images - use content.gallery if available, otherwise use getAllGalleryImages
-                  const getImagesFromContent = () => {
-                    if (content && content.gallery && content.gallery.length > 0) {
-                      const galleryImages = content.gallery
-                      const mainImage = trip.imageUrl || trip.image
-                      if (mainImage && !galleryImages.includes(mainImage)) {
-                        return [mainImage, ...galleryImages]
-                      }
-                      return galleryImages
-                    }
-                    return getAllGalleryImages()
-                  }
-                  const allImages = getImagesFromContent()
-                  const totalImages = allImages.length
-                  
-                  // If more than 5 images, show only first 4, then "View More"
-                  // Otherwise, show up to 4 images (repeating if necessary)
-                  const shouldShowViewMore = totalImages > 5
-                  const imagesToShow = shouldShowViewMore 
-                    ? allImages.slice(0, 4)
-                    : (() => {
-                        const images = []
-                        for (let i = 0; i < 4; i++) {
-                          images.push(allImages[i % allImages.length] || 'https://images.unsplash.com/photo-1501594907352-04cda38ebc29?auto=format&fit=crop&w=900&q=60')
-                        }
-                        return images
-                      })()
-                  
-                  return (
-                    <>
-                      {imagesToShow.map((image, index) => {
-                        // Calculate the actual image index in the gallery
-                        const actualIndex = shouldShowViewMore 
-                          ? index 
-                          : (index % totalImages)
-                        
-                        return (
-                          <div 
-                            key={index}
-                            className="relative h-[20vh] sm:h-[25vh] md:h-[30vh] lg:h-full group overflow-hidden rounded-lg sm:rounded-xl md:rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer"
-                            onClick={() => {
-                              setLightboxIndex(actualIndex)
-                              setLightboxOpen(true)
-                            }}
-                          >
-                            <img 
-                              src={image} 
-                              alt={`${trip.title} gallery ${index + 1}`}
-                              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                            <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                          </div>
-                        )
-                      })}
+                  {/* Four Smaller Images on Right (25% each in 2x2 grid) - Desktop, Stacked - Mobile */}
+                  <div className="w-full lg:w-1/2 grid grid-cols-2 gap-3 sm:gap-4 md:gap-6 h-auto lg:h-full">
+                    {imagesToDisplay.slice(1, 5).map((image, index) => {
+                      const actualIndex = index + 1 // Index 1-4 in the full gallery
+                      const isFifthImage = index === 3 && hasMoreThanFive // 4th in this slice = 5th overall
                       
-                      {/* View More Card - only show if more than 5 images */}
-                      {shouldShowViewMore && (
+                      return (
                         <div 
+                          key={actualIndex}
                           className="relative h-[20vh] sm:h-[25vh] md:h-[30vh] lg:h-full group overflow-hidden rounded-lg sm:rounded-xl md:rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer"
                           onClick={() => {
-                            setLightboxIndex(4)
+                            setLightboxIndex(actualIndex)
                             setLightboxOpen(true)
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.querySelector('.view-more-overlay').classList.remove('opacity-0')
-                            e.currentTarget.querySelector('.view-more-overlay').classList.add('opacity-100')
-                            e.currentTarget.querySelector('img').classList.add('blur-sm', 'brightness-50')
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.querySelector('.view-more-overlay').classList.remove('opacity-100')
-                            e.currentTarget.querySelector('.view-more-overlay').classList.add('opacity-0')
-                            e.currentTarget.querySelector('img').classList.remove('blur-sm', 'brightness-50')
                           }}
                         >
                           <img 
-                            src={allImages[4]} 
-                            alt={`${trip.title} gallery 5`}
-                            className="w-full h-full object-cover transition-all duration-500"
+                            src={image} 
+                            alt={`${trip.title} gallery ${actualIndex + 1}`}
+                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                           />
-                          <div className="absolute inset-0 bg-black/40 view-more-overlay opacity-0 transition-opacity duration-500 flex items-center justify-center">
-                            <div className="text-center">
-                              <div className="bg-white/90 backdrop-blur-sm px-4 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl shadow-xl mb-2">
-                                <p className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-gray-900">View More</p>
+                          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                          
+                          {/* +X Overlay on 5th image if more than 5 images */}
+                          {isFifthImage && (
+                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity duration-300 group-hover:bg-black/50 cursor-pointer">
+                              <div className="text-center">
+                                <p className="text-white text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold drop-shadow-2xl">
+                                  +{remainingImages}
+                                </p>
                               </div>
-                              <p className="text-white text-xs sm:text-sm md:text-base font-medium">
-                                +{totalImages - 5} more images
-                              </p>
                             </div>
-                          </div>
+                          )}
                         </div>
-                      )}
-                    </>
-                  )
-                })()}
-              </div>
-            </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })()}
             
             {/* Trip Info Badges */}
             <div className="mt-4 sm:mt-6 flex flex-wrap items-center justify-center gap-2 sm:gap-4 text-xs sm:text-sm md:text-base">

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import VideoCard from './card/VideoCard'
 import { vibeVideosAPI } from '../config/api'
 import { Loader2 } from 'lucide-react'
@@ -6,6 +6,7 @@ import { Loader2 } from 'lucide-react'
 function VibeWithUs() {
   const [videos, setVideos] = useState([])
   const [loading, setLoading] = useState(true)
+  const sliderRef = useRef(null)
 
   useEffect(() => {
     fetchVideos()
@@ -59,11 +60,42 @@ function VibeWithUs() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-          {videos.map((video, index) => (
-            <VideoCard key={video.id || index} video={video} isTall={video.isTall !== false} />
-          ))}
+        {/* Slider Container */}
+        <div className="relative">
+          {/* Slider */}
+          <div
+            ref={sliderRef}
+            className="flex overflow-x-auto scrollbar-hide gap-0 scroll-smooth"
+            style={{
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none',
+            }}
+          >
+            {videos.map((video, index) => {
+              // Preload first 2 videos and videos that are 1-2 positions ahead
+              // This ensures smooth scrolling without loading all videos at once
+              const shouldPreload = index < 2; // First 2 videos always preload
+              
+              return (
+                <div key={video.id || index} className="flex-shrink-0">
+                  <VideoCard 
+                    video={video} 
+                    isTall={video.isTall !== false}
+                    index={index}
+                    shouldPreload={shouldPreload}
+                  />
+                </div>
+              );
+            })}
+          </div>
         </div>
+
+        {/* Hide scrollbar for webkit browsers */}
+        <style>{`
+          .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+          }
+        `}</style>
       </div>
     </section>
   )

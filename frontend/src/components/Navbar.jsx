@@ -176,8 +176,8 @@ const Navbar = () => {
           aria-hidden="true"
         />
       )}
-      <nav className={`w-full border-b border-gray-100/50 bg-white/80 backdrop-blur-xl sticky top-0 z-50 transition-all duration-300 ${
-        isScrolled ? 'shadow-lg' : 'shadow-sm'
+      <nav className={`w-full border-b border-gray-100/50 bg-white sticky top-0 z-50 transition-shadow duration-300 ${
+        isScrolled ? 'shadow-md' : ''
       }`}>
       <div className="mx-auto w-full px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-4 py-4 lg:flex-row lg:items-center lg:justify-between lg:gap-6 lg:min-h-[80px]">
@@ -467,9 +467,9 @@ const Navbar = () => {
 
           {/* Experiences */}
           <Link
-            to="/blog"
+            to="/experiences"
             className={`relative flex items-center gap-1.5 whitespace-nowrap transition-all duration-300 px-4 py-2.5 rounded-lg hover:scale-110 active:scale-95 ${
-              location.pathname === '/blog' || location.pathname === '/experiences'
+              location.pathname === '/experiences'
                 ? 'text-[#017233] bg-gradient-to-br from-green-50 to-emerald-50 shadow-sm'
                 : 'hover:text-[#017233] hover:bg-gradient-to-br hover:from-green-50/50 hover:to-emerald-50/50'
             }`}
@@ -478,7 +478,7 @@ const Navbar = () => {
               <IconExperiences />
             </span>
             <span>Experiences</span>
-            {(location.pathname === '/blog' || location.pathname === '/experiences') && (
+            {location.pathname === '/experiences' && (
               <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-[#017233] rounded-full" />
             )}
           </Link>
@@ -726,7 +726,7 @@ const Navbar = () => {
 
               {/* Experiences */}
               <Link
-                to="/blog"
+                to="/experiences"
                 className="flex items-center gap-1.5 text-sm font-semibold text-gray-900 transition-all duration-300 hover:text-[#017233] hover:scale-105 active:scale-95"
                 onClick={() => setIsMobileMenuOpen(false)}
               >

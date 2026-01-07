@@ -1,4 +1,17 @@
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
+
 function Footer() {
+  const [newsletterEmail, setNewsletterEmail] = useState('')
+
+  const handleNewsletterSubmit = (e) => {
+    e.preventDefault()
+    // Handle newsletter subscription
+    console.log('Newsletter subscription:', newsletterEmail)
+    setNewsletterEmail('')
+    // You can add toast notification here
+  }
+
   return (
     <>
       <footer className="w-full bg-gradient-to-br from-[#017233] via-[#01994d] to-[#00C853] text-white relative overflow-hidden">
@@ -9,19 +22,25 @@ function Footer() {
         </div>
         
         <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 md:px-8 py-8 sm:py-12 md:py-16 relative z-10">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 md:gap-12">
-            {/* Company Info */}
+          {/* Top Section - 5 Columns on Desktop, Stacked on Mobile */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 sm:gap-8 md:gap-12">
+            {/* COLUMN 1: Brand Info */}
             <div className="space-y-4">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white text-xl font-bold shadow-lg border-2 border-white/30">
-                  ✈️
-                </div>
-                <h3 className="text-xl font-bold text-white drop-shadow-lg">Safe Hands Travels</h3>
+                <Link to="/" className="flex-shrink-0 group">
+                  <img
+                    src="/images/Logo.webp"
+                    alt="Safe Hands Travels"
+                    className="h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-110"
+                    loading="lazy"
+                  />
+                </Link>
+                
               </div>
-              <p className="text-white/90 leading-relaxed">
-                Your trusted partner for unforgettable travel experiences. We make your dreams come true, one destination at a time.
+              <p className="text-white/90 leading-relaxed text-sm">
+                Your trusted domestic travel partner for unforgettable experiences across India.
               </p>
-              <div className="flex gap-4 pt-2">
+              <div className="flex gap-3 pt-2">
                 <a
                   href="#"
                   className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm flex items-center justify-center transition-all hover:scale-110 border border-white/30"
@@ -61,108 +80,150 @@ function Footer() {
               </div>
             </div>
 
-          {/* Quick Links */}
-          <div>
-            <h4 className="text-lg font-bold mb-4 text-white drop-shadow-md">Quick Links</h4>
-            <ul className="space-y-3">
-              <li>
-                <a href="/" className="text-white/90 hover:text-white transition-colors hover:underline">
-                  Home
-                </a>
-              </li>
-              <li>
-                <a href="#trips" className="text-white/90 hover:text-white transition-colors hover:underline">
-                  Popular Trips
-                </a>
-              </li>
-              <li>
-                <a href="#destinations" className="text-white/90 hover:text-white transition-colors hover:underline">
-                  Destinations
-                </a>
-              </li>
-              <li>
-                <a href="#reviews" className="text-white/90 hover:text-white transition-colors hover:underline">
-                  Reviews
-                </a>
-              </li>
-              <li>
-                <a href="#about" className="text-white/90 hover:text-white transition-colors hover:underline">
-                  About Us
-                </a>
-              </li>
-            </ul>
-          </div>
+            {/* COLUMN 2: Quick Links */}
+            <div>
+              <h4 className="text-lg font-bold mb-4 text-white drop-shadow-md">Quick Links</h4>
+              <ul className="space-y-3">
+                <li>
+                  <a href="/" className="text-white/90 hover:text-white transition-colors hover:underline">
+                    Home
+                  </a>
+                </li>
+                <li>
+                  <a href="#destinations" className="text-white/90 hover:text-white transition-colors hover:underline">
+                    Destinations
+                  </a>
+                </li>
+                <li>
+                  <a href="#trips" className="text-white/90 hover:text-white transition-colors hover:underline">
+                    Popular Trips
+                  </a>
+                </li>
+                <li>
+                  <a href="#corporate" className="text-white/90 hover:text-white transition-colors hover:underline">
+                    Corporate Tours
+                  </a>
+                </li>
+                <li>
+                  <a href="#team" className="text-white/90 hover:text-white transition-colors hover:underline">
+                    Our Team
+                  </a>
+                </li>
+                <li>
+                  <a href="#reviews" className="text-white/90 hover:text-white transition-colors hover:underline">
+                    Reviews
+                  </a>
+                </li>
+              </ul>
+            </div>
 
-          {/* Services */}
-          <div>
-            <h4 className="text-lg font-bold mb-4 text-white drop-shadow-md">Our Services</h4>
-            <ul className="space-y-3">
-              <li>
-                <a href="#" className="text-white/90 hover:text-white transition-colors hover:underline">
-                  Adventure Tours
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-white/90 hover:text-white transition-colors hover:underline">
-                  Group Travel
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-white/90 hover:text-white transition-colors hover:underline">
-                  Custom Itineraries
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-white/90 hover:text-white transition-colors hover:underline">
-                  Travel Insurance
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-white/90 hover:text-white transition-colors hover:underline">
-                  24/7 Support
-                </a>
-              </li>
-            </ul>
-          </div>
+            {/* COLUMN 3: Our Services */}
+            <div>
+              <h4 className="text-lg font-bold mb-4 text-white drop-shadow-md">Our Services</h4>
+              <ul className="space-y-3">
+                <li>
+                  <a href="#" className="text-white/90 hover:text-white transition-colors hover:underline">
+                    Adventure Tours
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="text-white/90 hover:text-white transition-colors hover:underline">
+                    Group Travel
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="text-white/90 hover:text-white transition-colors hover:underline">
+                    Customized Itineraries
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="text-white/90 hover:text-white transition-colors hover:underline">
+                    Visa Assistance
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="text-white/90 hover:text-white transition-colors hover:underline">
+                    Travel Insurance
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="text-white/90 hover:text-white transition-colors hover:underline">
+                    24/7 Support
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="text-white/90 hover:text-white transition-colors hover:underline">
+                    Payment Options
+                  </a>
+                </li>
+              </ul>
+            </div>
 
-          {/* Contact Info */}
-          <div>
-            <h4 className="text-lg font-bold mb-4 text-white drop-shadow-md">Contact Info</h4>
-            <ul className="space-y-3 text-white/90">
-              <li className="flex items-start gap-3">
-                <span className="text-white mt-1 text-lg">📍</span>
-                <span>123 Travel Street<br />Adventure City, AC 12345<br />India</span>
-              </li>
-              <li className="flex items-center gap-3">
-                <span className="text-white text-lg">📞</span>
-                <a href="tel:+918448801998" className="hover:text-white transition-colors">
-                  (+91) 8448801998
-                </a>
-              </li>
-              <li className="flex items-center gap-3">
-                <span className="text-white text-lg">✉️</span>
-                <a href="mailto:info@safehandstravels.com" className="hover:text-white transition-colors">
-                  info@safehandstravels.com
-                </a>
-              </li>
-            </ul>
+            {/* COLUMN 4: Policies & Support */}
+            <div>
+              <h4 className="text-lg font-bold mb-4 text-white drop-shadow-md">Policies & Support</h4>
+              <ul className="space-y-3">
+                <li>
+                  <a href="#cancellation" className="text-white/90 hover:text-white transition-colors hover:underline">
+                    Cancellation & Refunds Policy
+                  </a>
+                </li>
+                <li>
+                  <a href="#privacy" className="text-white/90 hover:text-white transition-colors hover:underline">
+                    Privacy Policy
+                  </a>
+                </li>
+                <li>
+                  <a href="#terms" className="text-white/90 hover:text-white transition-colors hover:underline">
+                    Terms & Conditions
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            {/* COLUMN 5: Contact & Newsletter */}
+            <div>
+              <h4 className="text-lg font-bold mb-4 text-white drop-shadow-md">Contact & Newsletter</h4>
+              
+              {/* Contact Details */}
+              <div className="space-y-3 mb-6 text-white/90">
+                <div className="flex items-start gap-3">
+                  <span className="text-white mt-1 text-lg">📍</span>
+                  <span className="text-sm">123 Travel Street<br />Adventure City, AC 12345<br />India</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-white text-lg">📞</span>
+                  <a href="tel:+918448801998" className="text-sm hover:text-white transition-colors">
+                    (+91) 8448801998
+                  </a>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-white text-lg">✉️</span>
+                  <a href="mailto:info@safehandstravels.com" className="text-sm hover:text-white transition-colors break-all">
+                    info@safehandstravels.com
+                  </a>
+                </div>
+              </div>
+
+              {/* Newsletter Subscription */}
+              
+            </div>
           </div>
-        </div>
 
         {/* Bottom Bar */}
-        <div className="mt-8 sm:mt-12 pt-6 sm:pt-8 border-t border-white/20 px-4 sm:px-6 md:px-8">
+        <div className="mt-8 sm:mt-12 pt-6 sm:pt-8 border-t border-white/20">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4">
             <p className="text-white/90 text-xs sm:text-sm text-center sm:text-left">
-              © {new Date().getFullYear()} Safe Hands Travels. All rights reserved.
+              © 2026 Safe Hands Travels. All rights reserved.
             </p>
             <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-xs sm:text-sm">
-              <a href="#" className="text-white/90 hover:text-white transition-colors hover:underline">
+              <a href="#privacy" className="text-white/90 hover:text-white transition-colors hover:underline">
                 Privacy Policy
               </a>
-              <a href="#" className="text-white/90 hover:text-white transition-colors hover:underline">
+              <a href="#terms" className="text-white/90 hover:text-white transition-colors hover:underline">
                 Terms of Service
               </a>
-              <a href="#" className="text-white/90 hover:text-white transition-colors hover:underline">
+              <a href="#cookies" className="text-white/90 hover:text-white transition-colors hover:underline">
                 Cookie Policy
               </a>
             </div>
