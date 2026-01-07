@@ -217,20 +217,46 @@ if (!buildPath) {
     __dirname,
     join(__dirname, '..'),
     join(__dirname, '..', '..'),
+    join(__dirname, '..', '..', '..'),
     process.cwd(),
     join(process.cwd(), '..'),
     join(process.cwd(), '.builds'),
     join(process.cwd(), 'public_html'),
+    // Try to find .builds directory from various starting points
+    '/home/u427254332/domains/chocolate-nightingale-338585.hostingersite.com/public_html',
+    '/home/u427254332/domains/chocolate-nightingale-338585.hostingersite.com/public_html/.builds',
   ];
   
   for (const searchPath of searchPaths) {
     if (fs.existsSync(searchPath)) {
       console.log(`🔍 Searching in: ${searchPath}`);
-      const found = findDistFolder(searchPath, 5); // Increased depth to 5 for Hostinger structure
+      const found = findDistFolder(searchPath, 6); // Increased depth to 6 for Hostinger structure
       if (found) {
         console.log(`✅ Found build recursively at: ${found}`);
         buildPath = found;
         break;
+      }
+    } else {
+      console.log(`❌ Path does not exist: ${searchPath}`);
+    }
+  }
+  
+  // Last resort: Try to directly access the known path
+  if (!buildPath) {
+    const knownPaths = [
+      '/home/u427254332/domains/chocolate-nightingale-338585.hostingersite.com/public_html/.builds/source/repository/frontend/dist',
+      join(process.cwd(), '.builds', 'source', 'repository', 'frontend', 'dist'),
+      join(__dirname, '..', '..', '..', 'source', 'repository', 'frontend', 'dist'),
+    ];
+    
+    for (const knownPath of knownPaths) {
+      const indexPath = join(knownPath, 'index.html');
+      if (fs.existsSync(knownPath) && fs.existsSync(indexPath)) {
+        console.log(`✅ Found build at known path: ${knownPath}`);
+        buildPath = knownPath;
+        break;
+      } else {
+        console.log(`❌ Known path check failed: ${knownPath} (exists: ${fs.existsSync(knownPath)}, has index: ${fs.existsSync(indexPath)})`);
       }
     }
   }
