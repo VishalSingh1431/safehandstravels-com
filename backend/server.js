@@ -141,6 +141,37 @@ app.use('/api/branding-partners', brandingPartnersRoutes);
 app.use('/api/hotel-partners', hotelPartnersRoutes);
 
 // Serve React Frontend (Vite build is in frontend/dist)
+// Recursive function to find dist folder with index.html
+function findDistFolder(startPath, maxDepth = 3, currentDepth = 0) {
+  if (currentDepth >= maxDepth) return null;
+  
+  try {
+    const items = fs.readdirSync(startPath);
+    for (const item of items) {
+      const fullPath = join(startPath, item);
+      try {
+        const stat = fs.statSync(fullPath);
+        if (stat.isDirectory()) {
+          // Check if this is the dist folder with index.html
+          const indexPath = join(fullPath, 'index.html');
+          if (item === 'dist' && fs.existsSync(indexPath)) {
+            return fullPath;
+          }
+          // Recursively search subdirectories
+          const found = findDistFolder(fullPath, maxDepth, currentDepth + 1);
+          if (found) return found;
+        }
+      } catch (e) {
+        // Skip if can't read
+        continue;
+      }
+    }
+  } catch (e) {
+    // Skip if can't read directory
+  }
+  return null;
+}
+
 // Try multiple possible paths for Hostinger deployment
 const possibleBuildPaths = [
   join(__dirname, 'dist'),                         // dist in same folder as server.js
@@ -159,7 +190,7 @@ console.log('🔍 Checking for React build folder...');
 console.log('📁 Current working directory:', process.cwd());
 console.log('📁 __dirname:', __dirname);
 
-const buildPath = possibleBuildPaths.find(p => {
+let buildPath = possibleBuildPaths.find(p => {
   const indexPath = join(p, 'index.html');
   const exists = fs.existsSync(p) && fs.existsSync(indexPath);
   if (exists) {
@@ -167,6 +198,28 @@ const buildPath = possibleBuildPaths.find(p => {
   }
   return exists;
 });
+
+// If not found in common paths, try recursive search
+if (!buildPath) {
+  console.log('🔍 Searching recursively for dist folder...');
+  const searchPaths = [
+    __dirname,
+    join(__dirname, '..'),
+    process.cwd(),
+    join(process.cwd(), '..'),
+  ];
+  
+  for (const searchPath of searchPaths) {
+    if (fs.existsSync(searchPath)) {
+      const found = findDistFolder(searchPath);
+      if (found) {
+        console.log(`✅ Found build recursively at: ${found}`);
+        buildPath = found;
+        break;
+      }
+    }
+  }
+}
 
 if (buildPath) {
   console.log('✅ Serving React frontend from:', buildPath);
@@ -232,7 +285,31 @@ if (buildPath) {
 
 // Debug route to check paths (remove in production)
 app.get('/api/debug/paths', (req, res) => {
-  const paths = {
+  // List what's actually in common directories
+  function listDir(dirPath) {
+    try {
+      if (fs.existsSync(dirPath)) {
+        return fs.readdirSync(dirPath).map(item => {
+          const fullPath = join(dirPath, item);
+          try {
+            const stat = fs.statSync(fullPath);
+            return {
+              name: item,
+              type: stat.isDirectory() ? 'directory' : 'file',
+              path: fullPath,
+            };
+          } catch {
+            return { name: item, type: 'unknown' };
+          }
+        });
+      }
+    } catch (e) {
+      return [];
+    }
+    return [];
+  }
+
+  const debugInfo = {
     __dirname,
     cwd: process.cwd(),
     buildPaths: possibleBuildPaths.map(p => ({
@@ -241,8 +318,14 @@ app.get('/api/debug/paths', (req, res) => {
       hasIndex: fs.existsSync(join(p, 'index.html')),
     })),
     foundBuildPath: buildPath || null,
+    directories: {
+      __dirname: listDir(__dirname),
+      parent: listDir(join(__dirname, '..')),
+      cwd: listDir(process.cwd()),
+      cwdParent: listDir(join(process.cwd(), '..')),
+    },
   };
-  res.json(paths);
+  res.json(debugInfo);
 });
 
 // 404 handler for API routes only
