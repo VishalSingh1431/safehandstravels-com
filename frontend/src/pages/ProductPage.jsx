@@ -6,6 +6,70 @@ import { useToast } from '../contexts/ToastContext'
 import SEO from '../components/SEO'
 import { getTripSchema, getBreadcrumbSchema } from '../utils/structuredData'
 
+// Hotel Partners Data
+const hotelPartners = [
+  {
+    id: 1,
+    name: 'Taj Hotels',
+    logo: null, // Add logo URL here when available
+    link: 'https://www.tajhotels.com/'
+  },
+  {
+    id: 2,
+    name: 'Oberoi Hotels',
+    logo: null, // Add logo URL here when available
+    link: 'https://www.oberoihotels.com/'
+  },
+  {
+    id: 3,
+    name: 'Leela',
+    logo: null, // Add logo URL here when available
+    link: 'https://www.theleela.com/'
+  },
+  {
+    id: 4,
+    name: 'Raddison',
+    logo: null, // Add logo URL here when available
+    link: 'https://www.radissonhotels.com/'
+  },
+  {
+    id: 5,
+    name: 'Sarovar Hotels',
+    logo: null, // Add logo URL here when available
+    link: 'https://www.sarovarhotels.com/'
+  },
+  {
+    id: 6,
+    name: 'Clarks',
+    logo: null, // Add logo URL here when available
+    link: 'https://www.clarks.in/'
+  },
+  {
+    id: 7,
+    name: 'ITC',
+    logo: null, // Add logo URL here when available
+    link: 'https://www.itchotels.com/'
+  },
+  {
+    id: 8,
+    name: 'The Lalit',
+    logo: null, // Add logo URL here when available
+    link: 'https://www.thelalit.com/'
+  },
+  {
+    id: 9,
+    name: 'The Park',
+    logo: null, // Add logo URL here when available
+    link: 'https://www.theparkhotels.com/'
+  },
+  {
+    id: 10,
+    name: 'CGH Earth',
+    logo: null, // Add logo URL here when available
+    link: 'https://www.cghearth.com/'
+  }
+]
+
 function ProductPage() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -1390,6 +1454,45 @@ function ProductPage() {
 
         </div>
       </div>
+      </div>
+
+      {/* Our Hotel Partners Slider */}
+      <div className="mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 md:py-12 bg-gradient-to-b from-white to-gray-50">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-6 md:mb-8 text-center">
+            Our Hotel Partners
+          </h2>
+          <div className="relative overflow-hidden">
+            <div className="flex animate-scroll items-center gap-8 md:gap-12">
+              {/* Hotel Partners - Duplicated for seamless infinite scroll */}
+              {[...hotelPartners, ...hotelPartners].map((hotel, index) => (
+                <a
+                  key={`${hotel.id}-${index}`}
+                  href={hotel.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-shrink-0 h-16 md:h-20 lg:h-24 flex items-center justify-center px-4 md:px-6 lg:px-8 cursor-pointer hover:scale-110 transition-transform duration-300 group"
+                  aria-label={`Visit ${hotel.name}`}
+                >
+                  {hotel.logo ? (
+                    <img
+                      src={hotel.logo}
+                      alt={hotel.name}
+                      className="h-full w-auto max-w-[180px] md:max-w-[220px] object-contain opacity-70 group-hover:opacity-100 transition-opacity duration-300 filter grayscale group-hover:grayscale-0"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="h-12 md:h-16 lg:h-20 px-6 md:px-8 bg-white border-2 border-gray-200 rounded-lg flex items-center justify-center min-w-[140px] md:min-w-[180px] shadow-md group-hover:shadow-lg group-hover:border-[#017233] transition-all duration-300">
+                      <span className="text-gray-700 font-semibold text-sm md:text-base whitespace-nowrap group-hover:text-[#017233] transition-colors">
+                        {hotel.name}
+                      </span>
+                    </div>
+                  )}
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Call to Action Card */}

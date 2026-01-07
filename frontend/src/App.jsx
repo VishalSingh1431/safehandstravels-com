@@ -11,6 +11,10 @@ import SpiritualTrips from './pages/SpiritualTrips'
 import HimalayanEscapes from './pages/HimalayanEscapes'
 import BeachIslandBreaks from './pages/BeachIslandBreaks'
 import WellnessRetreats from './pages/WellnessRetreats'
+import Experiences from './pages/Experiences'
+import CustomisedTrip from './pages/CustomisedTrip'
+import WhySafeHandsTravels from './pages/WhySafeHandsTravels'
+import BlogDetail from './pages/BlogDetail'
 import AdminTrips from './pages/AdminTrips'
 import AdminCertificates from './pages/AdminCertificates'
 import AdminDestinations from './pages/AdminDestinations'
@@ -42,6 +46,11 @@ function App() {
               <Route path="/himalayan-escapes" element={<HimalayanEscapes />} />
               <Route path="/beach-island-breaks" element={<BeachIslandBreaks />} />
               <Route path="/wellness-retreats" element={<WellnessRetreats />} />
+              <Route path="/experiences" element={<Experiences />} />
+              <Route path="/customise-trip" element={<CustomisedTrip />} />
+              <Route path="/why-safehands-travels" element={<WhySafeHandsTravels />} />
+              <Route path="/blog/:id" element={<BlogDetail />} />
+              <Route path="/blog/destination/:id" element={<BlogDetail />} />
               {/* Admin Routes */}
               <Route path="/admin/trips" element={<AdminTrips />} />
               <Route path="/admin/certificates" element={<AdminCertificates />} />

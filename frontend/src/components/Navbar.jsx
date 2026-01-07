@@ -44,43 +44,73 @@ const IconBeach = () => (
   </svg>
 );
 
-const IconWellness = () => (
+const IconTravelStyle = () => (
   <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10" stroke="#FA709A" fill="#FEE140" fillOpacity="0.3"/>
-    <path d="M12 8v8M8 12h8" stroke="#FA709A"/>
+    <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="#F093FB" fill="#F093FB" fillOpacity="0.2"/>
+    <path d="M2 17l10 5 10-5M2 12l10 5 10-5" stroke="#F5576C" fill="#F5576C" fillOpacity="0.2"/>
+  </svg>
+);
+
+const IconExperiences = () => (
+  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="#4ECDC4" fill="#4ECDC4" fillOpacity="0.2"/>
+    <circle cx="12" cy="12" r="3" stroke="#4ECDC4" fill="#4ECDC4"/>
+    <path d="M12 1v6M12 17v6M1 12h6M17 12h6" stroke="#4ECDC4"/>
+  </svg>
+);
+
+const IconCustomise = () => (
+  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="#4FACFE" fill="#4FACFE" fillOpacity="0.2"/>
+    <circle cx="12" cy="12" r="2" stroke="#4FACFE" fill="#4FACFE"/>
+    <path d="M12 6v2M12 16v2M6 12h2M16 12h2" stroke="#4FACFE"/>
+  </svg>
+);
+
+const IconWhySafeHands = () => (
+  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10" stroke="#017233" fill="#017233" fillOpacity="0.1"/>
+    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" stroke="#017233" fill="#017233" fillOpacity="0.2"/>
+    <path d="M12 6v6l4 2" stroke="#017233"/>
   </svg>
 );
 
 const menuItems = [
   { 
-    label: 'All India Trips', 
-    hasDropdown: true,
-    Icon: IconAllIndia
-  },
-  { 
-    label: 'Spiritual Trails', 
-    hasDropdown: true,
-    Icon: IconSpiritual
-  },
-  { 
-    label: 'Car Booking', 
+    label: 'All India Tours', 
     hasDropdown: false,
-    Icon: IconCar
+    Icon: IconAllIndia,
+    route: '/all-india-trips'
   },
   { 
-    label: 'Himalayan Escapes', 
+    label: 'Travel Style', 
     hasDropdown: true,
-    Icon: IconMountain
+    Icon: IconTravelStyle,
+    dropdownItems: [
+      { label: 'Spiritual', route: '/spiritual-trips' },
+      { label: 'Cultural', route: '/cultural-trips' },
+      { label: 'Heritage', route: '/heritage-trips' },
+      { label: 'Nature', route: '/nature-trips' },
+      { label: 'Adventure', route: '/adventure-trips' }
+    ]
   },
   { 
-    label: 'Beach & Island Breaks', 
+    label: 'Experiences', 
     hasDropdown: false,
-    Icon: IconBeach
+    Icon: IconExperiences,
+    route: '/experiences'
   },
   { 
-    label: 'Wellness Retreats', 
+    label: 'Customise your Trip', 
     hasDropdown: false,
-    Icon: IconWellness
+    Icon: IconCustomise,
+    route: '/customise-trip'
+  },
+  { 
+    label: 'Why SafeHands Travels', 
+    hasDropdown: false,
+    Icon: IconWhySafeHands,
+    route: '/why-safehands-travels'
   }
 ];
 
@@ -93,6 +123,8 @@ const Navbar = () => {
   const [isAdminDropdownOpen, setIsAdminDropdownOpen] = useState(false);
   const adminDropdownRef = useRef(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [openDropdown, setOpenDropdown] = useState(null);
+  const travelStyleDropdownRef = useRef(null);
 
   // Set initial search query from URL if on home page
   useEffect(() => {
@@ -135,9 +167,12 @@ const Navbar = () => {
       if (isAdminDropdownOpen && adminDropdownRef.current && !adminDropdownRef.current.contains(event.target)) {
         setIsAdminDropdownOpen(false);
       }
+      if (openDropdown && travelStyleDropdownRef.current && !travelStyleDropdownRef.current.contains(event.target)) {
+        setOpenDropdown(null);
+      }
     };
 
-    if (isAdminDropdownOpen) {
+    if (isAdminDropdownOpen || openDropdown) {
       // Add event listener after a small delay to avoid immediate closure
       setTimeout(() => {
         document.addEventListener('click', handleClickOutside);
@@ -147,7 +182,7 @@ const Navbar = () => {
     return () => {
       document.removeEventListener('click', handleClickOutside);
     };
-  }, [isAdminDropdownOpen]);
+  }, [isAdminDropdownOpen, openDropdown]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -343,46 +378,53 @@ const Navbar = () => {
         <div className="hidden lg:flex flex-wrap items-center justify-center gap-x-6 xl:gap-x-8 gap-y-3 text-sm font-semibold text-gray-900 pb-2">
           {menuItems.map((item) => {
             const IconComponent = item.Icon;
-            const isCarBooking = item.label === 'Car Booking';
-            const isActive = location.pathname === '/car-rentals' && isCarBooking;
-            
-            // Map menu items to routes
-            const getRoute = (label) => {
-              switch (label) {
-                case 'All India Trips':
-                  return '/all-india-trips';
-                case 'Spiritual Trails':
-                  return '/spiritual-trips';
-                case 'Himalayan Escapes':
-                  return '/himalayan-escapes';
-                case 'Beach & Island Breaks':
-                  return '/beach-island-breaks';
-                case 'Wellness Retreats':
-                  return '/wellness-retreats';
-                default:
-                  return null;
-              }
-            };
-
-            const route = getRoute(item.label);
+            const route = item.route;
             const isCategoryActive = route && location.pathname === route;
+            const isDropdownOpen = openDropdown === item.label;
             
-            if (isCarBooking) {
+            if (item.hasDropdown && item.dropdownItems) {
               return (
-                <Link
-                  key={item.label}
-                  to="/car-rentals"
-                  className={`flex items-center gap-1.5 whitespace-nowrap transition-all duration-300 px-3 py-2 rounded-lg ${
-                    isActive 
-                      ? 'text-[#017233] bg-gradient-to-br from-green-50 to-emerald-50 shadow-sm' 
-                      : 'hover:text-[#017233] hover:bg-gradient-to-br hover:from-green-50/50 hover:to-emerald-50/50'
-                  }`}
-                >
-                  <span className="flex-shrink-0 transition-transform duration-300 hover:scale-110">
-                    <IconComponent />
-                  </span>
-                  <span>{item.label}</span>
-                </Link>
+                <div key={item.label} className="relative" ref={travelStyleDropdownRef}>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setOpenDropdown(isDropdownOpen ? null : item.label);
+                    }}
+                    className={`flex items-center gap-1.5 whitespace-nowrap transition-all duration-300 px-3 py-2 rounded-lg ${
+                      isDropdownOpen
+                        ? 'text-[#017233] bg-gradient-to-br from-green-50 to-emerald-50 shadow-sm'
+                        : 'hover:text-[#017233] hover:bg-gradient-to-br hover:from-green-50/50 hover:to-emerald-50/50'
+                    }`}
+                  >
+                    <span className="flex-shrink-0 transition-transform duration-300 hover:scale-110">
+                      <IconComponent />
+                    </span>
+                    <span>{item.label}</span>
+                    <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  {isDropdownOpen && (
+                    <div className="absolute top-full left-0 mt-2 w-56 bg-white/95 backdrop-blur-xl rounded-xl shadow-2xl border border-gray-200/50 py-2 z-[100] animate-fade-in">
+                      {item.dropdownItems.map((dropdownItem) => {
+                        const isDropdownItemActive = location.pathname === dropdownItem.route;
+                        return (
+                          <Link
+                            key={dropdownItem.label}
+                            to={dropdownItem.route}
+                            className={`block px-4 py-2 text-sm transition-all duration-200 rounded-lg mx-2 ${
+                              isDropdownItemActive
+                                ? 'bg-gradient-to-r from-green-50 to-emerald-50 text-[#017233] font-semibold'
+                                : 'text-gray-700 hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 hover:text-[#017233]'
+                            }`}
+                            onClick={() => setOpenDropdown(null)}
+                          >
+                            {dropdownItem.label}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               );
             }
             
@@ -543,50 +585,64 @@ const Navbar = () => {
             <div className="flex flex-col gap-3 border-t border-gray-200 pt-4">
               {menuItems.map((item) => {
                 const IconComponent = item.Icon;
-                const isCarBooking = item.label === 'Car Booking';
+                const route = item.route;
+                const isMobileDropdownOpen = openDropdown === item.label;
                 
-                // Map menu items to routes
-                const getRoute = (label) => {
-                  switch (label) {
-                    case 'All India Trips':
-                      return '/all-india-trips';
-                    case 'Spiritual Trails':
-                      return '/spiritual-trips';
-                    case 'Himalayan Escapes':
-                      return '/himalayan-escapes';
-                    case 'Beach & Island Breaks':
-                      return '/beach-island-breaks';
-                    case 'Wellness Retreats':
-                      return '/wellness-retreats';
-                    default:
-                      return null;
-                  }
-                };
-
-                const route = getRoute(item.label);
-                
-                if (isCarBooking) {
+                if (item.hasDropdown && item.dropdownItems) {
                   return (
-                    <Link
-                      key={item.label}
-                      to="/car-rentals"
-                      className="flex items-center gap-1.5 text-sm font-semibold text-gray-900 transition-colors hover:text-[#017233]"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      <span className="flex-shrink-0">
-                        <IconComponent />
-                      </span>
-                      <span>{item.label}</span>
-                    </Link>
+                    <div key={item.label} className="flex flex-col">
+                      <button
+                        type="button"
+                        onClick={() => setOpenDropdown(isMobileDropdownOpen ? null : item.label)}
+                        className="flex items-center justify-between text-sm font-semibold text-gray-900 transition-colors hover:text-[#017233]"
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <span className="flex-shrink-0">
+                            <IconComponent />
+                          </span>
+                          <span>{item.label}</span>
+                        </div>
+                        <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isMobileDropdownOpen ? 'rotate-180' : ''}`} />
+                      </button>
+                      {isMobileDropdownOpen && (
+                        <div className="mt-2 ml-6 space-y-2 border-l-2 border-gray-200 pl-4">
+                          {item.dropdownItems.map((dropdownItem) => {
+                            const isDropdownItemActive = location.pathname === dropdownItem.route;
+                            return (
+                              <Link
+                                key={dropdownItem.label}
+                                to={dropdownItem.route}
+                                className={`block text-sm transition-colors ${
+                                  isDropdownItemActive
+                                    ? 'text-[#017233] font-semibold'
+                                    : 'text-gray-700 hover:text-[#017233]'
+                                }`}
+                                onClick={() => {
+                                  setIsMobileMenuOpen(false);
+                                  setOpenDropdown(null);
+                                }}
+                              >
+                                {dropdownItem.label}
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
                   );
                 }
                 
                 if (route) {
+                  const isCategoryActive = location.pathname === route;
                   return (
                     <Link
                       key={item.label}
                       to={route}
-                      className="flex items-center gap-1.5 text-sm font-semibold text-gray-900 transition-colors hover:text-[#017233]"
+                      className={`flex items-center gap-1.5 text-sm font-semibold transition-colors ${
+                        isCategoryActive
+                          ? 'text-[#017233]'
+                          : 'text-gray-900 hover:text-[#017233]'
+                      }`}
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
                       <span className="flex-shrink-0">
