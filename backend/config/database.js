@@ -328,6 +328,8 @@ export const initializeDatabase = async () => {
         notes JSONB DEFAULT '[]'::jsonb,
         faq JSONB DEFAULT '[]'::jsonb,
         reviews JSONB DEFAULT '[]'::jsonb,
+        category JSONB DEFAULT '[]'::jsonb,
+        is_popular BOOLEAN DEFAULT FALSE,
         slug VARCHAR(255) UNIQUE,
         status VARCHAR(50) DEFAULT 'active' CHECK (status IN ('active', 'draft', 'archived')),
         created_by INTEGER REFERENCES users(id),
@@ -335,6 +337,28 @@ export const initializeDatabase = async () => {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+
+    // Add category column if it doesn't exist (for existing databases)
+    try {
+      await pool.query(`
+        ALTER TABLE trips 
+        ADD COLUMN IF NOT EXISTS category JSONB DEFAULT '[]'::jsonb
+      `);
+    } catch (error) {
+      // Column might already exist, ignore error
+      console.log('Category column check:', error.message);
+    }
+
+    // Add is_popular column if it doesn't exist (for existing databases)
+    try {
+      await pool.query(`
+        ALTER TABLE trips 
+        ADD COLUMN IF NOT EXISTS is_popular BOOLEAN DEFAULT FALSE
+      `);
+    } catch (error) {
+      // Column might already exist, ignore error
+      console.log('Is popular column check:', error.message);
+    }
 
     // Create certificates table if it doesn't exist
     await pool.query(`
@@ -635,6 +659,123 @@ export const initializeDatabase = async () => {
       DROP TRIGGER IF EXISTS update_enquiries_updated_at ON enquiries;
       CREATE TRIGGER update_enquiries_updated_at
       BEFORE UPDATE ON enquiries
+      FOR EACH ROW
+      EXECUTE FUNCTION update_updated_at_column();
+    `);
+
+    // Create app_settings table if it doesn't exist
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS app_settings (
+        setting_key VARCHAR(255) PRIMARY KEY,
+        setting_value JSONB,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create trigger for app_settings updated_at
+    await pool.query(`
+      DROP TRIGGER IF EXISTS update_app_settings_updated_at ON app_settings;
+      CREATE TRIGGER update_app_settings_updated_at
+      BEFORE UPDATE ON app_settings
+      FOR EACH ROW
+      EXECUTE FUNCTION update_updated_at_column();
+    `);
+
+    // Create faqs table if it doesn't exist
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS faqs (
+        id SERIAL PRIMARY KEY,
+        question TEXT NOT NULL,
+        answer TEXT NOT NULL,
+        display_order INTEGER DEFAULT 0,
+        status VARCHAR(50) DEFAULT 'active' CHECK (status IN ('active', 'draft', 'archived')),
+        created_by INTEGER REFERENCES users(id),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create trigger for faqs updated_at
+    await pool.query(`
+      DROP TRIGGER IF EXISTS update_faqs_updated_at ON faqs;
+      CREATE TRIGGER update_faqs_updated_at
+      BEFORE UPDATE ON faqs
+      FOR EACH ROW
+      EXECUTE FUNCTION update_updated_at_column();
+    `);
+
+    // Create banners table if it doesn't exist
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS banners (
+        id SERIAL PRIMARY KEY,
+        image_url TEXT,
+        image_public_id TEXT,
+        title TEXT,
+        subtitle TEXT,
+        display_order INTEGER DEFAULT 0,
+        status VARCHAR(50) DEFAULT 'active' CHECK (status IN ('active', 'draft', 'archived')),
+        created_by INTEGER REFERENCES users(id),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create trigger for banners updated_at
+    await pool.query(`
+      DROP TRIGGER IF EXISTS update_banners_updated_at ON banners;
+      CREATE TRIGGER update_banners_updated_at
+      BEFORE UPDATE ON banners
+      FOR EACH ROW
+      EXECUTE FUNCTION update_updated_at_column();
+    `);
+
+    // Create branding_partners table if it doesn't exist
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS branding_partners (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        logo_url TEXT,
+        logo_public_id TEXT,
+        link TEXT,
+        display_order INTEGER DEFAULT 0,
+        status VARCHAR(50) DEFAULT 'active' CHECK (status IN ('active', 'draft', 'archived')),
+        created_by INTEGER REFERENCES users(id),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create trigger for branding_partners updated_at
+    await pool.query(`
+      DROP TRIGGER IF EXISTS update_branding_partners_updated_at ON branding_partners;
+      CREATE TRIGGER update_branding_partners_updated_at
+      BEFORE UPDATE ON branding_partners
+      FOR EACH ROW
+      EXECUTE FUNCTION update_updated_at_column();
+    `);
+
+    // Create hotel_partners table if it doesn't exist
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS hotel_partners (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        logo_url TEXT,
+        logo_public_id TEXT,
+        link TEXT,
+        display_order INTEGER DEFAULT 0,
+        status VARCHAR(50) DEFAULT 'active' CHECK (status IN ('active', 'draft', 'archived')),
+        created_by INTEGER REFERENCES users(id),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create trigger for hotel_partners updated_at
+    await pool.query(`
+      DROP TRIGGER IF EXISTS update_hotel_partners_updated_at ON hotel_partners;
+      CREATE TRIGGER update_hotel_partners_updated_at
+      BEFORE UPDATE ON hotel_partners
       FOR EACH ROW
       EXECUTE FUNCTION update_updated_at_column();
     `);

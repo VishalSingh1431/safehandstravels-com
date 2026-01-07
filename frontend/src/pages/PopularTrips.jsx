@@ -1,10 +1,12 @@
 import { useMemo, useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { tripsAPI, locationFiltersAPI } from '../config/api'
-import TripCard from './card/TripCard'
+import TripCard from '../components/card/TripCard'
 import { Loader2 } from 'lucide-react'
 
-function UpcomingTrips({ searchQuery = '' }) {
+function PopularTrips() {
+  const [searchParams] = useSearchParams()
+  const searchQuery = searchParams.get('search') || ''
   const [activeFilter, setActiveFilter] = useState('All')
   const [trips, setTrips] = useState([])
   const [filters, setFilters] = useState(['All'])
@@ -28,7 +30,7 @@ function UpcomingTrips({ searchQuery = '' }) {
         setActiveFilter(matchedFilter)
       }
     }
-  }, [searchQuery])
+  }, [searchQuery, filters])
 
   const fetchTrips = async () => {
     try {
@@ -100,75 +102,70 @@ function UpcomingTrips({ searchQuery = '' }) {
   }, [activeFilter, trips, searchQuery])
 
   return (
-    <section className="w-full bg-gradient-to-b from-gray-50 to-white py-12 md:py-16">
-      <div className="mx-auto w-full px-4 sm:px-6 lg:px-8">
-        {/* Main Card Container */}
-        <div className="bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden">
-          <div>
-            {/* Header Card */}
-            <div className="p-4 md:p-5 lg:p-6 pb-0 mb-8">
-              <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center text-white text-xl font-bold shadow-lg">
-                    ✈️
-                  </div>
-                  <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900">
-                    {searchQuery.trim() ? `Search Results for "${searchQuery}"` : 'Popular Trips'}
-                  </h2>
-                </div>
-                <Link
-                  to="/popular-trips"
-                  className="rounded-full border-2 border-[#017233] bg-white text-[#017233] px-6 py-2 text-sm font-semibold transition-all duration-300 whitespace-nowrap hover:bg-[#017233] hover:text-white shadow-md hover:shadow-lg"
-                >
-                  See All
-                </Link>
-              </div>
-
-              {/* Filter Buttons */}
-              <div className="flex flex-wrap items-center gap-3">
-                {filters.map((filter) => (
-                  <button
-                    key={filter}
-                    type="button"
-                    onClick={() => setActiveFilter(filter)}
-                    className={`rounded-full border px-4 py-2 text-sm font-medium transition-all duration-300 whitespace-nowrap shadow-md hover:shadow-lg ${
-                      activeFilter === filter
-                        ? 'border-[#017233] bg-gradient-to-br from-[#017233] to-[#01994d] text-white shadow-lg'
-                        : 'border-gray-200 text-gray-700 hover:border-[#017233] hover:text-[#017233] bg-white'
-                    }`}
-                  >
-                    {filter}
-                  </button>
-                ))}
-              </div>
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-12 md:py-16">
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="mb-8 md:mb-12">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center text-white text-xl font-bold shadow-lg">
+              ✈️
             </div>
-
-            {/* Trips Grid */}
-            {loading ? (
-              <div className="flex justify-center items-center py-12">
-                <Loader2 className="w-8 h-8 animate-spin text-[#017233]" />
-              </div>
-            ) : visibleTrips.length > 0 ? (
-              <div className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 items-stretch p-4 md:p-5 lg:p-6">
-                {visibleTrips.slice(0, 16).map((trip) => (
-                  <TripCard key={trip.id} trip={trip} />
-                ))}
-              </div>
-            ) : (
-              <div className="p-8 md:p-12 text-center">
-                <p className="text-gray-500 text-lg">
-                  {searchQuery.trim() 
-                    ? `No trips found matching "${searchQuery}"` 
-                    : 'No trips available at the moment.'}
-                </p>
-              </div>
-            )}
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900">
+              {searchQuery.trim() ? `Search Results for "${searchQuery}"` : 'Popular Trips'}
+            </h1>
           </div>
+          <p className="text-gray-600 text-lg max-w-3xl">
+            Discover our most popular and highly-rated trips across India. 
+            These handpicked experiences are loved by travelers and come highly recommended.
+          </p>
         </div>
+
+        {/* Filter Buttons */}
+        {!loadingFilters && (
+          <div className="mb-8 flex flex-wrap items-center gap-3">
+            {filters.map((filter) => (
+              <button
+                key={filter}
+                type="button"
+                onClick={() => setActiveFilter(filter)}
+                className={`rounded-full border px-4 py-2 text-sm font-medium transition-all duration-300 whitespace-nowrap shadow-md hover:shadow-lg ${
+                  activeFilter === filter
+                    ? 'border-[#017233] bg-gradient-to-br from-[#017233] to-[#01994d] text-white shadow-lg'
+                    : 'border-gray-200 text-gray-700 hover:border-[#017233] hover:text-[#017233] bg-white'
+                }`}
+              >
+                {filter}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Trips Grid */}
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-12 h-12 animate-spin text-[#017233]" />
+          </div>
+        ) : visibleTrips.length > 0 ? (
+          <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 items-stretch">
+            {visibleTrips.map((trip) => (
+              <TripCard key={trip.id} trip={trip} />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-gray-500 text-lg">
+              {searchQuery.trim() 
+                ? `No trips found matching "${searchQuery}"` 
+                : activeFilter !== 'All'
+                ? `No trips found for ${activeFilter}`
+                : 'No popular trips available at the moment.'}
+            </p>
+          </div>
+        )}
       </div>
-    </section>
+    </div>
   )
 }
 
-export default UpcomingTrips
+export default PopularTrips
 

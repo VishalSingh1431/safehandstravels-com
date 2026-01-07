@@ -63,32 +63,21 @@ function WrittenReviews() {
 
             {/* Reviews Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-              {(showAll ? writtenReviews : writtenReviews.slice(0, 2)).map((review) => (
+              {(showAll ? writtenReviews : writtenReviews.slice(0, 4)).map((review) => (
                 <WrittenReviewCard key={review.id} review={review} />
               ))}
             </div>
 
-            {/* View All Button */}
-            {writtenReviews.length > 2 && (
+            {/* Show All / Show Less Button */}
+            {writtenReviews.length > 4 && (
               <div className="mt-8 flex justify-center">
-                {showAll ? (
-                  <button
-                    type="button"
-                    onClick={() => setShowAll(false)}
-                    className="bg-gradient-to-br from-[#017233] to-[#01994d] text-white px-8 py-3 rounded-xl font-bold text-base hover:shadow-xl hover:scale-105 transition-all duration-300 shadow-lg"
-                  >
-                    Show Less
-                  </button>
-                ) : (
-                  <a
-                    href="https://www.holidify.com/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="bg-gradient-to-br from-[#017233] to-[#01994d] text-white px-8 py-3 rounded-xl font-bold text-base hover:shadow-xl hover:scale-105 transition-all duration-300 shadow-lg inline-block text-center"
-                  >
-                    View All Reviews
-                  </a>
-                )}
+                <button
+                  type="button"
+                  onClick={() => setShowAll(!showAll)}
+                  className="bg-gradient-to-br from-[#017233] to-[#01994d] text-white px-8 py-3 rounded-xl font-bold text-base hover:shadow-xl hover:scale-105 transition-all duration-300 shadow-lg"
+                >
+                  {showAll ? 'Show Less' : 'Show All Reviews'}
+                </button>
               </div>
             )}
           </div>
