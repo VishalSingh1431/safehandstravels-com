@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import fs from 'fs';
 import compression from 'compression';
 import morgan from 'morgan';
 import { initializeDatabase } from './config/database.js';
@@ -32,8 +33,18 @@ const __dirname = dirname(__filename);
 //dotenv.config({ path: join(__dirname, '.env') });
 dotenv.config();
 
-// Validate environment variables
-validateEnv();
+// Validate environment variables (non-blocking in production)
+if (process.env.NODE_ENV !== 'production') {
+  validateEnv();
+} else {
+  // In production, just warn but don't crash
+  const required = ['DATABASE_URL', 'JWT_SECRET'];
+  const missing = required.filter(key => !process.env[key]);
+  if (missing.length > 0) {
+    console.warn('⚠️  Missing environment variables:', missing.join(', '));
+    console.warn('⚠️  Server will continue, but some features may not work');
+  }
+}
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -129,8 +140,49 @@ app.use('/api/banners', bannersRoutes);
 app.use('/api/branding-partners', brandingPartnersRoutes);
 app.use('/api/hotel-partners', hotelPartnersRoutes);
 
-// 404 handler
-app.use((req, res) => {
+// Serve React Frontend (Vite build is in frontend/dist)
+const possibleBuildPaths = [
+  join(__dirname, '..', 'frontend', 'dist'),  // If backend and frontend are siblings
+  join(__dirname, 'frontend', 'dist'),         // If frontend is inside backend
+  join(process.cwd(), 'frontend', 'dist'),     // From current working directory
+  join(process.cwd(), 'dist'),                 // If dist is in root
+];
+
+const buildPath = possibleBuildPaths.find(p => {
+  const indexPath = join(p, 'index.html');
+  return fs.existsSync(p) && fs.existsSync(indexPath);
+});
+
+if (buildPath) {
+  console.log('✅ Serving React frontend from:', buildPath);
+  
+  // Serve static files (CSS, JS, images, etc.)
+  app.use(express.static(buildPath));
+  
+  // Serve index.html for all non-API routes (React Router)
+  app.get('*', (req, res, next) => {
+    // Skip API routes
+    if (req.path.startsWith('/api')) {
+      return next();
+    }
+    
+    // Serve React app for all other routes
+    const indexPath = join(buildPath, 'index.html');
+    if (fs.existsSync(indexPath)) {
+      res.sendFile(indexPath);
+    } else {
+      next();
+    }
+  });
+} else {
+  console.warn('⚠️  React build folder not found. Checked paths:');
+  possibleBuildPaths.forEach(p => console.warn(`   - ${p}`));
+  console.warn('⚠️  Make sure to run: cd frontend && npm run build');
+  console.warn('⚠️  Then upload the frontend/dist folder to your server');
+}
+
+// 404 handler for API routes only
+app.use('/api/*', (req, res) => {
   res.status(404).json({
     error: 'Route not found',
     path: req.path,
