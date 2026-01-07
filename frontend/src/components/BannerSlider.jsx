@@ -1,48 +1,45 @@
 import { useState, useEffect } from 'react'
-
-const bannerImages = [
-  {
-    id: 1,
-    image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1600&q=60',
-    title: 'Discover Amazing Destinations',
-    subtitle: 'Explore the world with us'
-  },
-  {
-    id: 2,
-    image: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=1600&q=60',
-    title: 'Unforgettable Adventures',
-    subtitle: 'Create memories that last forever'
-  },
-  {
-    id: 3,
-    image: 'https://images.unsplash.com/photo-1523906630133-f6934a1ab6c8?auto=format&fit=crop&w=1600&q=60',
-    title: 'Travel in Style',
-    subtitle: 'Premium experiences at your fingertips'
-  },
-  {
-    id: 4,
-    image: 'https://images.unsplash.com/photo-1539650116574-75c0c6d73bb2?auto=format&fit=crop&w=1600&q=60',
-    title: 'Journey Beyond Boundaries',
-    subtitle: 'Discover new horizons with confidence'
-  },
-  {
-    id: 5,
-    image: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1600&q=60',
-    title: 'Your Next Adventure Awaits',
-    subtitle: 'Start planning your perfect trip today'
-  }
-]
+import { bannersAPI } from '../config/api'
+import { Loader2 } from 'lucide-react'
 
 function BannerSlider() {
   const [currentIndex, setCurrentIndex] = useState(0)
+  const [banners, setBanners] = useState([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    fetchBanners()
+  }, [])
+
+  const fetchBanners = async () => {
+    try {
+      setLoading(true)
+      const response = await bannersAPI.getAllBanners()
+      // Sort by display order
+      const sortedBanners = (response.banners || []).sort((a, b) => {
+        const orderA = a.displayOrder || 0
+        const orderB = b.displayOrder || 0
+        if (orderA !== orderB) return orderA - orderB
+        return a.id - b.id
+      })
+      setBanners(sortedBanners)
+    } catch (error) {
+      console.error('Error fetching banners:', error)
+      setBanners([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (banners.length === 0) return
+    
     const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % bannerImages.length)
+      setCurrentIndex((prev) => (prev + 1) % banners.length)
     }, 4000)
 
     return () => clearInterval(interval)
-  }, [])
+  }, [banners.length])
 
   const goToSlide = (index) => {
     setCurrentIndex(index)
@@ -56,11 +53,27 @@ function BannerSlider() {
     setCurrentIndex((prev) => (prev + 1) % bannerImages.length)
   }
 
+  if (loading) {
+    return (
+      <section className="w-full bg-gray-50 py-6 sm:py-8">
+        <div className="mx-auto w-full px-4 sm:px-6 lg:px-8">
+          <div className="relative h-48 sm:h-64 md:h-80 lg:h-96 xl:h-[500px] rounded-xl sm:rounded-2xl overflow-hidden shadow-xl bg-gray-200 flex items-center justify-center">
+            <Loader2 className="w-12 h-12 animate-spin text-gray-400" />
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  if (banners.length === 0) {
+    return null
+  }
+
   return (
     <section className="w-full bg-gray-50 py-6 sm:py-8">
       <div className="mx-auto w-full px-4 sm:px-6 lg:px-8">
         <div className="relative h-48 sm:h-64 md:h-80 lg:h-96 xl:h-[500px] rounded-xl sm:rounded-2xl overflow-hidden shadow-xl">
-          {bannerImages.map((banner, index) => (
+          {banners.map((banner, index) => (
             <div
               key={banner.id}
               className={`absolute inset-0 transition-opacity duration-1000 ${
@@ -68,19 +81,25 @@ function BannerSlider() {
               }`}
             >
               <img
-                src={banner.image}
-                alt={banner.title}
+                src={banner.imageUrl}
+                alt={banner.title || 'Banner'}
                 className="w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-transparent"></div>
-              <div className="absolute inset-0 flex flex-col items-start justify-center px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 text-white">
-                <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold mb-2 sm:mb-3 md:mb-4 max-w-2xl">
-                  {banner.title}
-                </h2>
-                <p className="text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl max-w-xl">
-                  {banner.subtitle}
-                </p>
-              </div>
+              {(banner.title || banner.subtitle) && (
+                <div className="absolute inset-0 flex flex-col items-start justify-center px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 text-white">
+                  {banner.title && (
+                    <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold mb-2 sm:mb-3 md:mb-4 max-w-2xl">
+                      {banner.title}
+                    </h2>
+                  )}
+                  {banner.subtitle && (
+                    <p className="text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl max-w-xl">
+                      {banner.subtitle}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           ))}
 
@@ -106,7 +125,7 @@ function BannerSlider() {
 
           {/* Dots Indicator */}
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
-            {bannerImages.map((_, index) => (
+            {banners.map((_, index) => (
               <button
                 key={index}
                 onClick={() => goToSlide(index)}

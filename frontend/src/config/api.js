@@ -523,17 +523,212 @@ export const productPageSettingsAPI = {
       method: 'GET',
     });
   },
+};
 
-  getSettingsAdmin: async () => {
-    return apiCall('/product-page-settings/admin', {
+// Location Filters API functions
+export const locationFiltersAPI = {
+  getLocationFilters: async () => {
+    return apiCall('/location-filters', {
       method: 'GET',
     });
   },
 
-  updateSettings: async (settings) => {
-    return apiCall('/product-page-settings', {
+  getLocationFiltersAdmin: async () => {
+    return apiCall('/location-filters/admin', {
+      method: 'GET',
+    });
+  },
+
+  updateLocationFilters: async (filters) => {
+    return apiCall('/location-filters/admin', {
       method: 'PUT',
-      body: JSON.stringify(settings),
+      body: JSON.stringify({ filters }),
+    });
+  },
+};
+
+// Vibe Videos API functions
+export const vibeVideosAPI = {
+  getVibeVideos: async () => {
+    return apiCall('/vibe-videos', {
+      method: 'GET',
+    });
+  },
+
+  getVibeVideosAdmin: async () => {
+    return apiCall('/vibe-videos/admin', {
+      method: 'GET',
+    });
+  },
+
+  updateVibeVideos: async (videos) => {
+    return apiCall('/vibe-videos/admin', {
+      method: 'PUT',
+      body: JSON.stringify({ videos }),
+    });
+  },
+};
+
+// FAQs API functions
+export const faqsAPI = {
+  getAllFAQs: async () => {
+    return apiCall('/faqs', {
+      method: 'GET',
+    });
+  },
+
+  getAllFAQsAdmin: async () => {
+    return apiCall('/faqs/admin', {
+      method: 'GET',
+    });
+  },
+
+  getFAQById: async (id) => {
+    return apiCall(`/faqs/${id}`, {
+      method: 'GET',
+    });
+  },
+
+  createFAQ: async (faq) => {
+    return apiCall('/faqs', {
+      method: 'POST',
+      body: JSON.stringify(faq),
+    });
+  },
+
+  updateFAQ: async (id, faq) => {
+    return apiCall(`/faqs/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(faq),
+    });
+  },
+
+  deleteFAQ: async (id) => {
+    return apiCall(`/faqs/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+// Banners API functions
+export const bannersAPI = {
+  getAllBanners: async () => {
+    return apiCall('/banners', {
+      method: 'GET',
+    });
+  },
+
+  getAllBannersAdmin: async () => {
+    return apiCall('/banners/admin', {
+      method: 'GET',
+    });
+  },
+
+  getBannerById: async (id) => {
+    return apiCall(`/banners/${id}`, {
+      method: 'GET',
+    });
+  },
+
+  createBanner: async (banner) => {
+    return apiCall('/banners', {
+      method: 'POST',
+      body: JSON.stringify(banner),
+    });
+  },
+
+  updateBanner: async (id, banner) => {
+    return apiCall(`/banners/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(banner),
+    });
+  },
+
+  deleteBanner: async (id) => {
+    return apiCall(`/banners/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+// Branding Partners API functions
+export const brandingPartnersAPI = {
+  getAllPartners: async () => {
+    return apiCall('/branding-partners', {
+      method: 'GET',
+    });
+  },
+
+  getAllPartnersAdmin: async () => {
+    return apiCall('/branding-partners/admin', {
+      method: 'GET',
+    });
+  },
+
+  getPartnerById: async (id) => {
+    return apiCall(`/branding-partners/${id}`, {
+      method: 'GET',
+    });
+  },
+
+  createPartner: async (partner) => {
+    return apiCall('/branding-partners', {
+      method: 'POST',
+      body: JSON.stringify(partner),
+    });
+  },
+
+  updatePartner: async (id, partner) => {
+    return apiCall(`/branding-partners/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(partner),
+    });
+  },
+
+  deletePartner: async (id) => {
+    return apiCall(`/branding-partners/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+// Hotel Partners API functions
+export const hotelPartnersAPI = {
+  getAllPartners: async () => {
+    return apiCall('/hotel-partners', {
+      method: 'GET',
+    });
+  },
+
+  getAllPartnersAdmin: async () => {
+    return apiCall('/hotel-partners/admin', {
+      method: 'GET',
+    });
+  },
+
+  getPartnerById: async (id) => {
+    return apiCall(`/hotel-partners/${id}`, {
+      method: 'GET',
+    });
+  },
+
+  createPartner: async (partner) => {
+    return apiCall('/hotel-partners', {
+      method: 'POST',
+      body: JSON.stringify(partner),
+    });
+  },
+
+  updatePartner: async (id, partner) => {
+    return apiCall(`/hotel-partners/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(partner),
+    });
+  },
+
+  deletePartner: async (id) => {
+    return apiCall(`/hotel-partners/${id}`, {
+      method: 'DELETE',
     });
   },
 };

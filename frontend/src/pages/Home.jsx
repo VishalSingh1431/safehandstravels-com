@@ -7,6 +7,7 @@ import BannerSlider from '../components/BannerSlider'
 import BrandingPartners from '../components/BrandingPartners'
 import CertificateLegal from '../components/CertificateLegal'
 import VibeWithUs from '../components/VibeWithUs'
+import HotelPartners from '../components/HotelPartners'
 import Reviews from '../components/Reviews'
 import WrittenReviews from '../components/WrittenReviews'
 import FAQ from '../components/FAQ'
@@ -69,6 +70,7 @@ function Home() {
         <BannerSlider />
         <BrandingPartners />
         <VibeWithUs />
+        <HotelPartners />
         <Reviews />
         <WrittenReviews />
         <FAQ />

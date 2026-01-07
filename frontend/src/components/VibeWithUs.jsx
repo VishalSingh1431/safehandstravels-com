@@ -1,37 +1,53 @@
+import { useState, useEffect, useRef } from 'react'
 import VideoCard from './card/VideoCard'
-
-const videos = [
-  {
-    id: 1,
-    title: 'Adventure Awaits',
-    youtubeId: 'dQw4w9WgXcQ', // Replace with actual YouTube video ID
-    poster: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=800&q=60',
-    isTall: true // Rectangular card
-  },
-  {
-    id: 2,
-    title: 'Mountain Views',
-    youtubeId: 'dQw4w9WgXcQ', // Replace with actual YouTube video ID
-    poster: 'https://images.unsplash.com/photo-1464822759843-d0f9c0d5c51d?auto=format&fit=crop&w=800&q=60',
-    isTall: true // Rectangular card
-  },
-  {
-    id: 3,
-    title: 'Beach Paradise',
-    youtubeId: 'dQw4w9WgXcQ', // Replace with actual YouTube video ID
-    poster: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=60',
-    isTall: true // Rectangular card
-  },
-  {
-    id: 4,
-    title: 'City Lights',
-    youtubeId: 'dQw4w9WgXcQ', // Replace with actual YouTube video ID
-    poster: 'https://images.unsplash.com/photo-1514565131-fce0801e5785?auto=format&fit=crop&w=800&q=60',
-    isTall: true // Rectangular card
-  }
-]
+import { vibeVideosAPI } from '../config/api'
+import { Loader2 } from 'lucide-react'
 
 function VibeWithUs() {
+  const [videos, setVideos] = useState([])
+  const [loading, setLoading] = useState(true)
+  const sliderRef = useRef(null)
+
+  useEffect(() => {
+    fetchVideos()
+  }, [])
+
+  const fetchVideos = async () => {
+    try {
+      setLoading(true)
+      const response = await vibeVideosAPI.getVibeVideos()
+      setVideos(response.videos || [])
+    } catch (error) {
+      console.error('Error fetching videos:', error)
+      setVideos([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <section className="w-full bg-gradient-to-b from-white to-gray-50 py-12 md:py-16">
+        <div className="mx-auto w-full px-4 sm:px-6 lg:px-8">
+          <div className="mb-8 md:mb-12 text-center">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-2">
+              Vibe with Us
+            </h2>
+            <p className="text-gray-600 text-lg">
+              Experience the world through our lens
+            </p>
+          </div>
+          <div className="flex justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-[#017233]" />
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  if (videos.length === 0) {
+    return null
+  }
   return (
     <section className="w-full bg-gradient-to-b from-white to-gray-50 py-12 md:py-16">
       <div className="mx-auto w-full px-4 sm:px-6 lg:px-8">
@@ -44,11 +60,42 @@ function VibeWithUs() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-          {videos.map((video, index) => (
-            <VideoCard key={video.id} video={video} isTall={video.isTall} />
-          ))}
+        {/* Slider Container */}
+        <div className="relative">
+          {/* Slider */}
+          <div
+            ref={sliderRef}
+            className="flex overflow-x-auto scrollbar-hide gap-0 scroll-smooth"
+            style={{
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none',
+            }}
+          >
+            {videos.map((video, index) => {
+              // Preload first 2 videos and videos that are 1-2 positions ahead
+              // This ensures smooth scrolling without loading all videos at once
+              const shouldPreload = index < 2; // First 2 videos always preload
+              
+              return (
+                <div key={video.id || index} className="flex-shrink-0">
+                  <VideoCard 
+                    video={video} 
+                    isTall={video.isTall !== false}
+                    index={index}
+                    shouldPreload={shouldPreload}
+                  />
+                </div>
+              );
+            })}
+          </div>
         </div>
+
+        {/* Hide scrollbar for webkit browsers */}
+        <style>{`
+          .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+          }
+        `}</style>
       </div>
     </section>
   )

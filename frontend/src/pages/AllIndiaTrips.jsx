@@ -1,9 +1,30 @@
-import { useMemo } from 'react'
-import { trips } from '../data/trips'
+import { useState, useEffect } from 'react'
+import { tripsAPI } from '../config/api'
 import TripCard from '../components/card/TripCard'
+import { Loader2 } from 'lucide-react'
 
 function AllIndiaTrips() {
-  const allTrips = useMemo(() => trips, [])
+  const [trips, setTrips] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchTrips()
+  }, [])
+
+  const fetchTrips = async () => {
+    try {
+      setLoading(true)
+      const response = await tripsAPI.getAllTrips()
+      // Show all active trips regardless of category
+      const allActiveTrips = (response.trips || []).filter(trip => trip.status === 'active')
+      setTrips(allActiveTrips)
+    } catch (error) {
+      console.error('Error fetching trips:', error)
+      setTrips([])
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-12 md:py-16">
@@ -25,9 +46,13 @@ function AllIndiaTrips() {
         </div>
 
         {/* Trips Grid */}
-        {allTrips.length > 0 ? (
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-12 h-12 animate-spin text-[#017233]" />
+          </div>
+        ) : trips.length > 0 ? (
           <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 items-stretch">
-            {allTrips.map((trip) => (
+            {trips.map((trip) => (
               <TripCard key={trip.id} trip={trip} />
             ))}
           </div>

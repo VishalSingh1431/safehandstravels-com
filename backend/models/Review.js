@@ -99,22 +99,21 @@ class Review {
       const values = [];
       let paramCount = 1;
 
-      const fields = {
-        name: data.name,
-        rating: data.rating,
-        location: data.location,
-        review: data.review,
+      const fieldMapping = {
+        name: 'name',
+        rating: 'rating',
+        location: 'location',
+        review: 'review',
         avatar: 'avatar',
         avatarPublicId: 'avatar_public_id',
-        type: data.type,
+        type: 'type',
         videoUrl: 'video_url',
         videoPublicId: 'video_public_id',
-        status: data.status,
+        status: 'status',
       };
 
-      for (const [key, value] of Object.entries(fields)) {
-        if (value !== undefined && data[key] !== undefined) {
-          const dbKey = typeof value === 'string' ? value : key;
+      for (const [key, dbKey] of Object.entries(fieldMapping)) {
+        if (data[key] !== undefined) {
           updates.push(`${dbKey} = $${paramCount++}`);
           values.push(data[key]);
         }

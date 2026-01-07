@@ -9,7 +9,8 @@
     "dev": "nodemon server.js",
     "prod": "NODE_ENV=production node server.js",
     "init-admins": "node scripts/initializeMainAdmins.js",
-    "test-cloudinary": "node scripts/testCloudinary.js"
+    "test-cloudinary": "node scripts/testCloudinary.js",
+    "add-hotel-partners": "node scripts/addHotelPartners.js"
   },
   "keywords": [],
   "author": "",

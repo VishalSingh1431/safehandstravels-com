@@ -26,6 +26,7 @@ const AdminTrips = () => {
     videoUrl: '',
     subtitle: '',
     intro: '',
+    category: [],
     whyVisit: [''],
     itinerary: [{ day: 'Day 1', title: '', activities: '' }],
     included: [''],
@@ -36,6 +37,8 @@ const AdminTrips = () => {
     gallery: [],
     status: 'active',
   });
+
+  const categoryOptions = ['Spiritual', 'Cultural', 'Heritage', 'Nature', 'Adventure'];
 
   useEffect(() => {
     checkAuthAndLoad();
@@ -76,6 +79,17 @@ const AdminTrips = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleCategoryToggle = (category) => {
+    setFormData(prev => {
+      const currentCategories = prev.category || [];
+      if (currentCategories.includes(category)) {
+        return { ...prev, category: currentCategories.filter(c => c !== category) };
+      } else {
+        return { ...prev, category: [...currentCategories, category] };
+      }
+    });
   };
 
   const handleArrayChange = (field, index, value) => {
@@ -149,9 +163,17 @@ const AdminTrips = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate category
+    if (!formData.category || formData.category.length === 0) {
+      toast.error('Please select at least one category tag');
+      return;
+    }
+    
     try {
       const tripData = {
         ...formData,
+        category: formData.category || [],
         whyVisit: formData.whyVisit.filter(v => v.trim()),
         included: formData.included.filter(v => v.trim()),
         notIncluded: formData.notIncluded.filter(v => v.trim()),
@@ -189,6 +211,7 @@ const AdminTrips = () => {
       videoUrl: trip.videoUrl || trip.video || '',
       subtitle: trip.subtitle || '',
       intro: trip.intro || '',
+      category: trip.category || [],
       whyVisit: trip.whyVisit && trip.whyVisit.length > 0 ? trip.whyVisit : [''],
       itinerary: trip.itinerary && trip.itinerary.length > 0 ? trip.itinerary : [{ day: 'Day 1', title: '', activities: '' }],
       included: trip.included && trip.included.length > 0 ? trip.included : [''],
@@ -230,6 +253,7 @@ const AdminTrips = () => {
       videoUrl: '',
       subtitle: '',
       intro: '',
+      category: [],
       whyVisit: [''],
       itinerary: [{ day: 'Day 1', title: '', activities: '' }],
       included: [''],
@@ -439,6 +463,30 @@ const AdminTrips = () => {
                         />
                       </div>
                     </div>
+                  )}
+                </div>
+
+                {/* Category Tags */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Category Tags *</label>
+                  <div className="flex flex-wrap gap-2">
+                    {categoryOptions.map((category) => (
+                      <button
+                        key={category}
+                        type="button"
+                        onClick={() => handleCategoryToggle(category)}
+                        className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-200 ${
+                          formData.category?.includes(category)
+                            ? 'bg-[#017233] text-white shadow-md hover:bg-[#015a28]'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300'
+                        }`}
+                      >
+                        {category}
+                      </button>
+                    ))}
+                  </div>
+                  {formData.category?.length === 0 && (
+                    <p className="mt-2 text-xs text-red-500">Please select at least one category</p>
                   )}
                 </div>
 
@@ -775,7 +823,7 @@ const AdminTrips = () => {
                         <div className="flex-1 min-w-0">
                           <h3 className="font-semibold text-gray-900 truncate mb-1">{trip.title}</h3>
                           <p className="text-sm text-gray-600 mb-2">{trip.location}</p>
-                          <div className="flex items-center gap-2 mb-2">
+                          <div className="flex items-center gap-2 mb-2 flex-wrap">
                             <span className="text-xs text-gray-500">{trip.duration}</span>
                             <span className="text-sm font-semibold text-gray-900">{trip.price}</span>
                             <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
@@ -786,6 +834,15 @@ const AdminTrips = () => {
                               {trip.status}
                             </span>
                           </div>
+                          {trip.category && trip.category.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mb-2">
+                              {trip.category.map((cat, idx) => (
+                                <span key={idx} className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-semibold">
+                                  {cat}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                           <div className="flex items-center gap-2">
                             <button
                               onClick={() => navigate(`/trip/${trip.id}`)}
@@ -827,6 +884,7 @@ const AdminTrips = () => {
                     <th className="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700">Location</th>
                     <th className="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700">Duration</th>
                     <th className="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700">Price</th>
+                    <th className="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700">Categories</th>
                     <th className="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700">Status</th>
                     <th className="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700">Actions</th>
                   </tr>
@@ -834,7 +892,7 @@ const AdminTrips = () => {
                 <tbody className="divide-y divide-gray-200">
                   {filteredTrips.length === 0 ? (
                     <tr>
-                      <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
+                      <td colSpan="8" className="px-6 py-12 text-center text-gray-500">
                         No trips found
                       </td>
                     </tr>
@@ -860,6 +918,19 @@ const AdminTrips = () => {
                         <td className="px-4 lg:px-6 py-3 lg:py-4 text-gray-700 text-sm sm:text-base">{trip.location}</td>
                         <td className="px-4 lg:px-6 py-3 lg:py-4 text-gray-700 text-sm sm:text-base">{trip.duration}</td>
                         <td className="px-4 lg:px-6 py-3 lg:py-4 text-gray-700 font-semibold text-sm sm:text-base">{trip.price}</td>
+                        <td className="px-4 lg:px-6 py-3 lg:py-4">
+                          {trip.category && trip.category.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {trip.category.map((cat, idx) => (
+                                <span key={idx} className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-semibold">
+                                  {cat}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-gray-400">No categories</span>
+                          )}
+                        </td>
                         <td className="px-4 lg:px-6 py-3 lg:py-4">
                           <span className={`px-2 sm:px-3 py-1 rounded-full text-xs font-semibold ${
                             trip.status === 'active' ? 'bg-green-100 text-green-800' :
