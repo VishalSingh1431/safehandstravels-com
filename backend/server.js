@@ -141,27 +141,43 @@ app.use('/api/branding-partners', brandingPartnersRoutes);
 app.use('/api/hotel-partners', hotelPartnersRoutes);
 
 // Serve React Frontend (Vite build is in frontend/dist)
+// Try multiple possible paths for Hostinger deployment
 const possibleBuildPaths = [
-  join(__dirname, '..', 'frontend', 'dist'),  // If backend and frontend are siblings
-  join(__dirname, 'frontend', 'dist'),         // If frontend is inside backend
-  join(process.cwd(), 'frontend', 'dist'),     // From current working directory
-  join(process.cwd(), 'dist'),                 // If dist is in root
+  join(__dirname, '..', 'frontend', 'dist'),      // backend/ and frontend/ are siblings
+  join(__dirname, 'frontend', 'dist'),            // frontend/ is inside backend/
+  join(process.cwd(), 'frontend', 'dist'),       // From current working directory
+  join(process.cwd(), 'dist'),                    // dist is in root
+  join(process.cwd(), 'public_html', 'frontend', 'dist'), // Hostinger public_html structure
+  join(process.cwd(), 'public_html', 'dist'),     // Hostinger dist in public_html
+  '/home/u427254332/domains/chocolate-nightingale-338585.hostingersite.com/public_html/frontend/dist', // Hostinger absolute path
+  '/home/u427254332/domains/chocolate-nightingale-338585.hostingersite.com/public_html/dist', // Hostinger absolute path
 ];
+
+console.log('🔍 Checking for React build folder...');
+console.log('📁 Current working directory:', process.cwd());
+console.log('📁 __dirname:', __dirname);
 
 const buildPath = possibleBuildPaths.find(p => {
   const indexPath = join(p, 'index.html');
-  return fs.existsSync(p) && fs.existsSync(indexPath);
+  const exists = fs.existsSync(p) && fs.existsSync(indexPath);
+  if (exists) {
+    console.log(`✅ Found build at: ${p}`);
+  }
+  return exists;
 });
 
 if (buildPath) {
   console.log('✅ Serving React frontend from:', buildPath);
   
-  // Serve static files (CSS, JS, images, etc.)
-  app.use(express.static(buildPath));
+  // Serve static files (CSS, JS, images, etc.) with proper MIME types
+  app.use(express.static(buildPath, {
+    maxAge: '1d', // Cache static assets for 1 day
+    etag: true,
+  }));
   
   // Serve index.html for all non-API routes (React Router)
   app.get('*', (req, res, next) => {
-    // Skip API routes
+    // Skip API routes - let them fall through to 404 handler
     if (req.path.startsWith('/api')) {
       return next();
     }
@@ -171,15 +187,61 @@ if (buildPath) {
     if (fs.existsSync(indexPath)) {
       res.sendFile(indexPath);
     } else {
+      console.error('❌ index.html not found at:', indexPath);
       next();
     }
   });
 } else {
-  console.warn('⚠️  React build folder not found. Checked paths:');
-  possibleBuildPaths.forEach(p => console.warn(`   - ${p}`));
-  console.warn('⚠️  Make sure to run: cd frontend && npm run build');
-  console.warn('⚠️  Then upload the frontend/dist folder to your server');
+  console.error('❌ React build folder not found!');
+  console.error('📋 Checked paths:');
+  possibleBuildPaths.forEach(p => {
+    const exists = fs.existsSync(p);
+    console.error(`   ${exists ? '✅' : '❌'} ${p}`);
+    if (exists) {
+      try {
+        const files = fs.readdirSync(p);
+        console.error(`      Contents: ${files.slice(0, 5).join(', ')}${files.length > 5 ? '...' : ''}`);
+      } catch (e) {
+        console.error(`      (Cannot read directory)`);
+      }
+    }
+  });
+  console.error('⚠️  Make sure to:');
+  console.error('   1. Run: cd frontend && npm run build');
+  console.error('   2. Upload the frontend/dist folder to your server');
+  console.error('   3. Ensure it\'s in the correct location relative to server.js');
+  
+  // Fallback: Show helpful message on root route
+  app.get('/', (req, res) => {
+    res.status(503).send(`
+      <html>
+        <head><title>Frontend Not Found</title></head>
+        <body style="font-family: Arial; padding: 40px; text-align: center;">
+          <h1>⚠️ React Frontend Not Found</h1>
+          <p>The frontend build folder (frontend/dist) was not found on the server.</p>
+          <p>Please check the server logs for the exact paths that were checked.</p>
+          <p><strong>API is running:</strong> <a href="/api/health">/api/health</a></p>
+          <p><strong>Debug paths:</strong> <a href="/api/debug/paths">/api/debug/paths</a></p>
+        </body>
+      </html>
+    `);
+  });
 }
+
+// Debug route to check paths (remove in production)
+app.get('/api/debug/paths', (req, res) => {
+  const paths = {
+    __dirname,
+    cwd: process.cwd(),
+    buildPaths: possibleBuildPaths.map(p => ({
+      path: p,
+      exists: fs.existsSync(p),
+      hasIndex: fs.existsSync(join(p, 'index.html')),
+    })),
+    foundBuildPath: buildPath || null,
+  };
+  res.json(paths);
+});
 
 // 404 handler for API routes only
 app.use('/api/*', (req, res) => {
