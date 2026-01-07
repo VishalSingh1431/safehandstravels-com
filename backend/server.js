@@ -29,13 +29,15 @@ import hotelPartnersRoutes from './routes/hotelPartners.js';
 // Load .env from backend directory (works even when run from different directory)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-dotenv.config({ path: join(__dirname, '.env') });
+//dotenv.config({ path: join(__dirname, '.env') });
+dotenv.config();
 
 // Validate environment variables
 validateEnv();
 
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
+
 // const PORT = process.env.PORT || 5000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
