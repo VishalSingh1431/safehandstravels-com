@@ -173,22 +173,28 @@ function findDistFolder(startPath, maxDepth = 3, currentDepth = 0) {
 }
 
 // Try multiple possible paths for Hostinger deployment
+// Based on actual location: /public_html/.builds/source/repository/frontend/dist/
 const possibleBuildPaths = [
-  // Hostinger GitHub deployment path (most likely)
-  join(process.cwd(), '.builds', 'source', 'repository', 'frontend', 'dist'), // Hostinger GitHub deployment
-  join(__dirname, '..', '..', '..', 'frontend', 'dist'), // From backend/ to repository/frontend/dist
-  join(__dirname, '..', 'frontend', 'dist'),      // backend/ and frontend/ are siblings (standard)
+  // Hostinger GitHub deployment paths (try these first)
+  join(__dirname, '..', 'frontend', 'dist'),      // From backend/ to frontend/dist (most likely)
+  join(process.cwd(), '.builds', 'source', 'repository', 'frontend', 'dist'), // From cwd
+  join(process.cwd(), 'frontend', 'dist'),        // From cwd/frontend/dist
+  join(__dirname, '..', '..', 'frontend', 'dist'), // From backend/../frontend/dist
+  join(__dirname, '..', '..', '..', 'frontend', 'dist'), // From backend/../../frontend/dist
+  
+  // Absolute paths for Hostinger
+  '/home/u427254332/domains/chocolate-nightingale-338585.hostingersite.com/public_html/.builds/source/repository/frontend/dist',
+  '/home/u427254332/domains/chocolate-nightingale-338585.hostingersite.com/public_html/frontend/dist',
+  '/home/u427254332/domains/chocolate-nightingale-338585.hostingersite.com/public_html/dist',
+  
+  // Other common paths
   join(__dirname, 'dist'),                         // dist in same folder as server.js
   join(__dirname, '..', 'dist'),                   // dist one level up from server.js
   join(__dirname, 'frontend', 'dist'),            // frontend/ is inside backend/
   join(process.cwd(), 'dist'),                     // dist is in root
-  join(process.cwd(), 'frontend', 'dist'),        // From current working directory
   join(process.cwd(), 'public_html', 'dist'),     // Hostinger dist in public_html
   join(process.cwd(), 'public_html', 'frontend', 'dist'), // Hostinger public_html structure
   join(process.cwd(), 'public_html', '.builds', 'source', 'repository', 'frontend', 'dist'), // Full Hostinger path
-  '/home/u427254332/domains/chocolate-nightingale-338585.hostingersite.com/public_html/.builds/source/repository/frontend/dist', // Hostinger absolute path
-  '/home/u427254332/domains/chocolate-nightingale-338585.hostingersite.com/public_html/dist', // Hostinger absolute path
-  '/home/u427254332/domains/chocolate-nightingale-338585.hostingersite.com/public_html/frontend/dist', // Hostinger absolute path
 ];
 
 console.log('🔍 Checking for React build folder...');
