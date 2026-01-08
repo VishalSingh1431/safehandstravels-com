@@ -268,90 +268,102 @@ const Navbar = () => {
                       <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isAdminDropdownOpen ? 'rotate-180' : ''}`} />
                     </button>
                     {isAdminDropdownOpen && (
-                      <div className="absolute right-0 mt-2 w-56 bg-white/95 backdrop-blur-xl rounded-xl shadow-2xl border border-gray-200/50 py-2 z-[100] animate-fade-in">
+                      <div className="absolute right-0 mt-2 min-w-fit w-auto bg-white/95 backdrop-blur-xl rounded-xl shadow-2xl border border-gray-200/50 py-2 z-[100] animate-fade-in">
                         <Link
                           to="/admin/trips"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg mx-2 hover:scale-105 active:scale-95"
+                          className="flex items-center gap-3 whitespace-nowrap px-5 py-2.5 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg mx-2 hover:scale-105 active:scale-95"
                           onClick={() => setIsAdminDropdownOpen(false)}
                         >
-                          🎒 Manage Trips
+                          <span className="text-base flex-shrink-0">🎒</span>
+                          <span>Manage Trips</span>
                         </Link>
                         <Link
                           to="/admin/certificates"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg mx-2 hover:scale-105 active:scale-95"
+                          className="flex items-center gap-3 whitespace-nowrap px-5 py-2.5 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg mx-2 hover:scale-105 active:scale-95"
                           onClick={() => setIsAdminDropdownOpen(false)}
                         >
-                          📜 Manage Certificates
+                          <span className="text-base flex-shrink-0">📜</span>
+                          <span>Manage Certificates</span>
                         </Link>
                         <Link
                           to="/admin/destinations"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg mx-2 hover:scale-105 active:scale-95"
+                          className="flex items-center gap-3 whitespace-nowrap px-5 py-2.5 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg mx-2 hover:scale-105 active:scale-95"
                           onClick={() => setIsAdminDropdownOpen(false)}
                         >
-                          🌍 Manage Destinations
+                          <span className="text-base flex-shrink-0">🌍</span>
+                          <span>Manage Destinations</span>
                         </Link>
                         <Link
                           to="/admin/enquiries"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg mx-2 hover:scale-105 active:scale-95"
+                          className="flex items-center gap-3 whitespace-nowrap px-5 py-2.5 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg mx-2 hover:scale-105 active:scale-95"
                           onClick={() => setIsAdminDropdownOpen(false)}
                         >
-                          📧 Manage Enquiries
+                          <span className="text-base flex-shrink-0">📧</span>
+                          <span>Manage Enquiries</span>
                         </Link>
                         <Link
                           to="/admin/drivers"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg mx-2 hover:scale-105 active:scale-95"
+                          className="flex items-center gap-3 whitespace-nowrap px-5 py-2.5 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg mx-2 hover:scale-105 active:scale-95"
                           onClick={() => setIsAdminDropdownOpen(false)}
                         >
-                          🚗 Manage Drivers & Car Booking
+                          <span className="text-base flex-shrink-0">🚗</span>
+                          <span>Manage Drivers & Car Booking</span>
                         </Link>
                         <Link
                           to="/admin/popular-trips"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg mx-2 hover:scale-105 active:scale-95"
+                          className="flex items-center gap-3 whitespace-nowrap px-5 py-2.5 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg mx-2 hover:scale-105 active:scale-95"
                           onClick={() => setIsAdminDropdownOpen(false)}
                         >
-                          ⭐ Manage Popular Trips
+                          <span className="text-base flex-shrink-0">⭐</span>
+                          <span>Manage Popular Trips</span>
                         </Link>
                         <Link
                           to="/admin/vibe-videos"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg mx-2 hover:scale-105 active:scale-95"
+                          className="flex items-center gap-3 whitespace-nowrap px-5 py-2.5 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg mx-2 hover:scale-105 active:scale-95"
                           onClick={() => setIsAdminDropdownOpen(false)}
                         >
-                          🎬 Manage Vibe Videos
+                          <span className="text-base flex-shrink-0">🎬</span>
+                          <span>Manage Vibe Videos</span>
                         </Link>
                         <Link
                           to="/admin/traveller-reviews"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg mx-2 hover:scale-105 active:scale-95"
+                          className="flex items-center gap-3 whitespace-nowrap px-5 py-2.5 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg mx-2 hover:scale-105 active:scale-95"
                           onClick={() => setIsAdminDropdownOpen(false)}
                         >
-                          ⭐ Manage Traveller Reviews
+                          <span className="text-base flex-shrink-0">⭐</span>
+                          <span>Manage Traveller Reviews</span>
                         </Link>
                         <Link
                           to="/admin/faqs"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg mx-2 hover:scale-105 active:scale-95"
+                          className="flex items-center gap-3 whitespace-nowrap px-5 py-2.5 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg mx-2 hover:scale-105 active:scale-95"
                           onClick={() => setIsAdminDropdownOpen(false)}
                         >
-                          ❓ Manage FAQs
+                          <span className="text-base flex-shrink-0">❓</span>
+                          <span>Manage FAQs</span>
                         </Link>
                         <Link
                           to="/admin/banners"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg mx-2 hover:scale-105 active:scale-95"
+                          className="flex items-center gap-3 whitespace-nowrap px-5 py-2.5 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg mx-2 hover:scale-105 active:scale-95"
                           onClick={() => setIsAdminDropdownOpen(false)}
                         >
-                          🖼️ Manage Banners
+                          <span className="text-base flex-shrink-0">🖼️</span>
+                          <span>Manage Banners</span>
                         </Link>
                         <Link
                           to="/admin/branding-partners"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg mx-2 hover:scale-105 active:scale-95"
+                          className="flex items-center gap-3 whitespace-nowrap px-5 py-2.5 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg mx-2 hover:scale-105 active:scale-95"
                           onClick={() => setIsAdminDropdownOpen(false)}
                         >
-                          🤝 Manage Branding Partners
+                          <span className="text-base flex-shrink-0">🤝</span>
+                          <span>Manage Branding Partners</span>
                         </Link>
                         <Link
                           to="/admin/hotel-partners"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg mx-2 hover:scale-105 active:scale-95"
+                          className="flex items-center gap-3 whitespace-nowrap px-5 py-2.5 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg mx-2 hover:scale-105 active:scale-95"
                           onClick={() => setIsAdminDropdownOpen(false)}
                         >
-                          🏨 Manage Hotel Partners
+                          <span className="text-base flex-shrink-0">🏨</span>
+                          <span>Manage Hotel Partners</span>
                         </Link>
                       </div>
                     )}

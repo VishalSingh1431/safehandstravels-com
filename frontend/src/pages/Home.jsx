@@ -73,9 +73,9 @@ function Home() {
         <HotelPartners />
         <Reviews />
         <WrittenReviews />
-        <FAQ />
         <CertificateLegal />
         <ContactUs />
+        <FAQ />
       </div>
     </>
   )
