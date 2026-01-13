@@ -233,38 +233,44 @@ class Trip {
   static mapRowToTrip(row) {
     if (!row) return null;
 
-    return {
-      id: row.id,
-      title: row.title,
-      location: row.location,
-      duration: row.duration,
-      price: row.price,
-      oldPrice: row.old_price,
-      image: row.image_url,
-      imageUrl: row.image_url,
-      video: row.video_url,
-      videoUrl: row.video_url,
-      videoPublicId: row.video_public_id,
-      imagePublicId: row.image_public_id,
-      gallery: Array.isArray(row.gallery) ? row.gallery : (row.gallery ? JSON.parse(row.gallery) : []),
-      galleryPublicIds: Array.isArray(row.gallery_public_ids) ? row.gallery_public_ids : (row.gallery_public_ids ? JSON.parse(row.gallery_public_ids) : []),
-      subtitle: row.subtitle,
-      intro: row.intro,
-      whyVisit: Array.isArray(row.why_visit) ? row.why_visit : (row.why_visit ? JSON.parse(row.why_visit) : []),
-      itinerary: Array.isArray(row.itinerary) ? row.itinerary : (row.itinerary ? JSON.parse(row.itinerary) : []),
-      included: Array.isArray(row.included) ? row.included : (row.included ? JSON.parse(row.included) : []),
-      notIncluded: Array.isArray(row.not_included) ? row.not_included : (row.not_included ? JSON.parse(row.not_included) : []),
-      notes: Array.isArray(row.notes) ? row.notes : (row.notes ? JSON.parse(row.notes) : []),
-      faq: Array.isArray(row.faq) ? row.faq : (row.faq ? JSON.parse(row.faq) : []),
-      reviews: Array.isArray(row.reviews) ? row.reviews : (row.reviews ? JSON.parse(row.reviews) : []),
-      category: Array.isArray(row.category) ? row.category : (row.category ? JSON.parse(row.category) : []),
-      isPopular: Boolean(row.is_popular),
-      slug: row.slug,
-      status: row.status,
-      createdBy: row.created_by,
-      createdAt: row.created_at,
-      updatedAt: row.updated_at,
-    };
+    try {
+      return {
+        id: row.id,
+        title: row.title,
+        location: row.location,
+        duration: row.duration,
+        price: row.price,
+        oldPrice: row.old_price,
+        image: row.image_url,
+        imageUrl: row.image_url,
+        video: row.video_url,
+        videoUrl: row.video_url,
+        videoPublicId: row.video_public_id,
+        imagePublicId: row.image_public_id,
+        gallery: Array.isArray(row.gallery) ? row.gallery : (row.gallery ? JSON.parse(row.gallery) : []),
+        galleryPublicIds: Array.isArray(row.gallery_public_ids) ? row.gallery_public_ids : (row.gallery_public_ids ? JSON.parse(row.gallery_public_ids) : []),
+        subtitle: row.subtitle,
+        intro: row.intro,
+        whyVisit: Array.isArray(row.why_visit) ? row.why_visit : (row.why_visit ? JSON.parse(row.why_visit) : []),
+        itinerary: Array.isArray(row.itinerary) ? row.itinerary : (row.itinerary ? JSON.parse(row.itinerary) : []),
+        included: Array.isArray(row.included) ? row.included : (row.included ? JSON.parse(row.included) : []),
+        notIncluded: Array.isArray(row.not_included) ? row.not_included : (row.not_included ? JSON.parse(row.not_included) : []),
+        notes: Array.isArray(row.notes) ? row.notes : (row.notes ? JSON.parse(row.notes) : []),
+        faq: Array.isArray(row.faq) ? row.faq : (row.faq ? JSON.parse(row.faq) : []),
+        reviews: Array.isArray(row.reviews) ? row.reviews : (row.reviews ? JSON.parse(row.reviews) : []),
+        category: Array.isArray(row.category) ? row.category : (row.category ? JSON.parse(row.category) : []),
+        isPopular: Boolean(row.is_popular),
+        slug: row.slug,
+        status: row.status,
+        createdBy: row.created_by,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+      };
+    } catch (error) {
+      console.error('Error mapping trip row:', error);
+      console.error('Row data:', row);
+      throw error;
+    }
   }
 }
 
