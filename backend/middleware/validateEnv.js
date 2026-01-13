@@ -34,9 +34,8 @@ export const validateEnv = () => {
   // Validate DATABASE_URL format
   if (process.env.DATABASE_URL) {
     const dbUrl = process.env.DATABASE_URL;
-    if (!dbUrl.startsWith('mysql://') && !dbUrl.startsWith('mysql2://') && 
-        !dbUrl.startsWith('postgres://') && !dbUrl.startsWith('postgresql://')) {
-      console.error('❌ DATABASE_URL must start with mysql://, mysql2://, postgres://, or postgresql://');
+    if (!dbUrl.startsWith('mysql://') && !dbUrl.startsWith('mysql2://')) {
+      console.error('❌ DATABASE_URL must start with mysql:// or mysql2://');
       if (process.env.NODE_ENV === 'production') {
         process.exit(1);
       }
