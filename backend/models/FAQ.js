@@ -1,7 +1,7 @@
 import pool from '../config/database.js';
 
 /**
- * FAQ Model - PostgreSQL operations
+ * FAQ Model - MySQL operations
  */
 class FAQ {
   /**
@@ -11,8 +11,7 @@ class FAQ {
     try {
       const query = `
         INSERT INTO faqs (question, answer, display_order, status, created_by)
-        VALUES ($1, $2, $3, $4, $5)
-        RETURNING *
+        VALUES (?, ?, ?, ?, ?)
       `;
 
       const values = [
@@ -23,8 +22,10 @@ class FAQ {
         data.createdBy || null,
       ];
 
-      const result = await pool.query(query, values);
-      return this.mapRowToFAQ(result.rows[0]);
+      const [result] = await pool.query(query, values);
+      // Get the inserted FAQ
+      const [rows] = await pool.query('SELECT * FROM faqs WHERE id = ?', [result.insertId]);
+      return this.mapRowToFAQ(rows[0]);
     } catch (error) {
       console.error('FAQ.create error:', error);
       throw error;
@@ -36,9 +37,9 @@ class FAQ {
    */
   static async findById(id) {
     try {
-      const query = 'SELECT * FROM faqs WHERE id = $1';
-      const result = await pool.query(query, [id]);
-      return result.rows.length > 0 ? this.mapRowToFAQ(result.rows[0]) : null;
+      const query = 'SELECT * FROM faqs WHERE id = ?';
+      const [rows] = await pool.query(query, [id]);
+      return rows.length > 0 ? this.mapRowToFAQ(rows[0]) : null;
     } catch (error) {
       console.error('FAQ.findById error:', error);
       throw error;
@@ -52,10 +53,9 @@ class FAQ {
     try {
       let query = 'SELECT * FROM faqs WHERE 1=1';
       const values = [];
-      let paramCount = 1;
 
       if (filters.status) {
-        query += ` AND status = $${paramCount++}`;
+        query += ` AND status = ?`;
         values.push(filters.status);
       }
 
@@ -65,8 +65,8 @@ class FAQ {
 
       query += ' ORDER BY display_order ASC, id ASC';
 
-      const result = await pool.query(query, values);
-      return result.rows.map(row => this.mapRowToFAQ(row));
+      const [rows] = await pool.query(query, values);
+      return rows.map(row => this.mapRowToFAQ(row));
     } catch (error) {
       console.error('FAQ.findAll error:', error);
       throw error;
@@ -80,7 +80,6 @@ class FAQ {
     try {
       const updates = [];
       const values = [];
-      let paramCount = 1;
 
       const fieldMapping = {
         question: 'question',
@@ -91,7 +90,7 @@ class FAQ {
 
       for (const [key, dbKey] of Object.entries(fieldMapping)) {
         if (data[key] !== undefined) {
-          updates.push(`${dbKey} = $${paramCount++}`);
+          updates.push(`${dbKey} = ?`);
           values.push(data[key]);
         }
       }
@@ -104,12 +103,13 @@ class FAQ {
       const query = `
         UPDATE faqs 
         SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP
-        WHERE id = $${paramCount}
-        RETURNING *
+        WHERE id = ?
       `;
 
-      const result = await pool.query(query, values);
-      return this.mapRowToFAQ(result.rows[0]);
+      await pool.query(query, values);
+      // Get the updated FAQ
+      const [rows] = await pool.query('SELECT * FROM faqs WHERE id = ?', [id]);
+      return this.mapRowToFAQ(rows[0]);
     } catch (error) {
       console.error('FAQ.update error:', error);
       throw error;
@@ -121,9 +121,12 @@ class FAQ {
    */
   static async delete(id) {
     try {
-      const query = 'DELETE FROM faqs WHERE id = $1 RETURNING *';
-      const result = await pool.query(query, [id]);
-      return result.rows.length > 0 ? this.mapRowToFAQ(result.rows[0]) : null;
+      // First get the FAQ before deleting
+      const [rows] = await pool.query('SELECT * FROM faqs WHERE id = ?', [id]);
+      if (rows.length === 0) return null;
+      
+      await pool.query('DELETE FROM faqs WHERE id = ?', [id]);
+      return this.mapRowToFAQ(rows[0]);
     } catch (error) {
       console.error('FAQ.delete error:', error);
       throw error;
@@ -150,4 +153,3 @@ class FAQ {
 }
 
 export default FAQ;
-

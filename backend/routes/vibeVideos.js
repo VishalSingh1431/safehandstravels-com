@@ -7,7 +7,7 @@ const router = express.Router();
 // Get vibe videos (public)
 router.get('/', async (req, res) => {
   try {
-    const result = await pool.query(`
+    const [rows] = await pool.query(`
       SELECT setting_value 
       FROM app_settings 
       WHERE setting_key = 'vibe_videos'
@@ -15,11 +15,11 @@ router.get('/', async (req, res) => {
 
     // Default empty array if not set
     let videos = [];
-    if (result.rows.length > 0 && result.rows[0].setting_value) {
+    if (rows.length > 0 && rows[0].setting_value) {
       try {
-        videos = typeof result.rows[0].setting_value === 'string' 
-          ? JSON.parse(result.rows[0].setting_value)
-          : result.rows[0].setting_value;
+        videos = typeof rows[0].setting_value === 'string' 
+          ? JSON.parse(rows[0].setting_value)
+          : rows[0].setting_value;
       } catch (e) {
         videos = [];
       }
@@ -35,7 +35,7 @@ router.get('/', async (req, res) => {
 // Get vibe videos (Admin)
 router.get('/admin', verifyToken, verifyAdmin, async (req, res) => {
   try {
-    const result = await pool.query(`
+    const [rows] = await pool.query(`
       SELECT setting_value 
       FROM app_settings 
       WHERE setting_key = 'vibe_videos'
@@ -43,11 +43,11 @@ router.get('/admin', verifyToken, verifyAdmin, async (req, res) => {
 
     // Default empty array if not set
     let videos = [];
-    if (result.rows.length > 0 && result.rows[0].setting_value) {
+    if (rows.length > 0 && rows[0].setting_value) {
       try {
-        videos = typeof result.rows[0].setting_value === 'string' 
-          ? JSON.parse(result.rows[0].setting_value)
-          : result.rows[0].setting_value;
+        videos = typeof rows[0].setting_value === 'string' 
+          ? JSON.parse(rows[0].setting_value)
+          : rows[0].setting_value;
       } catch (e) {
         videos = [];
       }
@@ -78,10 +78,9 @@ router.put('/admin', verifyToken, verifyAdmin, async (req, res) => {
 
     await pool.query(`
       INSERT INTO app_settings (setting_key, setting_value)
-      VALUES ('vibe_videos', $1::jsonb)
-      ON CONFLICT (setting_key) 
-      DO UPDATE SET setting_value = $1::jsonb, updated_at = CURRENT_TIMESTAMP
-    `, [JSON.stringify(videos)]);
+      VALUES ('vibe_videos', ?)
+      ON DUPLICATE KEY UPDATE setting_value = ?, updated_at = CURRENT_TIMESTAMP
+    `, [JSON.stringify(videos), JSON.stringify(videos)]);
 
     res.json({
       message: 'Vibe videos updated successfully',
@@ -97,4 +96,3 @@ router.put('/admin', verifyToken, verifyAdmin, async (req, res) => {
 });
 
 export default router;
-

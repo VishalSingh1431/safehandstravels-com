@@ -1,7 +1,7 @@
 import pool, { queryWithRetry } from '../config/database.js';
 
 /**
- * Destination Model - PostgreSQL operations
+ * Destination Model - MySQL operations
  */
 class Destination {
   /**
@@ -13,8 +13,7 @@ class Destination {
         INSERT INTO destinations (
           name, image, image_public_id, status, created_by
         )
-        VALUES ($1, $2, $3, $4, $5)
-        RETURNING *
+        VALUES (?, ?, ?, ?, ?)
       `;
 
       const values = [
@@ -25,8 +24,10 @@ class Destination {
         data.createdBy || null,
       ];
 
-      const result = await pool.query(query, values);
-      return this.mapRowToDestination(result.rows[0]);
+      const [result] = await pool.query(query, values);
+      // Get the inserted destination
+      const [rows] = await pool.query('SELECT * FROM destinations WHERE id = ?', [result.insertId]);
+      return this.mapRowToDestination(rows[0]);
     } catch (error) {
       console.error('Destination.create error:', error);
       throw error;
@@ -38,9 +39,9 @@ class Destination {
    */
   static async findById(id) {
     try {
-      const query = 'SELECT * FROM destinations WHERE id = $1';
-      const result = await pool.query(query, [id]);
-      return result.rows.length > 0 ? this.mapRowToDestination(result.rows[0]) : null;
+      const query = 'SELECT * FROM destinations WHERE id = ?';
+      const [rows] = await pool.query(query, [id]);
+      return rows.length > 0 ? this.mapRowToDestination(rows[0]) : null;
     } catch (error) {
       console.error('Destination.findById error:', error);
       throw error;
@@ -54,30 +55,29 @@ class Destination {
     try {
       let query = 'SELECT * FROM destinations WHERE 1=1';
       const values = [];
-      let paramCount = 1;
 
       if (filters.status) {
-        query += ` AND status = $${paramCount++}`;
+        query += ` AND status = ?`;
         values.push(filters.status);
       } else if (!filters.includeDraft) {
-        query += ` AND status = $${paramCount++}`;
+        query += ` AND status = ?`;
         values.push('active');
       }
 
       query += ' ORDER BY created_at DESC';
 
       if (filters.limit) {
-        query += ` LIMIT $${paramCount++}`;
+        query += ` LIMIT ?`;
         values.push(filters.limit);
       }
 
       if (filters.offset) {
-        query += ` OFFSET $${paramCount++}`;
+        query += ` OFFSET ?`;
         values.push(filters.offset);
       }
 
-      const result = await queryWithRetry(() => pool.query(query, values));
-      return result.rows.map(row => this.mapRowToDestination(row));
+      const [rows] = await queryWithRetry(() => pool.query(query, values));
+      return rows.map(row => this.mapRowToDestination(row));
     } catch (error) {
       console.error('Destination.findAll error:', error);
       throw error;
@@ -91,7 +91,6 @@ class Destination {
     try {
       const updates = [];
       const values = [];
-      let paramCount = 1;
 
       const fields = {
         name: data.name,
@@ -103,7 +102,7 @@ class Destination {
       for (const [key, value] of Object.entries(fields)) {
         if (value !== undefined && data[key] !== undefined) {
           const dbKey = typeof value === 'string' ? value : key;
-          updates.push(`${dbKey} = $${paramCount++}`);
+          updates.push(`${dbKey} = ?`);
           values.push(data[key]);
         }
       }
@@ -116,12 +115,13 @@ class Destination {
       const query = `
         UPDATE destinations 
         SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP
-        WHERE id = $${paramCount}
-        RETURNING *
+        WHERE id = ?
       `;
 
-      const result = await pool.query(query, values);
-      return this.mapRowToDestination(result.rows[0]);
+      await pool.query(query, values);
+      // Get the updated destination
+      const [rows] = await pool.query('SELECT * FROM destinations WHERE id = ?', [id]);
+      return this.mapRowToDestination(rows[0]);
     } catch (error) {
       console.error('Destination.update error:', error);
       throw error;
@@ -133,9 +133,12 @@ class Destination {
    */
   static async delete(id) {
     try {
-      const query = 'DELETE FROM destinations WHERE id = $1 RETURNING *';
-      const result = await pool.query(query, [id]);
-      return result.rows.length > 0 ? this.mapRowToDestination(result.rows[0]) : null;
+      // First get the destination before deleting
+      const [rows] = await pool.query('SELECT * FROM destinations WHERE id = ?', [id]);
+      if (rows.length === 0) return null;
+      
+      await pool.query('DELETE FROM destinations WHERE id = ?', [id]);
+      return this.mapRowToDestination(rows[0]);
     } catch (error) {
       console.error('Destination.delete error:', error);
       throw error;

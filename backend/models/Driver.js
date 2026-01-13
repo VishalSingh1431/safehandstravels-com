@@ -1,7 +1,7 @@
 import pool from '../config/database.js';
 
 /**
- * Driver Model - PostgreSQL operations
+ * Driver Model - MySQL operations
  */
 class Driver {
   /**
@@ -13,8 +13,7 @@ class Driver {
         INSERT INTO drivers (
           name, car, experience, photo_url, photo_public_id, status, display_order, five_driver
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-        RETURNING *
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
       const values = [
@@ -28,8 +27,10 @@ class Driver {
         data.fiveDriver || false,
       ];
 
-      const result = await pool.query(query, values);
-      return this.mapRowToDriver(result.rows[0]);
+      const [result] = await pool.query(query, values);
+      // Get the inserted driver
+      const [rows] = await pool.query('SELECT * FROM drivers WHERE id = ?', [result.insertId]);
+      return this.mapRowToDriver(rows[0]);
     } catch (error) {
       console.error('Driver.create error:', error);
       throw error;
@@ -41,9 +42,9 @@ class Driver {
    */
   static async findById(id) {
     try {
-      const query = 'SELECT * FROM drivers WHERE id = $1';
-      const result = await pool.query(query, [id]);
-      return result.rows.length > 0 ? this.mapRowToDriver(result.rows[0]) : null;
+      const query = 'SELECT * FROM drivers WHERE id = ?';
+      const [rows] = await pool.query(query, [id]);
+      return rows.length > 0 ? this.mapRowToDriver(rows[0]) : null;
     } catch (error) {
       console.error('Driver.findById error:', error);
       throw error;
@@ -57,31 +58,30 @@ class Driver {
     try {
       let query = 'SELECT * FROM drivers WHERE 1=1';
       const values = [];
-      let paramCount = 1;
 
       if (filters.status) {
-        query += ` AND status = $${paramCount++}`;
+        query += ` AND status = ?`;
         values.push(filters.status);
       } else if (!filters.includeInactive) {
         // By default, only show active drivers unless includeInactive is true
-        query += ` AND status = $${paramCount++}`;
+        query += ` AND status = ?`;
         values.push('active');
       }
 
       query += ' ORDER BY display_order ASC, created_at DESC';
 
       if (filters.limit) {
-        query += ` LIMIT $${paramCount++}`;
+        query += ` LIMIT ?`;
         values.push(filters.limit);
       }
 
       if (filters.offset) {
-        query += ` OFFSET $${paramCount++}`;
+        query += ` OFFSET ?`;
         values.push(filters.offset);
       }
 
-      const result = await pool.query(query, values);
-      return result.rows.map(row => this.mapRowToDriver(row));
+      const [rows] = await pool.query(query, values);
+      return rows.map(row => this.mapRowToDriver(row));
     } catch (error) {
       console.error('Driver.findAll error:', error);
       throw error;
@@ -95,7 +95,6 @@ class Driver {
     try {
       const updates = [];
       const values = [];
-      let paramCount = 1;
 
       const fields = {
         name: data.name,
@@ -111,7 +110,7 @@ class Driver {
       for (const [key, value] of Object.entries(fields)) {
         if (value !== undefined && data[key] !== undefined) {
           const dbKey = typeof value === 'string' ? value : key;
-          updates.push(`${dbKey} = $${paramCount++}`);
+          updates.push(`${dbKey} = ?`);
           values.push(data[key]);
         }
       }
@@ -124,12 +123,13 @@ class Driver {
       const query = `
         UPDATE drivers 
         SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP
-        WHERE id = $${paramCount}
-        RETURNING *
+        WHERE id = ?
       `;
 
-      const result = await pool.query(query, values);
-      return this.mapRowToDriver(result.rows[0]);
+      await pool.query(query, values);
+      // Get the updated driver
+      const [rows] = await pool.query('SELECT * FROM drivers WHERE id = ?', [id]);
+      return this.mapRowToDriver(rows[0]);
     } catch (error) {
       console.error('Driver.update error:', error);
       throw error;
@@ -141,9 +141,12 @@ class Driver {
    */
   static async delete(id) {
     try {
-      const query = 'DELETE FROM drivers WHERE id = $1 RETURNING *';
-      const result = await pool.query(query, [id]);
-      return result.rows.length > 0 ? this.mapRowToDriver(result.rows[0]) : null;
+      // First get the driver before deleting
+      const [rows] = await pool.query('SELECT * FROM drivers WHERE id = ?', [id]);
+      if (rows.length === 0) return null;
+      
+      await pool.query('DELETE FROM drivers WHERE id = ?', [id]);
+      return this.mapRowToDriver(rows[0]);
     } catch (error) {
       console.error('Driver.delete error:', error);
       throw error;
@@ -173,4 +176,3 @@ class Driver {
 }
 
 export default Driver;
-

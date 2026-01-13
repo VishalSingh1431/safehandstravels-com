@@ -55,7 +55,7 @@ const NODE_ENV = process.env.NODE_ENV || 'development';
 // Trust proxy - Required when behind Nginx reverse proxy
 app.set('trust proxy', 1);
 
-// Initialize PostgreSQL database (non-blocking)
+// Initialize MySQL database (non-blocking)
 initializeDatabase()
   .then(() => {
     console.log('✅ Database initialized successfully');
@@ -105,13 +105,13 @@ app.get('/api/health', async (req, res) => {
     await pool.query('SELECT 1');
     res.json({ 
       status: 'OK', 
-      message: 'VaranasiHub API is running',
+      message: 'Safe Hands Travels API is running',
       database: 'connected',
     });
   } catch (error) {
     res.json({ 
       status: 'OK', 
-      message: 'VaranasiHub API is running',
+      message: 'Safe Hands Travels API is running',
       database: 'disconnected',
       error: process.env.NODE_ENV === 'development' ? {
         code: error.code,
@@ -451,9 +451,9 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`🚀 Server is running on port ${PORT}`);
   console.log(`📝 Environment: ${NODE_ENV}`);
-  console.log(`📝 Database: PostgreSQL (Aiven)`);
+  console.log(`📝 Database: MySQL (Hostinger)`);
   const apiUrl = NODE_ENV === 'production' 
-    ? `https://${process.env.BASE_DOMAIN || 'varanasihub.com'}/api`
+    ? `https://${process.env.BASE_DOMAIN || 'safehandstravels.com'}/api`
     : `http://localhost:${PORT}/api`;
   console.log(`🌐 API Base URL: ${apiUrl}`);
   if (NODE_ENV === 'production') {

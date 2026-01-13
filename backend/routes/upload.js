@@ -59,7 +59,7 @@ router.post('/image', verifyToken, verifyAdmin, uploadImage.single('image'), han
 
     const result = await uploadImageToCloudinary(
       req.file.buffer,
-      'varanasihub/trips/images'
+      'safehandstravels/trips/images'
     );
 
     console.log('Image uploaded successfully:', result.public_id);
@@ -111,7 +111,7 @@ router.post('/video', verifyToken, verifyAdmin, uploadVideo.single('video'), han
 
     const result = await uploadVideoToCloudinary(
       req.file.buffer,
-      'varanasihub/trips/videos'
+      'safehandstravels/trips/videos'
     );
 
     console.log('Video uploaded successfully:', result.public_id);

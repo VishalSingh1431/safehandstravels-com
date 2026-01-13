@@ -1,7 +1,7 @@
 import pool, { queryWithRetry } from '../config/database.js';
 
 /**
- * WrittenReview Model - PostgreSQL operations
+ * WrittenReview Model - MySQL operations
  */
 class WrittenReview {
   /**
@@ -13,8 +13,7 @@ class WrittenReview {
         INSERT INTO written_reviews (
           name, rating, date, title, review, location, avatar, avatar_public_id, status, created_by
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-        RETURNING *
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
       const values = [
@@ -30,8 +29,10 @@ class WrittenReview {
         data.createdBy || null,
       ];
 
-      const result = await queryWithRetry(() => pool.query(query, values));
-      return this.mapRowToWrittenReview(result.rows[0]);
+      const [result] = await queryWithRetry(() => pool.query(query, values));
+      // Get the inserted review
+      const [rows] = await pool.query('SELECT * FROM written_reviews WHERE id = ?', [result.insertId]);
+      return this.mapRowToWrittenReview(rows[0]);
     } catch (error) {
       console.error('WrittenReview.create error:', error);
       throw error;
@@ -43,9 +44,9 @@ class WrittenReview {
    */
   static async findById(id) {
     try {
-      const query = 'SELECT * FROM written_reviews WHERE id = $1';
-      const result = await queryWithRetry(() => pool.query(query, [id]));
-      return result.rows.length > 0 ? this.mapRowToWrittenReview(result.rows[0]) : null;
+      const query = 'SELECT * FROM written_reviews WHERE id = ?';
+      const [rows] = await queryWithRetry(() => pool.query(query, [id]));
+      return rows.length > 0 ? this.mapRowToWrittenReview(rows[0]) : null;
     } catch (error) {
       console.error('WrittenReview.findById error:', error);
       throw error;
@@ -59,30 +60,29 @@ class WrittenReview {
     try {
       let query = 'SELECT * FROM written_reviews WHERE 1=1';
       const values = [];
-      let paramCount = 1;
 
       if (filters.status) {
-        query += ` AND status = $${paramCount++}`;
+        query += ` AND status = ?`;
         values.push(filters.status);
       } else if (!filters.includeDraft) {
-        query += ` AND status = $${paramCount++}`;
+        query += ` AND status = ?`;
         values.push('active');
       }
 
       query += ' ORDER BY created_at DESC';
 
       if (filters.limit) {
-        query += ` LIMIT $${paramCount++}`;
+        query += ` LIMIT ?`;
         values.push(filters.limit);
       }
 
       if (filters.offset) {
-        query += ` OFFSET $${paramCount++}`;
+        query += ` OFFSET ?`;
         values.push(filters.offset);
       }
 
-      const result = await queryWithRetry(() => pool.query(query, values));
-      return result.rows.map(row => this.mapRowToWrittenReview(row));
+      const [rows] = await queryWithRetry(() => pool.query(query, values));
+      return rows.map(row => this.mapRowToWrittenReview(row));
     } catch (error) {
       console.error('WrittenReview.findAll error:', error);
       throw error;
@@ -96,7 +96,6 @@ class WrittenReview {
     try {
       const updates = [];
       const values = [];
-      let paramCount = 1;
 
       const fields = {
         name: data.name,
@@ -113,7 +112,7 @@ class WrittenReview {
       for (const [key, value] of Object.entries(fields)) {
         if (value !== undefined && data[key] !== undefined) {
           const dbKey = typeof value === 'string' ? value : key;
-          updates.push(`${dbKey} = $${paramCount++}`);
+          updates.push(`${dbKey} = ?`);
           values.push(data[key]);
         }
       }
@@ -126,12 +125,13 @@ class WrittenReview {
       const query = `
         UPDATE written_reviews 
         SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP
-        WHERE id = $${paramCount}
-        RETURNING *
+        WHERE id = ?
       `;
 
-      const result = await queryWithRetry(() => pool.query(query, values));
-      return this.mapRowToWrittenReview(result.rows[0]);
+      await queryWithRetry(() => pool.query(query, values));
+      // Get the updated review
+      const [rows] = await pool.query('SELECT * FROM written_reviews WHERE id = ?', [id]);
+      return this.mapRowToWrittenReview(rows[0]);
     } catch (error) {
       console.error('WrittenReview.update error:', error);
       throw error;
@@ -143,9 +143,12 @@ class WrittenReview {
    */
   static async delete(id) {
     try {
-      const query = 'DELETE FROM written_reviews WHERE id = $1 RETURNING *';
-      const result = await queryWithRetry(() => pool.query(query, [id]));
-      return result.rows.length > 0 ? this.mapRowToWrittenReview(result.rows[0]) : null;
+      // First get the review before deleting
+      const [rows] = await pool.query('SELECT * FROM written_reviews WHERE id = ?', [id]);
+      if (rows.length === 0) return null;
+      
+      await queryWithRetry(() => pool.query('DELETE FROM written_reviews WHERE id = ?', [id]));
+      return this.mapRowToWrittenReview(rows[0]);
     } catch (error) {
       console.error('WrittenReview.delete error:', error);
       throw error;

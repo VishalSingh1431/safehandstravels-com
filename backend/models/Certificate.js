@@ -1,7 +1,7 @@
 import pool, { queryWithRetry } from '../config/database.js';
 
 /**
- * Certificate Model - PostgreSQL operations
+ * Certificate Model - MySQL operations
  */
 class Certificate {
   /**
@@ -13,8 +13,7 @@ class Certificate {
         INSERT INTO certificates (
           title, description, images, images_public_ids, status, created_by
         )
-        VALUES ($1, $2, $3, $4, $5, $6)
-        RETURNING *
+        VALUES (?, ?, ?, ?, ?, ?)
       `;
 
       const values = [
@@ -26,8 +25,10 @@ class Certificate {
         data.createdBy || null,
       ];
 
-      const result = await pool.query(query, values);
-      return this.mapRowToCertificate(result.rows[0]);
+      const [result] = await pool.query(query, values);
+      // Get the inserted certificate
+      const [rows] = await pool.query('SELECT * FROM certificates WHERE id = ?', [result.insertId]);
+      return this.mapRowToCertificate(rows[0]);
     } catch (error) {
       console.error('Certificate.create error:', error);
       throw error;
@@ -39,9 +40,9 @@ class Certificate {
    */
   static async findById(id) {
     try {
-      const query = 'SELECT * FROM certificates WHERE id = $1';
-      const result = await pool.query(query, [id]);
-      return result.rows.length > 0 ? this.mapRowToCertificate(result.rows[0]) : null;
+      const query = 'SELECT * FROM certificates WHERE id = ?';
+      const [rows] = await pool.query(query, [id]);
+      return rows.length > 0 ? this.mapRowToCertificate(rows[0]) : null;
     } catch (error) {
       console.error('Certificate.findById error:', error);
       throw error;
@@ -55,30 +56,29 @@ class Certificate {
     try {
       let query = 'SELECT * FROM certificates WHERE 1=1';
       const values = [];
-      let paramCount = 1;
 
       if (filters.status) {
-        query += ` AND status = $${paramCount++}`;
+        query += ` AND status = ?`;
         values.push(filters.status);
       } else if (!filters.includeDraft) {
-        query += ` AND status = $${paramCount++}`;
+        query += ` AND status = ?`;
         values.push('active');
       }
 
       query += ' ORDER BY created_at DESC';
 
       if (filters.limit) {
-        query += ` LIMIT $${paramCount++}`;
+        query += ` LIMIT ?`;
         values.push(filters.limit);
       }
 
       if (filters.offset) {
-        query += ` OFFSET $${paramCount++}`;
+        query += ` OFFSET ?`;
         values.push(filters.offset);
       }
 
-      const result = await queryWithRetry(() => pool.query(query, values));
-      return result.rows.map(row => this.mapRowToCertificate(row));
+      const [rows] = await queryWithRetry(() => pool.query(query, values));
+      return rows.map(row => this.mapRowToCertificate(row));
     } catch (error) {
       console.error('Certificate.findAll error:', error);
       throw error;
@@ -92,7 +92,6 @@ class Certificate {
     try {
       const updates = [];
       const values = [];
-      let paramCount = 1;
 
       const fields = {
         title: data.title,
@@ -106,10 +105,10 @@ class Certificate {
         if (value !== undefined && data[key] !== undefined) {
           const dbKey = typeof value === 'string' ? value : key;
           if (['images', 'imagesPublicIds'].includes(key)) {
-            updates.push(`${dbKey === 'imagesPublicIds' ? 'images_public_ids' : dbKey} = $${paramCount++}`);
+            updates.push(`${dbKey === 'imagesPublicIds' ? 'images_public_ids' : dbKey} = ?`);
             values.push(JSON.stringify(data[key]));
           } else {
-            updates.push(`${dbKey} = $${paramCount++}`);
+            updates.push(`${dbKey} = ?`);
             values.push(data[key]);
           }
         }
@@ -123,12 +122,13 @@ class Certificate {
       const query = `
         UPDATE certificates 
         SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP
-        WHERE id = $${paramCount}
-        RETURNING *
+        WHERE id = ?
       `;
 
-      const result = await pool.query(query, values);
-      return this.mapRowToCertificate(result.rows[0]);
+      await pool.query(query, values);
+      // Get the updated certificate
+      const [rows] = await pool.query('SELECT * FROM certificates WHERE id = ?', [id]);
+      return this.mapRowToCertificate(rows[0]);
     } catch (error) {
       console.error('Certificate.update error:', error);
       throw error;
@@ -140,9 +140,12 @@ class Certificate {
    */
   static async delete(id) {
     try {
-      const query = 'DELETE FROM certificates WHERE id = $1 RETURNING *';
-      const result = await pool.query(query, [id]);
-      return result.rows.length > 0 ? this.mapRowToCertificate(result.rows[0]) : null;
+      // First get the certificate before deleting
+      const [rows] = await pool.query('SELECT * FROM certificates WHERE id = ?', [id]);
+      if (rows.length === 0) return null;
+      
+      await pool.query('DELETE FROM certificates WHERE id = ?', [id]);
+      return this.mapRowToCertificate(rows[0]);
     } catch (error) {
       console.error('Certificate.delete error:', error);
       throw error;

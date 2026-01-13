@@ -7,5 +7,5 @@ export const API_BASE_URL = import.meta.env.PROD
   ? '/api'  // Production: use relative path (same domain)
   : 'http://localhost:5000/api';  // Development: use localhost
 
-// export const API_BASE_URL = 'https://varanasihub.com/api';  // Production
+// export const API_BASE_URL = 'https://safehandstravels.com/api';  // Production
 

@@ -1,4 +1,4 @@
-# robots.txt for Safe Hands Travels / VaranasiHub
+# robots.txt for Safe Hands Travels
 
 User-agent: *
 Allow: /
@@ -19,7 +19,7 @@ Allow: /wellness-retreats
 Allow: /car-rentals
 
 # Sitemap
-Sitemap: https://varanasihub.com/sitemap.xml
+Sitemap: https://safehandstravels.com/sitemap.xml
 
 # Crawl-delay (optional, be nice to servers)
 Crawl-delay: 1

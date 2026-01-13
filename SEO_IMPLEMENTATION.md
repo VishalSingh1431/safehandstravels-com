@@ -1,7 +1,7 @@
 # SEO Implementation Summary
 
 ## Overview
-Comprehensive SEO improvements have been implemented for the Safe Hands Travels / VaranasiHub website to improve search engine visibility and social media sharing.
+Comprehensive SEO improvements have been implemented for the Safe Hands Travels website to improve search engine visibility and social media sharing.
 
 ## What Has Been Implemented
 

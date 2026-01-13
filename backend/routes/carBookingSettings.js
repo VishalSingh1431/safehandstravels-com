@@ -7,14 +7,14 @@ const router = express.Router();
 // Get car booking settings (public)
 router.get('/', async (req, res) => {
   try {
-    const result = await pool.query(`
+    const [rows] = await pool.query(`
       SELECT setting_key, setting_value 
       FROM car_booking_settings 
       WHERE setting_key IN ('features', 'form_fields')
     `);
 
     const settings = {};
-    result.rows.forEach(row => {
+    rows.forEach(row => {
       settings[row.setting_key] = row.setting_value;
     });
 
@@ -52,14 +52,14 @@ router.get('/', async (req, res) => {
 // Get car booking settings (Admin)
 router.get('/admin', verifyToken, verifyAdmin, async (req, res) => {
   try {
-    const result = await pool.query(`
+    const [rows] = await pool.query(`
       SELECT setting_key, setting_value 
       FROM car_booking_settings 
       WHERE setting_key IN ('features', 'form_fields')
     `);
 
     const settings = {};
-    result.rows.forEach(row => {
+    rows.forEach(row => {
       settings[row.setting_key] = row.setting_value;
     });
 
@@ -103,20 +103,18 @@ router.put('/', verifyToken, verifyAdmin, async (req, res) => {
     if (features !== undefined) {
       await pool.query(`
         INSERT INTO car_booking_settings (setting_key, setting_value)
-        VALUES ('features', $1::jsonb)
-        ON CONFLICT (setting_key) 
-        DO UPDATE SET setting_value = $1::jsonb, updated_at = CURRENT_TIMESTAMP
-      `, [JSON.stringify(features)]);
+        VALUES ('features', ?)
+        ON DUPLICATE KEY UPDATE setting_value = ?, updated_at = CURRENT_TIMESTAMP
+      `, [JSON.stringify(features), JSON.stringify(features)]);
     }
 
     // Update or insert form fields
     if (formFields !== undefined) {
       await pool.query(`
         INSERT INTO car_booking_settings (setting_key, setting_value)
-        VALUES ('form_fields', $1::jsonb)
-        ON CONFLICT (setting_key) 
-        DO UPDATE SET setting_value = $1::jsonb, updated_at = CURRENT_TIMESTAMP
-      `, [JSON.stringify(formFields)]);
+        VALUES ('form_fields', ?)
+        ON DUPLICATE KEY UPDATE setting_value = ?, updated_at = CURRENT_TIMESTAMP
+      `, [JSON.stringify(formFields), JSON.stringify(formFields)]);
     }
 
     res.json({
@@ -132,4 +130,3 @@ router.put('/', verifyToken, verifyAdmin, async (req, res) => {
 });
 
 export default router;
-

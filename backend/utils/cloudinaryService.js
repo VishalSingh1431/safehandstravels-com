@@ -48,7 +48,7 @@ try {
  * @param {string} publicId - Custom public ID (optional)
  * @returns {Promise<Object>} Upload result with URL and public_id
  */
-export const uploadImage = async (fileBuffer, folder = 'varanasihub/images', publicId = null) => {
+export const uploadImage = async (fileBuffer, folder = 'safehandstravels/images', publicId = null) => {
   if (!cloudinaryConfigured) {
     const { cloudName, apiKey, apiSecret } = validateCloudinaryConfig();
     cloudinary.config({
@@ -148,7 +148,7 @@ export const uploadImage = async (fileBuffer, folder = 'varanasihub/images', pub
  * @param {string} publicId - Custom public ID (optional)
  * @returns {Promise<Object>} Upload result with URL and public_id
  */
-export const uploadVideo = async (fileBuffer, folder = 'varanasihub/videos', publicId = null) => {
+export const uploadVideo = async (fileBuffer, folder = 'safehandstravels/videos', publicId = null) => {
   validateCloudinaryConfig();
   
   if (!fileBuffer || !Buffer.isBuffer(fileBuffer)) {

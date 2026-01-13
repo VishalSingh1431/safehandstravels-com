@@ -19,7 +19,7 @@ const SEO = ({
 }) => {
   const baseUrl = typeof window !== 'undefined' 
     ? window.location.origin 
-    : 'https://varanasihub.com';
+    : 'https://safehandstravels.com';
   
   const fullUrl = url ? `${baseUrl}${url}` : baseUrl;
   const imageUrl = image.startsWith('http') ? image : `${baseUrl}${image}`;

@@ -168,7 +168,7 @@ const testWrittenReviews = [
     rating: 5,
     date: '2024-11-15',
     title: 'Unforgettable Spiritual Journey',
-    review: 'My trip to Varanasi with VaranasiHub was truly transformative. From the moment we arrived, everything was perfectly organized. The Ganga Aarti ceremony at Dashashwamedh Ghat was a spiritual experience I will never forget. The guide was knowledgeable and made the entire journey meaningful. The hotel was comfortable and the food was authentic. I highly recommend this tour to anyone seeking a genuine spiritual experience.',
+    review: 'My trip to Varanasi with Safe Hands Travels was truly transformative. From the moment we arrived, everything was perfectly organized. The Ganga Aarti ceremony at Dashashwamedh Ghat was a spiritual experience I will never forget. The guide was knowledgeable and made the entire journey meaningful. The hotel was comfortable and the food was authentic. I highly recommend this tour to anyone seeking a genuine spiritual experience.',
     location: 'Hyderabad, Telangana',
     avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80',
     avatarPublicId: '',
@@ -235,7 +235,7 @@ async function addTestData() {
         console.log(`✅ Certificate ${i + 1} created: ${certificate.title}`);
       } catch (error) {
         console.error(`❌ Error creating certificate ${i + 1} (${certData.title}):`, error.message);
-        if (error.code === '23505') {
+        if (error.code === 'ER_DUP_ENTRY' || error.errno === 1062) {
           console.log(`   ⚠️  Certificate with this title already exists, skipping...`);
         }
       }
@@ -250,7 +250,7 @@ async function addTestData() {
         console.log(`✅ Destination ${i + 1} created: ${destination.name}`);
       } catch (error) {
         console.error(`❌ Error creating destination ${i + 1} (${destData.name}):`, error.message);
-        if (error.code === '23505') {
+        if (error.code === 'ER_DUP_ENTRY' || error.errno === 1062) {
           console.log(`   ⚠️  Destination with this name already exists, skipping...`);
         }
       }

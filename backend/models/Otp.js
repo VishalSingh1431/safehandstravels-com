@@ -1,7 +1,7 @@
 import pool from '../config/database.js';
 
 /**
- * OTP Model - PostgreSQL operations
+ * OTP Model - MySQL operations
  */
 class Otp {
   /**
@@ -10,13 +10,14 @@ class Otp {
   static async create(email, otp, expiresAt) {
     const query = `
       INSERT INTO otps (email, otp, expires_at)
-      VALUES ($1, $2, $3)
-      RETURNING *
+      VALUES (?, ?, ?)
     `;
 
     const values = [email.toLowerCase(), otp, new Date(expiresAt)];
-    const result = await pool.query(query, values);
-    return result.rows[0];
+    const [result] = await pool.query(query, values);
+    // Get the inserted OTP
+    const [rows] = await pool.query('SELECT * FROM otps WHERE id = ?', [result.insertId]);
+    return rows[0];
   }
 
   /**
@@ -25,23 +26,23 @@ class Otp {
   static async findValidOtp(email, otp) {
     const query = `
       SELECT * FROM otps 
-      WHERE email = $1 
-        AND otp = $2 
+      WHERE email = ? 
+        AND otp = ? 
         AND expires_at > CURRENT_TIMESTAMP 
         AND used = FALSE
       ORDER BY created_at DESC
       LIMIT 1
     `;
 
-    const result = await pool.query(query, [email.toLowerCase(), otp]);
-    return result.rows.length > 0 ? result.rows[0] : null;
+    const [rows] = await pool.query(query, [email.toLowerCase(), otp]);
+    return rows.length > 0 ? rows[0] : null;
   }
 
   /**
    * Mark OTP as used
    */
   static async markAsUsed(id) {
-    const query = 'UPDATE otps SET used = TRUE WHERE id = $1';
+    const query = 'UPDATE otps SET used = TRUE WHERE id = ?';
     await pool.query(query, [id]);
   }
 
@@ -50,10 +51,9 @@ class Otp {
    */
   static async cleanupExpired() {
     const query = 'DELETE FROM otps WHERE expires_at < CURRENT_TIMESTAMP';
-    const result = await pool.query(query);
-    return result.rowCount;
+    const [result] = await pool.query(query);
+    return result.affectedRows;
   }
 }
 
 export default Otp;
-

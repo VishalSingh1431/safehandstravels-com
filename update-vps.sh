@@ -1,12 +1,12 @@
 #!/bin/bash
-# Complete VPS Update Script for Varanasihub.com
+# Complete VPS Update Script for Safe Hands Travels
 # Run this on your VPS to update the website
 
-echo "=== Starting Varanasihub Update ==="
+echo "=== Starting Safe Hands Travels Update ==="
 
 # Navigate to project directory
 echo "1. Navigating to project directory..."
-cd /var/www/Varanasihub/Varanasihub.com || { echo "❌ Failed to navigate to project directory"; exit 1; }
+cd /var/www/safehandstravels/safehandstravels.com || { echo "❌ Failed to navigate to project directory"; exit 1; }
 
 # Pull latest code from GitHub
 echo "2. Pulling latest code from GitHub..."
@@ -48,6 +48,6 @@ pm2 logs backend --lines 20 --nostream
 
 echo ""
 echo "✅ Update Complete!"
-echo "🌐 Website: https://varanasihub.com"
+echo "🌐 Website: https://safehandstravels.com"
 echo "📊 Check logs: pm2 logs backend --lines 50"
 

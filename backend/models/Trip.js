@@ -1,7 +1,7 @@
 import pool from '../config/database.js';
 
 /**
- * Trip Model - PostgreSQL operations
+ * Trip Model - MySQL operations
  */
 class Trip {
   /**
@@ -16,11 +16,7 @@ class Trip {
           subtitle, intro, why_visit, itinerary, included, not_included,
           notes, faq, reviews, category, is_popular, slug, status, created_by
         )
-        VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
-          $16, $17, $18, $19, $20, $21, $22, $23, $24, $25
-        )
-        RETURNING *
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
       const values = [
@@ -51,8 +47,10 @@ class Trip {
         data.createdBy || null,
       ];
 
-      const result = await pool.query(query, values);
-      return this.mapRowToTrip(result.rows[0]);
+      const [result] = await pool.query(query, values);
+      // Get the inserted trip
+      const [rows] = await pool.query('SELECT * FROM trips WHERE id = ?', [result.insertId]);
+      return this.mapRowToTrip(rows[0]);
     } catch (error) {
       console.error('Trip.create error:', error);
       throw error;
@@ -64,9 +62,9 @@ class Trip {
    */
   static async findById(id) {
     try {
-      const query = 'SELECT * FROM trips WHERE id = $1';
-      const result = await pool.query(query, [id]);
-      return result.rows.length > 0 ? this.mapRowToTrip(result.rows[0]) : null;
+      const query = 'SELECT * FROM trips WHERE id = ?';
+      const [rows] = await pool.query(query, [id]);
+      return rows.length > 0 ? this.mapRowToTrip(rows[0]) : null;
     } catch (error) {
       console.error('Trip.findById error:', error);
       throw error;
@@ -78,9 +76,9 @@ class Trip {
    */
   static async findBySlug(slug) {
     try {
-      const query = 'SELECT * FROM trips WHERE slug = $1 AND status = $2';
-      const result = await pool.query(query, [slug, 'active']);
-      return result.rows.length > 0 ? this.mapRowToTrip(result.rows[0]) : null;
+      const query = 'SELECT * FROM trips WHERE slug = ? AND status = ?';
+      const [rows] = await pool.query(query, [slug, 'active']);
+      return rows.length > 0 ? this.mapRowToTrip(rows[0]) : null;
     } catch (error) {
       console.error('Trip.findBySlug error:', error);
       throw error;
@@ -94,36 +92,35 @@ class Trip {
     try {
       let query = 'SELECT * FROM trips WHERE 1=1';
       const values = [];
-      let paramCount = 1;
 
       if (filters.status) {
-        query += ` AND status = $${paramCount++}`;
+        query += ` AND status = ?`;
         values.push(filters.status);
       } else if (!filters.includeDraft) {
         // By default, only show active trips unless includeDraft is true
-        query += ` AND status = $${paramCount++}`;
+        query += ` AND status = ?`;
         values.push('active');
       }
 
       if (filters.location) {
-        query += ` AND location ILIKE $${paramCount++}`;
+        query += ` AND LOWER(location) LIKE LOWER(?)`;
         values.push(`%${filters.location}%`);
       }
 
       query += ' ORDER BY created_at DESC';
 
       if (filters.limit) {
-        query += ` LIMIT $${paramCount++}`;
+        query += ` LIMIT ?`;
         values.push(filters.limit);
       }
 
       if (filters.offset) {
-        query += ` OFFSET $${paramCount++}`;
+        query += ` OFFSET ?`;
         values.push(filters.offset);
       }
 
-      const result = await pool.query(query, values);
-      return result.rows.map(row => this.mapRowToTrip(row));
+      const [rows] = await pool.query(query, values);
+      return rows.map(row => this.mapRowToTrip(row));
     } catch (error) {
       console.error('Trip.findAll error:', error);
       throw error;
@@ -137,7 +134,6 @@ class Trip {
     try {
       const updates = [];
       const values = [];
-      let paramCount = 1;
 
       // Map frontend field names to database column names
       const fieldMapping = {
@@ -172,7 +168,7 @@ class Trip {
 
       for (const [key, dbColumn] of Object.entries(fieldMapping)) {
         if (data[key] !== undefined) {
-          updates.push(`${dbColumn} = $${paramCount++}`);
+          updates.push(`${dbColumn} = ?`);
           if (jsonFields.includes(key)) {
             values.push(JSON.stringify(data[key]));
           } else {
@@ -189,12 +185,13 @@ class Trip {
       const query = `
         UPDATE trips 
         SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP
-        WHERE id = $${paramCount}
-        RETURNING *
+        WHERE id = ?
       `;
 
-      const result = await pool.query(query, values);
-      return this.mapRowToTrip(result.rows[0]);
+      await pool.query(query, values);
+      // Get the updated trip
+      const [rows] = await pool.query('SELECT * FROM trips WHERE id = ?', [id]);
+      return this.mapRowToTrip(rows[0]);
     } catch (error) {
       console.error('Trip.update error:', error);
       throw error;
@@ -206,9 +203,12 @@ class Trip {
    */
   static async delete(id) {
     try {
-      const query = 'DELETE FROM trips WHERE id = $1 RETURNING *';
-      const result = await pool.query(query, [id]);
-      return result.rows.length > 0 ? this.mapRowToTrip(result.rows[0]) : null;
+      // First get the trip before deleting
+      const [rows] = await pool.query('SELECT * FROM trips WHERE id = ?', [id]);
+      if (rows.length === 0) return null;
+      
+      await pool.query('DELETE FROM trips WHERE id = ?', [id]);
+      return this.mapRowToTrip(rows[0]);
     } catch (error) {
       console.error('Trip.delete error:', error);
       throw error;
@@ -258,7 +258,7 @@ class Trip {
       faq: Array.isArray(row.faq) ? row.faq : (row.faq ? JSON.parse(row.faq) : []),
       reviews: Array.isArray(row.reviews) ? row.reviews : (row.reviews ? JSON.parse(row.reviews) : []),
       category: Array.isArray(row.category) ? row.category : (row.category ? JSON.parse(row.category) : []),
-      isPopular: row.is_popular || false,
+      isPopular: Boolean(row.is_popular),
       slug: row.slug,
       status: row.status,
       createdBy: row.created_by,

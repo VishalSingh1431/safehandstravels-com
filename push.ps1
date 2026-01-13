@@ -1,4 +1,4 @@
-cd "C:\Users\visha\Desktop\Varanasihub.com-main"
+cd "C:\Users\visha\Desktop\safehandstravels-com"
 
 # Initialize git if needed
 if (-not (Test-Path .git)) {
@@ -13,7 +13,7 @@ git remote add origin https://github.com/VishalSingh1431/Safehandstravels.git
 git add -A
 
 # Commit
-git commit -m "Push Varanasihub website" --allow-empty
+git commit -m "Push Safe Hands Travels website" --allow-empty
 
 # Set branch to main
 git branch -M main

@@ -1,7 +1,7 @@
 import pool from '../config/database.js';
 
 /**
- * Banner Model - PostgreSQL operations
+ * Banner Model - MySQL operations
  */
 class Banner {
   /**
@@ -11,8 +11,7 @@ class Banner {
     try {
       const query = `
         INSERT INTO banners (image_url, image_public_id, title, subtitle, display_order, status, created_by)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
-        RETURNING *
+        VALUES (?, ?, ?, ?, ?, ?, ?)
       `;
 
       const values = [
@@ -25,8 +24,10 @@ class Banner {
         data.createdBy || null,
       ];
 
-      const result = await pool.query(query, values);
-      return this.mapRowToBanner(result.rows[0]);
+      const [result] = await pool.query(query, values);
+      // Get the inserted banner
+      const [rows] = await pool.query('SELECT * FROM banners WHERE id = ?', [result.insertId]);
+      return this.mapRowToBanner(rows[0]);
     } catch (error) {
       console.error('Banner.create error:', error);
       throw error;
@@ -38,9 +39,9 @@ class Banner {
    */
   static async findById(id) {
     try {
-      const query = 'SELECT * FROM banners WHERE id = $1';
-      const result = await pool.query(query, [id]);
-      return result.rows.length > 0 ? this.mapRowToBanner(result.rows[0]) : null;
+      const query = 'SELECT * FROM banners WHERE id = ?';
+      const [rows] = await pool.query(query, [id]);
+      return rows.length > 0 ? this.mapRowToBanner(rows[0]) : null;
     } catch (error) {
       console.error('Banner.findById error:', error);
       throw error;
@@ -54,10 +55,9 @@ class Banner {
     try {
       let query = 'SELECT * FROM banners WHERE 1=1';
       const values = [];
-      let paramCount = 1;
 
       if (filters.status) {
-        query += ` AND status = $${paramCount++}`;
+        query += ` AND status = ?`;
         values.push(filters.status);
       }
 
@@ -67,8 +67,8 @@ class Banner {
 
       query += ' ORDER BY display_order ASC, id ASC';
 
-      const result = await pool.query(query, values);
-      return result.rows.map(row => this.mapRowToBanner(row));
+      const [rows] = await pool.query(query, values);
+      return rows.map(row => this.mapRowToBanner(row));
     } catch (error) {
       console.error('Banner.findAll error:', error);
       throw error;
@@ -82,7 +82,6 @@ class Banner {
     try {
       const updates = [];
       const values = [];
-      let paramCount = 1;
 
       const fieldMapping = {
         imageUrl: 'image_url',
@@ -95,7 +94,7 @@ class Banner {
 
       for (const [key, dbKey] of Object.entries(fieldMapping)) {
         if (data[key] !== undefined) {
-          updates.push(`${dbKey} = $${paramCount++}`);
+          updates.push(`${dbKey} = ?`);
           values.push(data[key]);
         }
       }
@@ -108,12 +107,13 @@ class Banner {
       const query = `
         UPDATE banners 
         SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP
-        WHERE id = $${paramCount}
-        RETURNING *
+        WHERE id = ?
       `;
 
-      const result = await pool.query(query, values);
-      return this.mapRowToBanner(result.rows[0]);
+      await pool.query(query, values);
+      // Get the updated banner
+      const [rows] = await pool.query('SELECT * FROM banners WHERE id = ?', [id]);
+      return this.mapRowToBanner(rows[0]);
     } catch (error) {
       console.error('Banner.update error:', error);
       throw error;
@@ -125,9 +125,12 @@ class Banner {
    */
   static async delete(id) {
     try {
-      const query = 'DELETE FROM banners WHERE id = $1 RETURNING *';
-      const result = await pool.query(query, [id]);
-      return result.rows.length > 0 ? this.mapRowToBanner(result.rows[0]) : null;
+      // First get the banner before deleting
+      const [rows] = await pool.query('SELECT * FROM banners WHERE id = ?', [id]);
+      if (rows.length === 0) return null;
+      
+      await pool.query('DELETE FROM banners WHERE id = ?', [id]);
+      return this.mapRowToBanner(rows[0]);
     } catch (error) {
       console.error('Banner.delete error:', error);
       throw error;
@@ -156,4 +159,3 @@ class Banner {
 }
 
 export default Banner;
-

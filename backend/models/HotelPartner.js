@@ -1,7 +1,7 @@
 import pool from '../config/database.js';
 
 /**
- * HotelPartner Model - PostgreSQL operations
+ * HotelPartner Model - MySQL operations
  */
 class HotelPartner {
   /**
@@ -11,8 +11,7 @@ class HotelPartner {
     try {
       const query = `
         INSERT INTO hotel_partners (name, logo_url, logo_public_id, link, display_order, status, created_by)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
-        RETURNING *
+        VALUES (?, ?, ?, ?, ?, ?, ?)
       `;
 
       const values = [
@@ -25,8 +24,10 @@ class HotelPartner {
         data.createdBy || null,
       ];
 
-      const result = await pool.query(query, values);
-      return this.mapRowToPartner(result.rows[0]);
+      const [result] = await pool.query(query, values);
+      // Get the inserted partner
+      const [rows] = await pool.query('SELECT * FROM hotel_partners WHERE id = ?', [result.insertId]);
+      return this.mapRowToPartner(rows[0]);
     } catch (error) {
       console.error('HotelPartner.create error:', error);
       throw error;
@@ -38,9 +39,9 @@ class HotelPartner {
    */
   static async findById(id) {
     try {
-      const query = 'SELECT * FROM hotel_partners WHERE id = $1';
-      const result = await pool.query(query, [id]);
-      return result.rows.length > 0 ? this.mapRowToPartner(result.rows[0]) : null;
+      const query = 'SELECT * FROM hotel_partners WHERE id = ?';
+      const [rows] = await pool.query(query, [id]);
+      return rows.length > 0 ? this.mapRowToPartner(rows[0]) : null;
     } catch (error) {
       console.error('HotelPartner.findById error:', error);
       throw error;
@@ -54,10 +55,9 @@ class HotelPartner {
     try {
       let query = 'SELECT * FROM hotel_partners WHERE 1=1';
       const values = [];
-      let paramCount = 1;
 
       if (filters.status) {
-        query += ` AND status = $${paramCount++}`;
+        query += ` AND status = ?`;
         values.push(filters.status);
       }
 
@@ -67,8 +67,8 @@ class HotelPartner {
 
       query += ' ORDER BY display_order ASC, id ASC';
 
-      const result = await pool.query(query, values);
-      return result.rows.map(row => this.mapRowToPartner(row));
+      const [rows] = await pool.query(query, values);
+      return rows.map(row => this.mapRowToPartner(row));
     } catch (error) {
       console.error('HotelPartner.findAll error:', error);
       throw error;
@@ -82,7 +82,6 @@ class HotelPartner {
     try {
       const updates = [];
       const values = [];
-      let paramCount = 1;
 
       const fieldMapping = {
         name: 'name',
@@ -95,7 +94,7 @@ class HotelPartner {
 
       for (const [key, dbKey] of Object.entries(fieldMapping)) {
         if (data[key] !== undefined) {
-          updates.push(`${dbKey} = $${paramCount++}`);
+          updates.push(`${dbKey} = ?`);
           values.push(data[key]);
         }
       }
@@ -108,12 +107,13 @@ class HotelPartner {
       const query = `
         UPDATE hotel_partners 
         SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP
-        WHERE id = $${paramCount}
-        RETURNING *
+        WHERE id = ?
       `;
 
-      const result = await pool.query(query, values);
-      return this.mapRowToPartner(result.rows[0]);
+      await pool.query(query, values);
+      // Get the updated partner
+      const [rows] = await pool.query('SELECT * FROM hotel_partners WHERE id = ?', [id]);
+      return this.mapRowToPartner(rows[0]);
     } catch (error) {
       console.error('HotelPartner.update error:', error);
       throw error;
@@ -125,9 +125,12 @@ class HotelPartner {
    */
   static async delete(id) {
     try {
-      const query = 'DELETE FROM hotel_partners WHERE id = $1 RETURNING *';
-      const result = await pool.query(query, [id]);
-      return result.rows.length > 0 ? this.mapRowToPartner(result.rows[0]) : null;
+      // First get the partner before deleting
+      const [rows] = await pool.query('SELECT * FROM hotel_partners WHERE id = ?', [id]);
+      if (rows.length === 0) return null;
+      
+      await pool.query('DELETE FROM hotel_partners WHERE id = ?', [id]);
+      return this.mapRowToPartner(rows[0]);
     } catch (error) {
       console.error('HotelPartner.delete error:', error);
       throw error;
@@ -156,4 +159,3 @@ class HotelPartner {
 }
 
 export default HotelPartner;
-
