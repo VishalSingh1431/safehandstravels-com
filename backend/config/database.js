@@ -11,10 +11,19 @@ dotenv.config({ path: join(__dirname, '..', '.env') });
 // Parse MySQL connection string
 let dbConfig = {};
 
+console.log('🔍 Database Configuration Debug:');
+console.log('   DATABASE_URL:', process.env.DATABASE_URL ? 'SET' : 'NOT SET');
+console.log('   MYSQL_URL:', process.env.MYSQL_URL ? 'SET' : 'NOT SET');
+console.log('   DB_HOST:', process.env.DB_HOST || 'NOT SET');
+console.log('   DB_USER:', process.env.DB_USER || 'NOT SET');
+console.log('   DB_NAME:', process.env.DB_NAME || 'NOT SET');
+
 if (process.env.DATABASE_URL || process.env.MYSQL_URL) {
   try {
     // MySQL URI format: mysql://user:password@host:port/database
     const uri = process.env.DATABASE_URL || process.env.MYSQL_URL;
+    console.log('📝 Using DATABASE_URL format');
+    console.log('   DATABASE_URL preview:', uri.substring(0, 30) + '...');
     
     // Validate URI format
     if (!uri.startsWith('mysql://') && !uri.startsWith('mysql2://')) {
@@ -42,19 +51,21 @@ if (process.env.DATABASE_URL || process.env.MYSQL_URL) {
       password: decodeURIComponent(url.password), // Decode URL-encoded password
     };
     
-    console.log('🔗 Database Config:', {
-      host: dbConfig.host,
-      port: dbConfig.port,
-      database: dbConfig.database,
-      user: dbConfig.user,
-    });
+    console.log('✅ Database Config from DATABASE_URL:');
+    console.log('   Host:', dbConfig.host);
+    console.log('   Port:', dbConfig.port);
+    console.log('   Database:', dbConfig.database);
+    console.log('   User:', dbConfig.user);
+    console.log('   Password:', dbConfig.password ? '*** (decoded)' : 'NOT SET');
   } catch (error) {
     console.error('❌ Invalid DATABASE_URL format:', error.message);
     console.error('📝 Expected format: mysql://username:password@host:port/database');
+    console.error('   Full error:', error);
     throw error;
   }
 } else {
   // Use individual environment variables
+  console.log('📝 Using individual DB environment variables');
   dbConfig = {
     host: process.env.DB_HOST || process.env.MYSQL_HOST || 'srv1672.hstgr.io',
     port: parseInt(process.env.DB_PORT || process.env.MYSQL_PORT || '3306'),
@@ -62,6 +73,12 @@ if (process.env.DATABASE_URL || process.env.MYSQL_URL) {
     user: process.env.DB_USER || process.env.MYSQL_USER || 'u427254332_SHT',
     password: process.env.DB_PASSWORD || process.env.MYSQL_PASSWORD || 'Safe1431@@',
   };
+  console.log('✅ Database Config from individual variables:');
+  console.log('   Host:', dbConfig.host);
+  console.log('   Port:', dbConfig.port);
+  console.log('   Database:', dbConfig.database);
+  console.log('   User:', dbConfig.user);
+  console.log('   Password:', dbConfig.password ? '*** (set)' : 'NOT SET (using fallback)');
 }
 
 // MySQL connection pool (optimized for production)
@@ -114,17 +131,31 @@ export const queryWithRetry = async (queryFn, maxRetries = 3, retryDelay = 1000)
 
 // Test database connection function
 export const testConnection = async () => {
+  console.log('🔄 Attempting database connection...');
+  console.log('   Using config:', {
+    host: dbConfig.host,
+    port: dbConfig.port,
+    database: dbConfig.database,
+    user: dbConfig.user,
+    password: dbConfig.password ? '***' : 'NOT SET',
+  });
+  
   try {
     const [rows] = await pool.query('SELECT 1 as test');
     console.log('✅ Database connection test successful');
+    console.log('   Connection established to:', dbConfig.host);
     return true;
   } catch (error) {
     console.error('❌ Database connection test failed:');
     console.error('   Error code:', error.code);
+    console.error('   Error errno:', error.errno);
     console.error('   Error message:', error.message);
+    console.error('   SQL State:', error.sqlState);
+    
     if (error.code === 'ENOTFOUND') {
       console.error('   → DNS resolution failed. The hostname cannot be found.');
       console.error('   → FIX: Check your Hostinger MySQL settings');
+      console.error('   → Try using "localhost" instead of the remote host');
     } else if (error.code === 'ECONNREFUSED') {
       console.error('   → Connection refused. The database server is not accepting connections.');
       console.error('   → FIX: Check if MySQL service is running');
@@ -132,12 +163,22 @@ export const testConnection = async () => {
     } else if (error.code === 'ETIMEDOUT') {
       console.error('   → Connection timeout. Network or firewall issue.');
       console.error('   → FIX: Check Remote MySQL access in Hostinger');
-    } else if (error.code === 'ER_ACCESS_DENIED_ERROR' || error.code === 'ER_NOT_SUPPORTED_AUTH_MODE') {
+    } else if (error.code === 'ER_ACCESS_DENIED_ERROR' || error.errno === 1045) {
       console.error('   → Authentication failed. Wrong username or password.');
       console.error('   → FIX: Check your MySQL credentials in Hostinger');
+      console.error('   → Username:', dbConfig.user);
+      console.error('   → Host:', dbConfig.host);
+      console.error('   → Database:', dbConfig.database);
+      console.error('   → Check if user has permission to connect from this IP');
+    } else if (error.code === 'ER_NOT_SUPPORTED_AUTH_MODE') {
+      console.error('   → Authentication method not supported.');
+      console.error('   → FIX: MySQL server requires different authentication');
     } else if (error.code === 'ER_BAD_DB_ERROR') {
       console.error('   → Database does not exist.');
       console.error('   → FIX: Check the database name in your DATABASE_URL');
+      console.error('   → Attempted database:', dbConfig.database);
+    } else {
+      console.error('   → Unknown error. Full error object:', JSON.stringify(error, null, 2));
     }
     return false;
   }
@@ -145,11 +186,17 @@ export const testConnection = async () => {
 
 // Initialize database tables
 export const initializeDatabase = async () => {
+  console.log('🔄 Initializing database...');
+  console.log('   Step 1: Testing database connection');
+  
   // First test the connection
   const connectionOk = await testConnection();
   if (!connectionOk) {
+    console.error('❌ Database initialization aborted - connection test failed');
     throw new Error('Database connection failed. Please check your database configuration.');
   }
+  
+  console.log('   Step 2: Connection test passed, proceeding with table initialization');
 
   try {
     // Create users table if it doesn't exist

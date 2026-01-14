@@ -33,6 +33,19 @@ const __dirname = dirname(__filename);
 //dotenv.config({ path: join(__dirname, '.env') });
 dotenv.config();
 
+// Debug: Log environment variables status (without showing sensitive values)
+console.log('🔍 Environment Variables Debug:');
+console.log('   NODE_ENV:', process.env.NODE_ENV || 'not set');
+console.log('   PORT:', process.env.PORT || 'not set (using default 5000)');
+console.log('   DATABASE_URL:', process.env.DATABASE_URL ? `${process.env.DATABASE_URL.substring(0, 20)}...` : '❌ NOT SET');
+console.log('   DB_HOST:', process.env.DB_HOST || 'not set');
+console.log('   DB_USER:', process.env.DB_USER || 'not set');
+console.log('   DB_NAME:', process.env.DB_NAME || 'not set');
+console.log('   DB_PASSWORD:', process.env.DB_PASSWORD ? '***' : 'not set');
+console.log('   JWT_SECRET:', process.env.JWT_SECRET ? '*** (set)' : '❌ NOT SET');
+console.log('   CLOUDINARY_CLOUD_NAME:', process.env.CLOUDINARY_CLOUD_NAME || '❌ NOT SET');
+console.log('   CLOUDINARY_API_KEY:', process.env.CLOUDINARY_API_KEY ? '*** (set)' : '❌ NOT SET');
+
 // Validate environment variables (non-blocking in production)
 if (process.env.NODE_ENV !== 'production') {
   validateEnv();
