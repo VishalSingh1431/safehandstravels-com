@@ -79,6 +79,8 @@ initializeDatabase()
     console.warn('⚠️  Please check your DATABASE_URL in .env file');
   });
 
+  
+
 // Security middleware
 app.use(securityMiddleware);
 
