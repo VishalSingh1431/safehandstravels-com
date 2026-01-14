@@ -20,7 +20,7 @@ lerna-debug.log*
 # Build outputs
 # dist/ - removed to allow frontend/dist in git
 dist-ssr/
-build/
+
 *.tsbuildinfo
 !frontend/dist/
 
