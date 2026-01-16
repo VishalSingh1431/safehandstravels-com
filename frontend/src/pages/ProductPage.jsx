@@ -774,32 +774,10 @@ function ProductPage() {
                   )}
                 </div>
 
-                {/* Tabs Navigation */}
-                {pageSettings?.tabs?.some(tab => tab.enabled) && (
-                  <div className="mb-6 sm:mb-8 flex flex-wrap gap-2 sm:gap-3 border-b border-gray-200 pb-3 sm:pb-4 overflow-x-auto">
-                    {pageSettings.tabs
-                      .filter(tab => tab.enabled)
-                      .sort((a, b) => a.order - b.order)
-                      .map((tab) => (
-                        <button
-                          key={tab.id}
-                          onClick={() => setActiveTab(tab.label)}
-                          className={`px-4 sm:px-6 py-2 sm:py-3 rounded-full font-semibold text-xs sm:text-sm transition-all duration-300 whitespace-nowrap ${
-                            activeTab === tab.label
-                              ? 'bg-gradient-to-br from-[#017233] to-[#01994d] text-white shadow-lg'
-                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:border hover:border-[#017233]/30'
-                          }`}
-                        >
-                          {tab.label}
-                        </button>
-                      ))}
-                  </div>
-                )}
-
-                {/* Tab Content */}
+                {/* All Sections - Single Vertical Scroll Layout */}
                 <div className="space-y-8">
-                  {/* Itinerary Tab */}
-                  {activeTab === 'Itinerary' && pageSettings?.tabs?.find(t => t.id === 'itinerary')?.enabled && (
+                  {/* Itinerary Section */}
+                  {pageSettings?.tabs?.find(t => t.id === 'itinerary')?.enabled && (
                     <section className="bg-gradient-to-br from-[#017233]/5 to-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 md:p-8 lg:p-10 border border-[#017233]/10">
                       <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
                         <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-[#017233] to-[#01994d] flex items-center justify-center text-white text-lg sm:text-xl font-bold shadow-lg flex-shrink-0">
@@ -877,8 +855,8 @@ function ProductPage() {
                   </section>
                   )}
 
-                  {/* Inclusion/Exclusion Tab */}
-                  {activeTab === 'Inclusion/Exclusion' && pageSettings?.tabs?.find(t => t.id === 'inclusion')?.enabled && (
+                  {/* Inclusion/Exclusion Section */}
+                  {pageSettings?.tabs?.find(t => t.id === 'inclusion')?.enabled && (
                     <div className="grid md:grid-cols-2 gap-6">
               <section className="bg-gradient-to-br from-[#017233]/5 to-white rounded-2xl shadow-lg p-8 border border-[#017233]/10">
                 <div className="flex items-center gap-3 mb-6">
@@ -915,8 +893,8 @@ function ProductPage() {
                     </div>
                   )}
 
-                  {/* Notes Tab */}
-                  {activeTab === 'Notes' && pageSettings?.tabs?.find(t => t.id === 'notes')?.enabled && (
+                  {/* Notes Section */}
+                  {pageSettings?.tabs?.find(t => t.id === 'notes')?.enabled && (
                     <section className="bg-gradient-to-br from-[#017233]/5 via-white to-[#01994d]/5 border-l-4 border-[#017233] rounded-2xl shadow-lg p-8 md:p-10">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#017233] to-[#01994d] flex items-center justify-center text-white text-xl font-bold shadow-lg">
@@ -935,8 +913,8 @@ function ProductPage() {
                   </section>
                   )}
 
-                  {/* Date & Costing Tab */}
-                  {activeTab === 'Date & Costing' && pageSettings?.tabs?.find(t => t.id === 'costing')?.enabled && (
+                  {/* Date & Costing Section */}
+                  {pageSettings?.tabs?.find(t => t.id === 'costing')?.enabled && (
                     <section className="bg-gradient-to-br from-[#017233]/5 to-white rounded-2xl shadow-lg p-8 md:p-10 border border-[#017233]/10">
                       <div className="flex items-center gap-4 mb-6">
                         <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#017233] to-[#01994d] flex items-center justify-center text-white text-xl font-bold shadow-lg">
@@ -968,32 +946,6 @@ function ProductPage() {
                     </section>
                   )}
 
-                  {/* Why Visit Section */}
-                  {pageSettings?.sections?.find(s => s.id === 'whyVisit')?.enabled && (
-                  <section className="bg-gradient-to-br from-[#017233]/5 to-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 md:p-8 lg:p-10 border border-[#017233]/10">
-                    <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
-                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-[#017233] to-[#01994d] flex items-center justify-center text-white text-lg sm:text-xl font-bold shadow-lg flex-shrink-0">
-                        ✨
-                      </div>
-                      <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900">
-                        Why Visit {trip.location}?
-                      </h2>
-                    </div>
-                    <ul className="grid sm:grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-                      {content.whyVisit.map((reason, index) => (
-                        <li 
-                          key={index} 
-                          className="group flex items-start gap-3 sm:gap-4 bg-white rounded-lg sm:rounded-xl p-4 sm:p-5 shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-[#017233]/30"
-                        >
-                          <div className="flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-[#017233] to-[#01994d] flex items-center justify-center text-white text-sm sm:text-base font-bold shadow-lg group-hover:scale-110 transition-transform">
-                            ✓
-                          </div>
-                          <span className="text-gray-700 text-sm sm:text-base leading-relaxed pt-0.5 sm:pt-1">{reason}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </section>
-                  )}
 
                   {/* Gallery Section */}
                   {pageSettings?.sections?.find(s => s.id === 'gallery')?.enabled && (
@@ -1359,34 +1311,6 @@ function ProductPage() {
       </div>
       </div>
 
-      {/* Call to Action Card */}
-      {pageSettings?.cta?.enabled && (
-      <div className="mx-auto w-full px-4 sm:px-6 lg:px-8 pb-16">
-          <section className="relative bg-gradient-to-br from-[#017233] via-[#01994d] to-[#017233] text-white p-10 md:p-12 rounded-3xl text-center shadow-2xl overflow-hidden border-4 border-white">
-            {/* Decorative elements */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32"></div>
-            <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full -ml-24 -mb-24"></div>
-            
-            <div className="relative z-10">
-              <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 drop-shadow-lg">
-                {pageSettings?.cta?.heading || 'Ready to Embark on This Adventure?'}
-              </h2>
-              <p className="text-lg md:text-xl mb-8 opacity-95">
-                {pageSettings?.cta?.description || 'Book your spot now and create memories that last a lifetime!'}
-              </p>
-              <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-                <div className="text-center bg-white/10 backdrop-blur-sm rounded-xl px-6 py-4 border border-white/20">
-                  <p className="text-sm opacity-90 mb-1">Starting from</p>
-                  <p className="text-4xl md:text-5xl font-bold">{trip.price}</p>
-                  {trip.oldPrice && pageSettings?.displaySettings?.showOldPrice && (
-                    <p className="text-sm opacity-75 mt-1 line-through">{trip.oldPrice}</p>
-                  )}
-                </div>
-              </div>
-            </div>
-          </section>
-        </div>
-      )}
 
       {/* Enquiry Form Modal */}
       {showEnquiryForm && (

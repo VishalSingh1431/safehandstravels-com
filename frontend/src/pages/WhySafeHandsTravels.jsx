@@ -46,7 +46,7 @@ function WhySafeHandsTravels() {
       <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 text-gray-900 font-sans">
         {/* Section Header */}
         <section className="py-12 md:py-16 lg:py-20 bg-white">
-          <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto w-full max-w-6xl px-2 sm:px-3 lg:px-4">
             <div className="text-center">
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-4 md:mb-6">
                 Why SafeHand Travels
@@ -61,7 +61,7 @@ function WhySafeHandsTravels() {
 
         {/* Features Grid */}
         <section className="py-12 md:py-16 lg:py-20 bg-gradient-to-b from-white to-gray-50">
-          <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto w-full max-w-7xl px-2 sm:px-3 lg:px-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
               {features.map((feature, index) => {
                 const IconComponent = feature.icon

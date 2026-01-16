@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Calendar, Clock, MapPin, CheckCircle } from 'lucide-react'
 import SEO from '../components/SEO'
 
 function BlogDetail() {
@@ -119,10 +118,66 @@ function BlogDetail() {
     }
   }, [id])
 
-  const handleBookNow = () => {
-    // Navigate to booking page or open booking form
-    navigate('/all-india-trips')
-  }
+  // Parse HTML content into sections (text and images) using useMemo
+  const contentBlocks = useMemo(() => {
+    if (!blog?.content) return []
+    
+    try {
+      const htmlContent = blog.content
+      // Split by image divs - look for divs containing img tags
+      const imageDivPattern = /<div[^>]*class="[^"]*my-8[^"]*"[^>]*>[\s\S]*?<\/div>/gi
+      const parts = []
+      let lastIndex = 0
+      
+      // Find all image divs
+      const matches = []
+      let match
+      while ((match = imageDivPattern.exec(htmlContent)) !== null) {
+        matches.push({
+          index: match.index,
+          length: match[0].length,
+          fullMatch: match[0]
+        })
+      }
+      
+      // Process each image div
+      matches.forEach((divMatch) => {
+        // Get text before this image
+        const textBefore = htmlContent.substring(lastIndex, divMatch.index).trim()
+        if (textBefore) {
+          parts.push({ type: 'text', content: textBefore })
+        }
+        
+        // Extract image src and alt from the div
+        const imgTagMatch = divMatch.fullMatch.match(/<img[^>]*src=["']([^"']*)["'][^>]*alt=["']([^"']*)["'][^>]*>/i)
+        if (imgTagMatch) {
+          parts.push({ 
+            type: 'image', 
+            src: imgTagMatch[1], 
+            alt: imgTagMatch[2] || '' 
+          })
+        }
+        
+        lastIndex = divMatch.index + divMatch.length
+      })
+      
+      // Add remaining text after last image
+      const remainingText = htmlContent.substring(lastIndex).trim()
+      if (remainingText) {
+        parts.push({ type: 'text', content: remainingText })
+      }
+      
+      // If no images found, return entire content as text
+      if (parts.length === 0) {
+        return [{ type: 'text', content: htmlContent }]
+      }
+      
+      return parts
+    } catch (error) {
+      console.error('Error parsing content:', error)
+      return [{ type: 'text', content: blog.content }]
+    }
+  }, [blog?.content])
 
   if (loading) {
     return (
@@ -180,99 +235,129 @@ function BlogDetail() {
           </div>
         </section>
 
-        {/* Main Content Layout - Two Column */}
-        <section className="py-8 md:py-12">
+        {/* Main Content Layout - Zigzag Pattern */}
+        <section className="py-8 md:py-16">
           <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
-              {/* LEFT (70%) - Scrollable Content */}
-              <div className="w-full lg:w-[70%]">
-                <div className="prose prose-lg max-w-none">
-                  {/* Blog Description */}
-                  <p className="text-xl md:text-2xl text-gray-700 leading-relaxed mb-8 font-medium">
-                    {blog.description}
-                  </p>
+            {/* Blog Description */}
+            <div className="mb-12 text-center">
+              <p className="text-xl md:text-2xl text-gray-700 leading-relaxed font-medium max-w-3xl mx-auto">
+                {blog.description}
+              </p>
+            </div>
 
-                  {/* Blog Content with Images */}
-                  <div 
-                    className="blog-content text-gray-700"
-                    dangerouslySetInnerHTML={{ __html: blog.content }}
-                    style={{
-                      lineHeight: '1.75'
-                    }}
-                  />
-                </div>
-              </div>
+            {/* Zigzag Content Sections */}
+            {(() => {
+              // Fallback to original rendering if parsing fails or returns empty
+              if (!contentBlocks || contentBlocks.length === 0) {
+                return (
+                  <div className="blog-content text-gray-700 prose prose-lg max-w-4xl mx-auto">
+                    <div 
+                      dangerouslySetInnerHTML={{ __html: blog.content }}
+                      style={{ lineHeight: '1.75' }}
+                    />
+                  </div>
+                )
+              }
 
-              {/* RIGHT (30%) - Fixed Tour Package Section */}
-              <div className="w-full lg:w-[30%]">
-                <div className="lg:sticky lg:top-24">
-                  <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
-                    {/* Tour Package Header */}
-                    <div className="bg-gradient-to-br from-[#017233] to-[#01994d] p-6 text-white">
-                      <h2 className="text-2xl font-bold mb-2">Tour Package</h2>
-                      <p className="text-white/90 text-sm">Book your adventure now</p>
+              const blocks = []
+              let currentText = ''
+              let blockIndex = 0
+
+              // Process sections sequentially to create blocks
+              contentBlocks.forEach((section) => {
+                if (section.type === 'text') {
+                  // Accumulate text
+                  currentText += section.content
+                } else if (section.type === 'image') {
+                  // When we hit an image, create a block with accumulated text and this image
+                  if (currentText.trim()) {
+                    blocks.push({
+                      text: currentText.trim(),
+                      image: section,
+                      index: blockIndex++
+                    })
+                    currentText = ''
+                  } else {
+                    // Image without preceding text - create image-only block
+                    blocks.push({
+                      text: '',
+                      image: section,
+                      index: blockIndex++
+                    })
+                  }
+                }
+              })
+
+              // Add any remaining text
+              if (currentText.trim()) {
+                blocks.push({
+                  text: currentText.trim(),
+                  image: null,
+                  index: blockIndex++
+                })
+              }
+
+              return blocks.map((block, idx) => {
+                const isEven = idx % 2 === 0
+                const hasImage = block.image !== null
+                const hasText = block.text !== ''
+
+                // If no image, render text full width
+                if (!hasImage && hasText) {
+                  return (
+                    <div key={idx} className="mb-12 md:mb-16">
+                      <div 
+                        className="blog-content text-gray-700 prose prose-lg max-w-4xl mx-auto"
+                        dangerouslySetInnerHTML={{ __html: block.text }}
+                        style={{ lineHeight: '1.75' }}
+                      />
                     </div>
+                  )
+                }
 
-                    {/* Tour Package Details */}
-                    <div className="p-6 space-y-6">
-                      {/* Package Title */}
-                      <div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-2">
-                          {blog.tourPackage.title}
-                        </h3>
-                      </div>
+                // If no text, render image full width
+                if (hasImage && !hasText) {
+                  return (
+                    <div key={idx} className="mb-12 md:mb-16">
+                      <img
+                        src={block.image.src}
+                        alt={block.image.alt}
+                        className="w-full h-[400px] md:h-[500px] lg:h-[600px] rounded-2xl shadow-2xl object-cover"
+                      />
+                    </div>
+                  )
+                }
 
-                      {/* Price */}
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-4xl font-bold text-[#017233]">
-                          {blog.tourPackage.price}
-                        </span>
-                        <span className="text-gray-600">per person</span>
-                      </div>
-
-                      {/* Duration */}
-                      <div className="flex items-center gap-3 text-gray-700">
-                        <Clock className="w-5 h-5 text-[#017233]" />
-                        <span className="font-semibold">{blog.tourPackage.duration}</span>
-                      </div>
-
-                      {/* Highlights */}
-                      <div>
-                        <h4 className="text-lg font-bold text-gray-900 mb-4">Highlights</h4>
-                        <ul className="space-y-3">
-                          {blog.tourPackage.highlights.map((highlight, index) => (
-                            <li key={index} className="flex items-start gap-3">
-                              <CheckCircle className="w-5 h-5 text-[#017233] flex-shrink-0 mt-0.5" />
-                              <span className="text-gray-700">{highlight}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-
-                      {/* Book Now Button */}
-                      <button
-                        onClick={handleBookNow}
-                        className="w-full bg-gradient-to-br from-[#017233] to-[#01994d] text-white px-6 py-4 rounded-xl font-bold text-lg hover:shadow-xl hover:scale-105 transition-all duration-300 shadow-lg"
-                      >
-                        Book Now
-                      </button>
-
-                      {/* Additional Info */}
-                      <div className="pt-4 border-t border-gray-200">
-                        <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
-                          <MapPin className="w-4 h-4 text-[#017233]" />
-                          <span>Multiple locations</span>
+                // Zigzag layout: even index = image left, odd index = image right
+                return (
+                  <div key={idx} className="mb-12 md:mb-20">
+                    <div className={`flex flex-col ${isEven ? 'lg:flex-row' : 'lg:flex-row-reverse'} gap-8 lg:gap-12 items-start`}>
+                      {/* Image Section */}
+                      {hasImage && (
+                        <div className="w-full lg:w-1/2">
+                          <img
+                            src={block.image.src}
+                            alt={block.image.alt}
+                            className="w-full h-[400px] md:h-[500px] lg:h-[600px] rounded-2xl shadow-2xl object-cover"
+                          />
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <Calendar className="w-4 h-4 text-[#017233]" />
-                          <span>Flexible dates</span>
+                      )}
+
+                      {/* Text Section */}
+                      {hasText && (
+                        <div className={`w-full ${hasImage ? 'lg:w-1/2' : 'lg:w-full'}`}>
+                          <div 
+                            className="blog-content text-gray-700 prose prose-lg max-w-none"
+                            dangerouslySetInnerHTML={{ __html: block.text }}
+                            style={{ lineHeight: '1.75' }}
+                          />
                         </div>
-                      </div>
+                      )}
                     </div>
                   </div>
-                </div>
-              </div>
-            </div>
+                )
+              })
+            })()}
           </div>
         </section>
       </div>
