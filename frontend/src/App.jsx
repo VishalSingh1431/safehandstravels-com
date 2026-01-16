@@ -39,12 +39,15 @@ import AdminBrandingPartners from './pages/AdminBrandingPartners'
 import AdminHotelPartners from './pages/AdminHotelPartners'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
+import ScrollToTop from './components/ScrollToTop'
+import LeadCaptureForm from './components/LeadCaptureForm'
 import './App.css'
 
 function App() {
   return (
     <ToastProvider>
       <Router>
+        <ScrollToTop />
         <div className="min-h-screen flex flex-col">
           <Navbar />
           <main className="flex-grow">
@@ -90,6 +93,7 @@ function App() {
             </Routes>
           </main>
           <Footer />
+          <LeadCaptureForm />
         </div>
       </Router>
     </ToastProvider>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search } from 'lucide-react'
 import SEO from '../components/SEO'
@@ -6,8 +6,6 @@ import SEO from '../components/SEO'
 function Experiences() {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
-  const [instagramFollowers, setInstagramFollowers] = useState(0)
-  const [googleReviews, setGoogleReviews] = useState(0)
 
   // Sample data - replace with actual API calls
   const destinations = [
@@ -28,32 +26,6 @@ function Experiences() {
     { id: 6, title: 'Backwaters of Kerala', image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80' }
   ]
 
-  // Animated counter effect
-  useEffect(() => {
-    const targetInstagram = 12500 // Replace with actual Instagram followers count
-    const targetGoogle = 450 // Replace with actual Google reviews count
-    const duration = 2000 // 2 seconds
-    const steps = 60
-    const stepTime = duration / steps
-
-    let currentStep = 0
-    const timer = setInterval(() => {
-      currentStep++
-      const progress = currentStep / steps
-      const easeOutQuart = 1 - Math.pow(1 - progress, 4)
-      
-      setInstagramFollowers(Math.floor(targetInstagram * easeOutQuart))
-      setGoogleReviews(Math.floor(targetGoogle * easeOutQuart))
-
-      if (currentStep >= steps) {
-        setInstagramFollowers(targetInstagram)
-        setGoogleReviews(targetGoogle)
-        clearInterval(timer)
-      }
-    }, stepTime)
-
-    return () => clearInterval(timer)
-  }, [])
 
   const handleSearch = (e) => {
     e.preventDefault()
@@ -97,7 +69,7 @@ function Experiences() {
 
         {/* Blog Search Bar */}
         <section className="py-8 md:py-12 bg-white">
-          <div className="mx-auto w-full max-w-4xl px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto w-full max-w-4xl px-2 sm:px-3 lg:px-4">
             <form onSubmit={handleSearch} className="relative">
               <input
                 type="search"
@@ -117,36 +89,9 @@ function Experiences() {
           </div>
         </section>
 
-        {/* Social Proof Section */}
-        <section className="py-8 md:py-12 bg-gradient-to-br from-gray-50 to-white">
-          <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-8 md:gap-16">
-              {/* Instagram Followers */}
-              <div className="text-center">
-                <div className="text-4xl md:text-5xl lg:text-6xl font-bold text-[#017233] mb-2">
-                  {instagramFollowers.toLocaleString()}+
-                </div>
-                <div className="text-lg md:text-xl text-gray-600 font-semibold">
-                  Instagram Followers
-                </div>
-              </div>
-
-              {/* Google Reviews */}
-              <div className="text-center">
-                <div className="text-4xl md:text-5xl lg:text-6xl font-bold text-[#017233] mb-2">
-                  {googleReviews.toLocaleString()}+
-                </div>
-                <div className="text-lg md:text-xl text-gray-600 font-semibold">
-                  Google Reviews
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
         {/* Related Blogs Section - Explore by Destination */}
         <section className="py-12 md:py-16 bg-white">
-          <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto w-full max-w-7xl px-2 sm:px-3 lg:px-4">
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-8 md:mb-12 text-center">
               Explore by Destination
             </h2>
@@ -176,7 +121,7 @@ function Experiences() {
 
         {/* Latest Blogs Section */}
         <section className="py-12 md:py-16 bg-gradient-to-b from-white to-gray-50">
-          <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto w-full max-w-7xl px-2 sm:px-3 lg:px-4">
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-8 md:mb-12 text-center">
               Latest Blogs
             </h2>
