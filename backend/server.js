@@ -45,6 +45,8 @@ console.log('   DB_PASSWORD:', process.env.DB_PASSWORD ? '***' : 'not set');
 console.log('   JWT_SECRET:', process.env.JWT_SECRET ? '*** (set)' : '❌ NOT SET');
 console.log('   CLOUDINARY_CLOUD_NAME:', process.env.CLOUDINARY_CLOUD_NAME || '❌ NOT SET');
 console.log('   CLOUDINARY_API_KEY:', process.env.CLOUDINARY_API_KEY ? '*** (set)' : '❌ NOT SET');
+console.log('   FRONTEND_URL:', process.env.FRONTEND_URL || '❌ NOT SET (CORS may fail!)');
+console.log('   BASE_DOMAIN:', process.env.BASE_DOMAIN || '❌ NOT SET');
 
 // Validate environment variables (non-blocking in production)
 if (process.env.NODE_ENV !== 'production') {
