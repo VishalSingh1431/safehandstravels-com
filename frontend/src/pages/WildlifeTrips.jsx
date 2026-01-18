@@ -3,7 +3,7 @@ import { tripsAPI } from '../config/api'
 import TripCard from '../components/card/TripCard'
 import { Loader2 } from 'lucide-react'
 
-function NatureTrips() {
+function WildlifeTrips() {
   const [trips, setTrips] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -15,13 +15,13 @@ function NatureTrips() {
     try {
       setLoading(true)
       const response = await tripsAPI.getAllTrips()
-      // Filter active trips with Nature category
-      const natureTrips = (response.trips || []).filter(trip => {
+      // Filter active trips with Wildlife category
+      const wildlifeTrips = (response.trips || []).filter(trip => {
         const isActive = trip.status === 'active'
         const categories = Array.isArray(trip.category) ? trip.category : []
-        return isActive && categories.includes('Nature')
+        return isActive && categories.includes('Wildlife')
       })
-      setTrips(natureTrips)
+      setTrips(wildlifeTrips)
     } catch (error) {
       console.error('Error fetching trips:', error)
       setTrips([])
@@ -35,15 +35,15 @@ function NatureTrips() {
       <div className="mx-auto w-full max-w-7xl px-4 md:px-6 lg:px-8">
         <div className="mb-8 md:mb-12">
           <div className="flex items-center gap-4 mb-4">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-white text-xl font-bold shadow-lg">
-              🌿
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center text-white text-xl font-bold shadow-lg">
+              🦁
             </div>
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900">
-              Nature Tours
+              Wildlife Tours
             </h1>
           </div>
           <p className="text-gray-600 text-lg max-w-3xl">
-            Discover India's breathtaking natural beauty, wildlife sanctuaries, and pristine landscapes.
+            Explore India's diverse wildlife sanctuaries, national parks, and encounter majestic tigers, elephants, and exotic birds in their natural habitat.
           </p>
         </div>
 
@@ -59,7 +59,7 @@ function NatureTrips() {
           </div>
         ) : (
           <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">No nature trips available at the moment.</p>
+            <p className="text-gray-500 text-lg">No wildlife trips available at the moment.</p>
           </div>
         )}
       </div>
@@ -67,5 +67,5 @@ function NatureTrips() {
   )
 }
 
-export default NatureTrips
+export default WildlifeTrips
 

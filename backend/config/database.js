@@ -307,6 +307,7 @@ export const initializeDatabase = async () => {
         faq JSON DEFAULT ('[]'),
         reviews JSON DEFAULT ('[]'),
         category JSON DEFAULT ('[]'),
+        recommended_trips JSON DEFAULT ('[]'),
         is_popular BOOLEAN DEFAULT FALSE,
         slug VARCHAR(255) UNIQUE,
         status VARCHAR(50) DEFAULT 'active',
@@ -328,6 +329,22 @@ export const initializeDatabase = async () => {
     // Add is_popular column if it doesn't exist
     try {
       await pool.query(`ALTER TABLE trips ADD COLUMN is_popular BOOLEAN DEFAULT FALSE`);
+    } catch (e) {
+      // Column might already exist, ignore
+    }
+
+    // Add recommended_trips column if it doesn't exist
+    try {
+      await pool.query(`ALTER TABLE trips ADD COLUMN recommended_trips JSON DEFAULT ('[]')`);
+      console.log('✅ Added recommended_trips column to trips table');
+    } catch (e) {
+      // Column might already exist, ignore
+    }
+
+    // Add seats_left column if it doesn't exist
+    try {
+      await pool.query(`ALTER TABLE trips ADD COLUMN seats_left INT DEFAULT NULL`);
+      console.log('✅ Added seats_left column to trips table');
     } catch (e) {
       // Column might already exist, ignore
     }
@@ -623,6 +640,44 @@ export const initializeDatabase = async () => {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
       )
     `);
+
+    // Create blogs table if it doesn't exist
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS blogs (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        slug VARCHAR(255) NOT NULL UNIQUE,
+        description TEXT,
+        content LONGTEXT NOT NULL,
+        hero_image TEXT,
+        hero_image_public_id TEXT,
+        category VARCHAR(100),
+        tags JSON DEFAULT ('[]'),
+        author VARCHAR(255),
+        author_id INT,
+        featured BOOLEAN DEFAULT FALSE,
+        status VARCHAR(50) DEFAULT 'draft',
+        display_order INT DEFAULT 0,
+        views INT DEFAULT 0,
+        meta_title VARCHAR(255),
+        meta_description TEXT,
+        meta_keywords JSON DEFAULT ('[]'),
+        published_at TIMESTAMP NULL,
+        created_by INT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        CONSTRAINT chk_status CHECK (status IN ('draft', 'published', 'archived')),
+        FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+      )
+    `);
+
+    // Create indexes for blogs
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_blogs_slug ON blogs(slug)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_blogs_status ON blogs(status)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_blogs_category ON blogs(category)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_blogs_featured ON blogs(featured)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_blogs_published_at ON blogs(published_at)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_blogs_display_order ON blogs(display_order)`);
 
     console.log('✅ Database tables initialized');
   } catch (error) {

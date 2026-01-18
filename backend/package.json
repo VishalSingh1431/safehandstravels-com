@@ -10,7 +10,8 @@
     "prod": "node server.js",
     "init-admins": "node scripts/initializeMainAdmins.js",
     "test-cloudinary": "node scripts/testCloudinary.js",
-    "add-hotel-partners": "node scripts/addHotelPartners.js"
+    "add-hotel-partners": "node scripts/addHotelPartners.js",
+    "add-test-blogs": "node scripts/addTestBlogs.js"
   },
   "keywords": [],
   "author": "",

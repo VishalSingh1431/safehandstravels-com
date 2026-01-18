@@ -14,14 +14,14 @@ class Trip {
           title, location, duration, price, old_price, image_url, video_url,
           video_public_id, image_public_id, gallery, gallery_public_ids,
           subtitle, intro, why_visit, itinerary, included, not_included,
-          notes, faq, reviews, category, is_popular, slug, status, created_by
+          notes, faq, reviews, category, recommended_trips, seats_left, is_popular, slug, status, created_by
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
       const values = [
         data.title,
-        data.location,
+        Array.isArray(data.location) ? JSON.stringify(data.location) : (data.location || ''),
         data.duration,
         data.price,
         data.oldPrice || null,
@@ -41,6 +41,8 @@ class Trip {
         JSON.stringify(data.faq || []),
         JSON.stringify(data.reviews || []),
         JSON.stringify(data.category || []),
+        JSON.stringify(data.recommendedTrips || []),
+        data.seatsLeft ? parseInt(data.seatsLeft) : null,
         data.isPopular || false,
         data.slug || this.generateSlug(data.title),
         data.status || 'active',
@@ -158,19 +160,51 @@ class Trip {
         faq: 'faq',
         reviews: 'reviews',
         category: 'category',
+        recommendedTrips: 'recommended_trips',
+        seatsLeft: 'seats_left',
         isPopular: 'is_popular',
         slug: 'slug',
         status: 'status',
       };
 
       // JSON fields that need to be stringified
-      const jsonFields = ['gallery', 'galleryPublicIds', 'whyVisit', 'itinerary', 'included', 'notIncluded', 'notes', 'faq', 'reviews', 'category'];
+      const jsonFields = ['gallery', 'galleryPublicIds', 'whyVisit', 'itinerary', 'included', 'notIncluded', 'notes', 'faq', 'reviews', 'category', 'location', 'recommendedTrips'];
+
+      // Explicitly handle recommendedTrips first - always update if present in data (even if empty array)
+      let recommendedTripsAdded = false;
+      if ('recommendedTrips' in data) {
+        updates.push('recommended_trips = ?');
+        const recTrips = Array.isArray(data.recommendedTrips) ? data.recommendedTrips : [];
+        values.push(JSON.stringify(recTrips));
+        recommendedTripsAdded = true;
+        console.log('Updating recommended_trips:', recTrips); // Debug log
+      }
+
+      // Explicitly handle seatsLeft - convert empty string to null
+      let seatsLeftAdded = false;
+      if ('seatsLeft' in data) {
+        updates.push('seats_left = ?');
+        const seatsValue = data.seatsLeft === '' || data.seatsLeft === null || data.seatsLeft === undefined 
+          ? null 
+          : parseInt(data.seatsLeft);
+        values.push(seatsValue);
+        seatsLeftAdded = true;
+        console.log('Updating seats_left:', seatsValue); // Debug log
+      }
 
       for (const [key, dbColumn] of Object.entries(fieldMapping)) {
+        // Skip recommendedTrips and seatsLeft if already added above
+        if ((key === 'recommendedTrips' && recommendedTripsAdded) || 
+            (key === 'seatsLeft' && seatsLeftAdded)) {
+          continue;
+        }
+        
         if (data[key] !== undefined) {
           updates.push(`${dbColumn} = ?`);
           if (jsonFields.includes(key)) {
-            values.push(JSON.stringify(data[key]));
+            // Ensure arrays are properly formatted
+            const jsonValue = Array.isArray(data[key]) ? data[key] : (data[key] || []);
+            values.push(JSON.stringify(jsonValue));
           } else {
             values.push(data[key]);
           }
@@ -188,10 +222,15 @@ class Trip {
         WHERE id = ?
       `;
 
+      console.log('UPDATE query:', query); // Debug log
+      console.log('UPDATE values:', values); // Debug log
       await pool.query(query, values);
       // Get the updated trip
       const [rows] = await pool.query('SELECT * FROM trips WHERE id = ?', [id]);
-      return this.mapRowToTrip(rows[0]);
+      const updatedTrip = this.mapRowToTrip(rows[0]);
+      console.log('Updated trip recommendedTrips from DB:', rows[0]?.recommended_trips); // Debug log
+      console.log('Parsed recommendedTrips:', updatedTrip?.recommendedTrips); // Debug log
+      return updatedTrip;
     } catch (error) {
       console.error('Trip.update error:', error);
       throw error;
@@ -234,10 +273,28 @@ class Trip {
     if (!row) return null;
 
     try {
+      console.log('mapRowToTrip - recommended_trips raw value:', row.recommended_trips, 'type:', typeof row.recommended_trips); // Debug log
+      // Parse location - handle both JSON array and string (backward compatibility)
+      let location = row.location || '';
+      if (location && typeof location === 'string' && location.trim() !== '') {
+        // Check if it looks like JSON (starts with [)
+        if (location.trim().startsWith('[')) {
+          try {
+            const parsed = JSON.parse(location);
+            location = Array.isArray(parsed) ? parsed : location; // If array, use it; else keep original
+          } catch (e) {
+            // Not valid JSON, keep as string (backward compatibility)
+          }
+        }
+        // If it doesn't start with [, it's a plain string, keep it as is
+      } else if (!location) {
+        location = '';
+      }
+
       return {
         id: row.id,
         title: row.title,
-        location: row.location,
+        location: location,
         duration: row.duration,
         price: row.price,
         oldPrice: row.old_price,
@@ -259,6 +316,43 @@ class Trip {
         faq: Array.isArray(row.faq) ? row.faq : (row.faq ? JSON.parse(row.faq) : []),
         reviews: Array.isArray(row.reviews) ? row.reviews : (row.reviews ? JSON.parse(row.reviews) : []),
         category: Array.isArray(row.category) ? row.category : (row.category ? JSON.parse(row.category) : []),
+        seatsLeft: row.seats_left !== null && row.seats_left !== undefined ? parseInt(row.seats_left) : null,
+        recommendedTrips: (() => {
+          try {
+            const recTrips = row.recommended_trips;
+            
+            // If already an array, return it
+            if (Array.isArray(recTrips)) {
+              return recTrips;
+            }
+            
+            // If it's a string, try to parse it
+            if (recTrips && typeof recTrips === 'string') {
+              // Handle empty string or '[]'
+              if (recTrips.trim() === '' || recTrips.trim() === '[]') {
+                return [];
+              }
+              const parsed = JSON.parse(recTrips);
+              return Array.isArray(parsed) ? parsed : [];
+            }
+            
+            // If null or undefined, return empty array
+            if (!recTrips) {
+              return [];
+            }
+            
+            // Fallback: try to parse as JSON (might be a JSON object already parsed by MySQL)
+            try {
+              const parsed = JSON.parse(recTrips);
+              return Array.isArray(parsed) ? parsed : [];
+            } catch {
+              return [];
+            }
+          } catch (e) {
+            console.error('Error parsing recommended_trips:', e, 'Value:', row.recommended_trips, 'Type:', typeof row.recommended_trips);
+            return [];
+          }
+        })(),
         isPopular: Boolean(row.is_popular),
         slug: row.slug,
         status: row.status,

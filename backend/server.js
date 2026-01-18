@@ -26,6 +26,7 @@ import faqsRoutes from './routes/faqs.js';
 import bannersRoutes from './routes/banners.js';
 import brandingPartnersRoutes from './routes/brandingPartners.js';
 import hotelPartnersRoutes from './routes/hotelPartners.js';
+import blogsRoutes from './routes/blogs.js';
 
 // Load .env from backend directory (works even when run from different directory)
 const __filename = fileURLToPath(import.meta.url);
@@ -36,7 +37,7 @@ dotenv.config();
 // Debug: Log environment variables status (without showing sensitive values)
 console.log('🔍 Environment Variables Debug:');
 console.log('   NODE_ENV:', process.env.NODE_ENV || 'not set');
-console.log('   PORT:', process.env.PORT || 'not set (using default 5000)');
+console.log('   PORT:', process.env.PORT || 'not set (using default 5001)');
 console.log('   DATABASE_URL:', process.env.DATABASE_URL ? `${process.env.DATABASE_URL.substring(0, 20)}...` : '❌ NOT SET');
 console.log('   DB_HOST:', process.env.DB_HOST || 'not set');
 console.log('   DB_USER:', process.env.DB_USER || 'not set');
@@ -62,9 +63,9 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
-// const PORT = process.env.PORT || 5000;
+// const PORT = process.env.PORT || 5001;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
 // Trust proxy - Required when behind Nginx reverse proxy
@@ -115,6 +116,18 @@ if (NODE_ENV === 'production') {
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Caching middleware for public GET requests (improves performance)
+app.use('/api', (req, res, next) => {
+  // Only cache GET requests
+  if (req.method === 'GET' && !req.path.includes('/admin')) {
+    // Cache public API responses for 5 minutes
+    // This helps reduce server load and improves response times
+    res.set('Cache-Control', 'public, max-age=300, s-maxage=300'); // 5 minutes
+    res.set('ETag', false); // Disable ETag to prevent validation requests
+  }
+  next();
+});
+
 // Health check
 app.get('/api/health', async (req, res) => {
   try {
@@ -156,6 +169,7 @@ app.use('/api/faqs', faqsRoutes);
 app.use('/api/banners', bannersRoutes);
 app.use('/api/branding-partners', brandingPartnersRoutes);
 app.use('/api/hotel-partners', hotelPartnersRoutes);
+app.use('/api/blogs', blogsRoutes);
 
 // Serve React Frontend (Vite build is in frontend/dist)
 // Recursive function to find dist folder with index.html
@@ -284,8 +298,9 @@ if (buildPath) {
   
   // Serve static files (CSS, JS, images, etc.) with proper MIME types
   app.use(express.static(buildPath, {
-    maxAge: '1d', // Cache static assets for 1 day
+    maxAge: '1y', // Cache static assets for 1 year (better for production)
     etag: true,
+    immutable: true, // Files with hash in name are immutable
   }));
   
   // Serve index.html for all non-API routes (React Router)

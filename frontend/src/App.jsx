@@ -1,47 +1,64 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { Suspense, lazy } from 'react'
 import { ToastProvider } from './contexts/ToastContext'
-import Login from './pages/Login'
-import Signup from './pages/Signup'
-import Profile from './pages/Profile'
-import Home from './pages/Home'
-import ProductPage from './pages/ProductPage'
-import CarBooking from './pages/CarBooking'
-import AllIndiaTrips from './pages/AllIndiaTrips'
-import PopularTrips from './pages/PopularTrips'
-import DestinationTrips from './pages/DestinationTrips'
-import SpiritualTrips from './pages/SpiritualTrips'
-import CulturalTrips from './pages/CulturalTrips'
-import HeritageTrips from './pages/HeritageTrips'
-import NatureTrips from './pages/NatureTrips'
-import AdventureTrips from './pages/AdventureTrips'
-import HimalayanEscapes from './pages/HimalayanEscapes'
-import BeachIslandBreaks from './pages/BeachIslandBreaks'
-import WellnessRetreats from './pages/WellnessRetreats'
-import Blog from './pages/Blog'
-import Experiences from './pages/Experiences'
-import CustomiseTrip from './pages/CustomiseTrip'
-import CustomisedTrip from './pages/CustomisedTrip'
-import WhySafeHandsTravels from './pages/WhySafeHandsTravels'
-import BlogDetail from './pages/BlogDetail'
-import AdminTrips from './pages/AdminTrips'
-import AdminCertificates from './pages/AdminCertificates'
-import AdminDestinations from './pages/AdminDestinations'
-import AdminReviews from './pages/AdminReviews'
-import AdminWrittenReviews from './pages/AdminWrittenReviews'
-import AdminEnquiries from './pages/AdminEnquiries'
-import AdminDrivers from './pages/AdminDrivers'
-import AdminPopularTrips from './pages/AdminPopularTrips'
-import AdminVibeVideos from './pages/AdminVibeVideos'
-import AdminTravellerReviews from './pages/AdminTravellerReviews'
-import AdminFAQs from './pages/AdminFAQs'
-import AdminBanners from './pages/AdminBanners'
-import AdminBrandingPartners from './pages/AdminBrandingPartners'
-import AdminHotelPartners from './pages/AdminHotelPartners'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import ScrollToTop from './components/ScrollToTop'
 import LeadCaptureForm from './components/LeadCaptureForm'
 import './App.css'
+
+// Lazy load all pages for code splitting - reduces initial bundle size
+const Home = lazy(() => import('./pages/Home'))
+const ProductPage = lazy(() => import('./pages/ProductPage'))
+const Login = lazy(() => import('./pages/Login'))
+const Signup = lazy(() => import('./pages/Signup'))
+const Profile = lazy(() => import('./pages/Profile'))
+const CarBooking = lazy(() => import('./pages/CarBooking'))
+const AllIndiaTrips = lazy(() => import('./pages/AllIndiaTrips'))
+const PopularTrips = lazy(() => import('./pages/PopularTrips'))
+const DestinationTrips = lazy(() => import('./pages/DestinationTrips'))
+const SpiritualTrips = lazy(() => import('./pages/SpiritualTrips'))
+const CulturalTrips = lazy(() => import('./pages/CulturalTrips'))
+const HeritageTrips = lazy(() => import('./pages/HeritageTrips'))
+const WellnessTrips = lazy(() => import('./pages/WellnessTrips'))
+const WildlifeTrips = lazy(() => import('./pages/WildlifeTrips'))
+const AdventureTrips = lazy(() => import('./pages/AdventureTrips'))
+const HimalayanEscapes = lazy(() => import('./pages/HimalayanEscapes'))
+const BeachIslandBreaks = lazy(() => import('./pages/BeachIslandBreaks'))
+const WellnessRetreats = lazy(() => import('./pages/WellnessRetreats'))
+const Blog = lazy(() => import('./pages/Blog'))
+const Experiences = lazy(() => import('./pages/Experiences'))
+const CustomiseTrip = lazy(() => import('./pages/CustomiseTrip'))
+const CustomisedTrip = lazy(() => import('./pages/CustomisedTrip'))
+const WhySafeHandsTravels = lazy(() => import('./pages/WhySafeHandsTravels'))
+const BlogDetail = lazy(() => import('./pages/BlogDetail'))
+
+// Admin pages - lazy loaded separately (rarely accessed)
+const AdminTrips = lazy(() => import('./pages/AdminTrips'))
+const AdminCertificates = lazy(() => import('./pages/AdminCertificates'))
+const AdminDestinations = lazy(() => import('./pages/AdminDestinations'))
+const AdminReviews = lazy(() => import('./pages/AdminReviews'))
+const AdminWrittenReviews = lazy(() => import('./pages/AdminWrittenReviews'))
+const AdminEnquiries = lazy(() => import('./pages/AdminEnquiries'))
+const AdminDrivers = lazy(() => import('./pages/AdminDrivers'))
+const AdminPopularTrips = lazy(() => import('./pages/AdminPopularTrips'))
+const AdminVibeVideos = lazy(() => import('./pages/AdminVibeVideos'))
+const AdminTravellerReviews = lazy(() => import('./pages/AdminTravellerReviews'))
+const AdminFAQs = lazy(() => import('./pages/AdminFAQs'))
+const AdminBanners = lazy(() => import('./pages/AdminBanners'))
+const AdminBrandingPartners = lazy(() => import('./pages/AdminBrandingPartners'))
+const AdminHotelPartners = lazy(() => import('./pages/AdminHotelPartners'))
+const AdminBlogs = lazy(() => import('./pages/AdminBlogs'))
+
+// Loading component
+const PageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center bg-white">
+    <div className="text-center">
+      <div className="w-16 h-16 border-4 border-[#017233] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+      <p className="text-gray-600">Loading...</p>
+    </div>
+  </div>
+)
 
 function App() {
   return (
@@ -51,7 +68,8 @@ function App() {
         <div className="min-h-screen flex flex-col">
           <Navbar />
           <main className="flex-grow">
-            <Routes>
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/trip/:id" element={<ProductPage />} />
               <Route path="/login" element={<Login />} />
@@ -64,7 +82,8 @@ function App() {
               <Route path="/spiritual-trips" element={<SpiritualTrips />} />
               <Route path="/cultural-trips" element={<CulturalTrips />} />
               <Route path="/heritage-trips" element={<HeritageTrips />} />
-              <Route path="/nature-trips" element={<NatureTrips />} />
+              <Route path="/wellness-trips" element={<WellnessTrips />} />
+              <Route path="/wildlife-trips" element={<WildlifeTrips />} />
               <Route path="/adventure-trips" element={<AdventureTrips />} />
               <Route path="/himalayan-escapes" element={<HimalayanEscapes />} />
               <Route path="/beach-island-breaks" element={<BeachIslandBreaks />} />
@@ -90,7 +109,9 @@ function App() {
               <Route path="/admin/banners" element={<AdminBanners />} />
               <Route path="/admin/branding-partners" element={<AdminBrandingPartners />} />
               <Route path="/admin/hotel-partners" element={<AdminHotelPartners />} />
-            </Routes>
+              <Route path="/admin/blogs" element={<AdminBlogs />} />
+              </Routes>
+            </Suspense>
           </main>
           <Footer />
           <LeadCaptureForm />

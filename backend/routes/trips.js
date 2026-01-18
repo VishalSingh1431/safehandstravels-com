@@ -65,6 +65,8 @@ router.get('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Trip not found' });
     }
 
+    console.log('GET /:id - trip.recommendedTrips:', trip.recommendedTrips); // Debug log
+    console.log('GET /:id - trip.seatsLeft:', trip.seatsLeft, 'type:', typeof trip.seatsLeft); // Debug log
     res.json({ trip });
   } catch (error) {
     console.error('Error fetching trip:', error);
@@ -129,6 +131,9 @@ router.put('/:id', verifyToken, verifyAdmin, async (req, res) => {
 
     // Handle file deletions if new files are uploaded
     const updateData = { ...req.body };
+    
+    // Debug log to see what's being received
+    console.log('Update trip - received recommendedTrips:', updateData.recommendedTrips); // Debug log
     
     // If new image uploaded, delete old one
     if (updateData.imageUrl && existingTrip.imagePublicId && updateData.imageUrl !== existingTrip.imageUrl) {

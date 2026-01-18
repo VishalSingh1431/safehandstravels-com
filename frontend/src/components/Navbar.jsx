@@ -44,7 +44,8 @@ const travelDropdownItems = [
   { label: 'Spiritual', route: '/spiritual-trips', icon: '🕉️' },
   { label: 'Cultural', route: '/cultural-trips', icon: '🎭' },
   { label: 'Heritage', route: '/heritage-trips', icon: '🏛️' },
-  { label: 'Nature', route: '/nature-trips', icon: '🌿' },
+  { label: 'Wellness', route: '/wellness-trips', icon: '🧘' },
+  { label: 'Wildlife', route: '/wildlife-trips', icon: '🦁' },
   { label: 'Adventure', route: '/adventure-trips', icon: '⛰️' }
 ];
 
@@ -365,6 +366,14 @@ const Navbar = () => {
                           <span className="text-base flex-shrink-0">🏨</span>
                           <span>Manage Hotel Partners</span>
                         </Link>
+                        <Link
+                          to="/admin/blogs"
+                          className="flex items-center gap-3 whitespace-nowrap px-5 py-2.5 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg mx-2 hover:scale-105 active:scale-95"
+                          onClick={() => setIsAdminDropdownOpen(false)}
+                        >
+                          <span className="text-base flex-shrink-0">📝</span>
+                          <span>Manage Blog Posts</span>
+                        </Link>
                       </div>
                     )}
                   </div>
@@ -644,6 +653,13 @@ const Navbar = () => {
                         onClick={() => setIsMobileMenuOpen(false)}
                       >
                         🏨 Manage Hotel Partners
+                      </Link>
+                      <Link
+                        to="/admin/blogs"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        📝 Manage Blog Posts
                       </Link>
                     </div>
                   )}

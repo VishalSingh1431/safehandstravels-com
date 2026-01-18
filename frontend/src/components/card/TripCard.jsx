@@ -1,6 +1,11 @@
 import { Link } from 'react-router-dom'
+import { getThumbnailUrl } from '../../utils/imageOptimizer'
 
 function TripCard({ trip }) {
+  // Optimize image URL for thumbnail (smaller size, faster loading)
+  const imageUrl = trip.imageUrl || trip.image || 'https://images.unsplash.com/photo-1501594907352-04cda38ebc29?auto=format&fit=crop&w=900&q=60'
+  const optimizedImageUrl = getThumbnailUrl(imageUrl)
+  
   return (
     <Link
       to={`/trip/${trip.id}`}
@@ -9,8 +14,9 @@ function TripCard({ trip }) {
       {/* Image Section */}
       <div className="relative h-40 sm:h-44 w-full overflow-hidden">
         <img 
-          src={trip.imageUrl || trip.image || 'https://images.unsplash.com/photo-1501594907352-04cda38ebc29?auto=format&fit=crop&w=900&q=60'} 
+          src={optimizedImageUrl} 
           alt={trip.title} 
+          loading="lazy"
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" 
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>

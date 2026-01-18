@@ -42,7 +42,7 @@ export const apiCall = async (endpoint, options = {}) => {
     console.error('API Error:', error);
     // If it's a network error, provide helpful message
     if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-      const networkError = new Error('Cannot connect to server. Make sure the backend server is running on port 5000.');
+      const networkError = new Error('Cannot connect to server. Make sure the backend server is running on port 5001.');
       networkError.help = 'Start the backend server with: cd backend && npm run dev';
       throw networkError;
     }
@@ -728,6 +728,66 @@ export const hotelPartnersAPI = {
 
   deletePartner: async (id) => {
     return apiCall(`/hotel-partners/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+// Blogs API functions
+export const blogsAPI = {
+  getAllBlogs: async (category = '', featured = '', search = '', limit = 50, offset = 0) => {
+    const params = new URLSearchParams();
+    if (category) params.append('category', category);
+    if (featured) params.append('featured', featured);
+    if (search) params.append('search', search);
+    params.append('limit', limit);
+    params.append('offset', offset);
+    return apiCall(`/blogs?${params.toString()}`, {
+      method: 'GET',
+    });
+  },
+
+  getAllBlogsAdmin: async (status = '', category = '', featured = '', search = '', limit = 50, offset = 0) => {
+    const params = new URLSearchParams();
+    if (status) params.append('status', status);
+    if (category) params.append('category', category);
+    if (featured) params.append('featured', featured);
+    if (search) params.append('search', search);
+    params.append('limit', limit);
+    params.append('offset', offset);
+    return apiCall(`/blogs/admin?${params.toString()}`, {
+      method: 'GET',
+    });
+  },
+
+  getBlogById: async (id) => {
+    return apiCall(`/blogs/${id}`, {
+      method: 'GET',
+    });
+  },
+
+  getBlogBySlug: async (slug) => {
+    return apiCall(`/blogs/slug/${slug}`, {
+      method: 'GET',
+    });
+  },
+
+  createBlog: async (blogData) => {
+    return apiCall('/blogs', {
+      method: 'POST',
+      body: JSON.stringify(blogData),
+    });
+  },
+
+  updateBlog: async (id, blogData) => {
+    return apiCall(`/blogs/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(blogData),
+    });
+  },
+
+  deleteBlog: async (id) => {
+    return apiCall(`/blogs/${id}`, {
       method: 'DELETE',
     });
   },
