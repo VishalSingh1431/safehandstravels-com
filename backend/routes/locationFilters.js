@@ -7,7 +7,7 @@ const router = express.Router();
 // Get location filters (public)
 router.get('/', async (req, res) => {
   try {
-    const result = await pool.query(`
+    const [rows] = await pool.query(`
       SELECT setting_value 
       FROM app_settings 
       WHERE setting_key = 'location_filters'
@@ -27,11 +27,11 @@ router.get('/', async (req, res) => {
     ];
 
     let filters = defaultFilters;
-    if (result.rows.length > 0 && result.rows[0].setting_value) {
+    if (rows.length > 0 && rows[0].setting_value) {
       try {
-        filters = typeof result.rows[0].setting_value === 'string' 
-          ? JSON.parse(result.rows[0].setting_value)
-          : result.rows[0].setting_value;
+        filters = typeof rows[0].setting_value === 'string' 
+          ? JSON.parse(rows[0].setting_value)
+          : rows[0].setting_value;
       } catch (e) {
         filters = defaultFilters;
       }
@@ -47,7 +47,7 @@ router.get('/', async (req, res) => {
 // Get location filters (Admin)
 router.get('/admin', verifyToken, verifyAdmin, async (req, res) => {
   try {
-    const result = await pool.query(`
+    const [rows] = await pool.query(`
       SELECT setting_value 
       FROM app_settings 
       WHERE setting_key = 'location_filters'
@@ -67,11 +67,11 @@ router.get('/admin', verifyToken, verifyAdmin, async (req, res) => {
     ];
 
     let filters = defaultFilters;
-    if (result.rows.length > 0 && result.rows[0].setting_value) {
+    if (rows.length > 0 && rows[0].setting_value) {
       try {
-        filters = typeof result.rows[0].setting_value === 'string' 
-          ? JSON.parse(result.rows[0].setting_value)
-          : result.rows[0].setting_value;
+        filters = typeof rows[0].setting_value === 'string' 
+          ? JSON.parse(rows[0].setting_value)
+          : rows[0].setting_value;
       } catch (e) {
         filters = defaultFilters;
       }
@@ -100,10 +100,9 @@ router.put('/admin', verifyToken, verifyAdmin, async (req, res) => {
 
     await pool.query(`
       INSERT INTO app_settings (setting_key, setting_value)
-      VALUES ('location_filters', $1::jsonb)
-      ON CONFLICT (setting_key) 
-      DO UPDATE SET setting_value = $1::jsonb, updated_at = CURRENT_TIMESTAMP
-    `, [JSON.stringify(processedFilters)]);
+      VALUES ('location_filters', ?)
+      ON DUPLICATE KEY UPDATE setting_value = ?, updated_at = CURRENT_TIMESTAMP
+    `, [JSON.stringify(processedFilters), JSON.stringify(processedFilters)]);
 
     res.json({
       message: 'Location filters updated successfully',
@@ -119,4 +118,3 @@ router.put('/admin', verifyToken, verifyAdmin, async (req, res) => {
 });
 
 export default router;
-

@@ -4,7 +4,7 @@
 
 const baseUrl = typeof window !== 'undefined' 
   ? window.location.origin 
-  : 'https://varanasihub.com';
+  : 'https://safehandstravels.com';
 
 /**
  * Organization structured data
@@ -13,7 +13,7 @@ export const getOrganizationSchema = () => ({
   '@context': 'https://schema.org',
   '@type': 'TravelAgency',
   name: 'Safe Hands Travels',
-  alternateName: 'VaranasiHub',
+  alternateName: 'Safe Hands Travels',
   url: baseUrl,
   logo: `${baseUrl}/images/Logo.webp`,
   description: 'Your trusted partner for unforgettable travel experiences. We make your dreams come true, one destination at a time.',
@@ -177,7 +177,7 @@ export const getWebsiteSchema = () => ({
   '@context': 'https://schema.org',
   '@type': 'WebSite',
   name: 'Safe Hands Travels',
-  alternateName: 'VaranasiHub',
+  alternateName: 'Safe Hands Travels',
   url: baseUrl,
   potentialAction: {
     '@type': 'SearchAction',

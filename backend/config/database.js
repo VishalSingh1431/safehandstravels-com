@@ -1,4 +1,4 @@
-import pkg from 'pg';
+import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -8,19 +8,26 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 dotenv.config({ path: join(__dirname, '..', '.env') });
 
-const { Pool } = pkg;
-
-// Parse Aiven Service URI if provided
+// Parse MySQL connection string
 let dbConfig = {};
 
-if (process.env.DATABASE_URL || process.env.POSTGRES_SERVICE_URI) {
+console.log('🔍 Database Configuration Debug:');
+console.log('   DATABASE_URL:', process.env.DATABASE_URL ? 'SET' : 'NOT SET');
+console.log('   MYSQL_URL:', process.env.MYSQL_URL ? 'SET' : 'NOT SET');
+console.log('   DB_HOST:', process.env.DB_HOST || 'NOT SET');
+console.log('   DB_USER:', process.env.DB_USER || 'NOT SET');
+console.log('   DB_NAME:', process.env.DB_NAME || 'NOT SET');
+
+if (process.env.DATABASE_URL || process.env.MYSQL_URL) {
   try {
-    // Aiven Service URI format: postgres://user:password@host:port/database?sslmode=require
-    const uri = process.env.DATABASE_URL || process.env.POSTGRES_SERVICE_URI;
+    // MySQL URI format: mysql://user:password@host:port/database
+    const uri = process.env.DATABASE_URL || process.env.MYSQL_URL;
+    console.log('📝 Using DATABASE_URL format');
+    console.log('   DATABASE_URL preview:', uri.substring(0, 30) + '...');
     
     // Validate URI format
-    if (!uri.startsWith('postgres://') && !uri.startsWith('postgresql://')) {
-      throw new Error('DATABASE_URL must start with postgres:// or postgresql://');
+    if (!uri.startsWith('mysql://') && !uri.startsWith('mysql2://')) {
+      throw new Error('DATABASE_URL must start with mysql:// or mysql2://');
     }
     
     const url = new URL(uri);
@@ -38,62 +45,55 @@ if (process.env.DATABASE_URL || process.env.POSTGRES_SERVICE_URI) {
     
     dbConfig = {
       host: url.hostname,
-      port: parseInt(url.port) || 5432,
-      database: url.pathname.replace(/^\//, '') || 'defaultdb', // Remove leading '/'
+      port: parseInt(url.port) || 3306,
+      database: url.pathname.replace(/^\//, '') || 'defaultdb',
       user: url.username,
-      password: url.password,
-      ssl: {
-        rejectUnauthorized: false
-      },
+      password: decodeURIComponent(url.password), // Decode URL-encoded password
     };
     
-    console.log('🔗 Database Config:', {
-      host: dbConfig.host,
-      port: dbConfig.port,
-      database: dbConfig.database,
-      user: dbConfig.user,
-      ssl: 'enabled'
-    });
+    console.log('✅ Database Config from DATABASE_URL:');
+    console.log('   Host:', dbConfig.host);
+    console.log('   Port:', dbConfig.port);
+    console.log('   Database:', dbConfig.database);
+    console.log('   User:', dbConfig.user);
+    console.log('   Password:', dbConfig.password ? '*** (decoded)' : 'NOT SET');
   } catch (error) {
     console.error('❌ Invalid DATABASE_URL format:', error.message);
-    console.error('📝 Expected format: postgres://username:password@host:port/database?sslmode=require');
-    console.error('📝 Get your connection string from: https://console.aiven.io/');
+    console.error('📝 Expected format: mysql://username:password@host:port/database');
+    console.error('   Full error:', error);
     throw error;
   }
 } else {
   // Use individual environment variables
+  console.log('📝 Using individual DB environment variables');
   dbConfig = {
-    host: process.env.DB_HOST || process.env.POSTGRES_HOST,
-    port: parseInt(process.env.DB_PORT || process.env.POSTGRES_PORT || '5432'),
-    database: process.env.DB_NAME || process.env.POSTGRES_DB || 'defaultdb',
-    user: process.env.DB_USER || process.env.POSTGRES_USER,
-    password: process.env.DB_PASSWORD || process.env.POSTGRES_PASSWORD,
-    ssl: process.env.DB_SSL === 'true' || process.env.POSTGRES_SSL === 'true' ? {
-      rejectUnauthorized: false
-    } : false,
+    host: process.env.DB_HOST || process.env.MYSQL_HOST || 'srv1672.hstgr.io',
+    port: parseInt(process.env.DB_PORT || process.env.MYSQL_PORT || '3306'),
+    database: process.env.DB_NAME || process.env.MYSQL_DB || 'u427254332_SHT',
+    user: process.env.DB_USER || process.env.MYSQL_USER || 'u427254332_SHT',
+    password: process.env.DB_PASSWORD || process.env.MYSQL_PASSWORD || 'Safe1431@@',
   };
+  console.log('✅ Database Config from individual variables:');
+  console.log('   Host:', dbConfig.host);
+  console.log('   Port:', dbConfig.port);
+  console.log('   Database:', dbConfig.database);
+  console.log('   User:', dbConfig.user);
+  console.log('   Password:', dbConfig.password ? '*** (set)' : 'NOT SET (using fallback)');
 }
 
-// PostgreSQL connection pool (optimized for production)
-const pool = new Pool({
+// MySQL connection pool (optimized for production)
+const pool = mysql.createPool({
   ...dbConfig,
-  max: process.env.NODE_ENV === 'production' ? 30 : 20, // More connections in production
-  min: process.env.NODE_ENV === 'production' ? 5 : 2, // Keep minimum connections alive
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 20000, // Increased to 20 seconds for Aiven
-  allowExitOnIdle: false, // Keep pool alive
+  waitForConnections: true,
+  connectionLimit: process.env.NODE_ENV === 'production' ? 30 : 20,
+  queueLimit: 0,
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 0,
 });
 
 // Test connection
-pool.on('connect', () => {
-  console.log('✅ Connected to PostgreSQL');
-});
-
-pool.on('error', (err) => {
-  console.error('❌ PostgreSQL connection error:', err);
-  console.error('Error code:', err.code);
-  console.error('Error message:', err.message);
-  // Don't exit on error - let the app handle it gracefully
+pool.on('connection', (connection) => {
+  console.log('✅ Connected to MySQL');
 });
 
 // Helper function to retry queries on connection errors
@@ -112,9 +112,9 @@ export const queryWithRetry = async (queryFn, maxRetries = 3, retryDelay = 1000)
         error.code === 'ETIMEDOUT' ||
         error.code === 'ENOTFOUND' ||
         error.code === 'ECONNREFUSED' ||
-        error.message?.includes('Connection terminated') ||
-        error.message?.includes('connection timeout') ||
-        error.message?.includes('Connection terminated unexpectedly');
+        error.code === 'PROTOCOL_CONNECTION_LOST' ||
+        error.message?.includes('Connection lost') ||
+        error.message?.includes('connection timeout');
       
       if (isConnectionError && attempt < maxRetries) {
         console.warn(`⚠️  Database connection error (attempt ${attempt}/${maxRetries}), retrying in ${retryDelay}ms...`);
@@ -122,7 +122,6 @@ export const queryWithRetry = async (queryFn, maxRetries = 3, retryDelay = 1000)
         continue;
       }
       
-      // If not a connection error or max retries reached, throw immediately
       throw error;
     }
   }
@@ -132,144 +131,121 @@ export const queryWithRetry = async (queryFn, maxRetries = 3, retryDelay = 1000)
 
 // Test database connection function
 export const testConnection = async () => {
+  console.log('🔄 Attempting database connection...');
+  console.log('   Using config:', {
+    host: dbConfig.host,
+    port: dbConfig.port,
+    database: dbConfig.database,
+    user: dbConfig.user,
+    password: dbConfig.password ? '***' : 'NOT SET',
+  });
+  
   try {
-    const result = await pool.query('SELECT NOW() as current_time');
+    const [rows] = await pool.query('SELECT 1 as test');
     console.log('✅ Database connection test successful');
-    console.log('   Current database time:', result.rows[0].current_time);
+    console.log('   Connection established to:', dbConfig.host);
     return true;
   } catch (error) {
     console.error('❌ Database connection test failed:');
     console.error('   Error code:', error.code);
+    console.error('   Error errno:', error.errno);
     console.error('   Error message:', error.message);
-    console.error('   Error details:', error);
+    console.error('   SQL State:', error.sqlState);
+    
     if (error.code === 'ENOTFOUND') {
       console.error('   → DNS resolution failed. The hostname cannot be found.');
-      console.error('   → FIX: Check your Aiven dashboard at https://console.aiven.io/');
-      console.error('   → Get the correct Service URI from: Project → PostgreSQL → Connection Information');
-      console.error('   → Make sure your database service is running (not paused)');
+      console.error('   → FIX: Check your Hostinger MySQL settings');
+      console.error('   → Try using "localhost" instead of the remote host');
     } else if (error.code === 'ECONNREFUSED') {
       console.error('   → Connection refused. The database server is not accepting connections.');
-      console.error('   → FIX: Check if the database service is running in Aiven dashboard');
-      console.error('   → Verify the port number is correct');
+      console.error('   → FIX: Check if MySQL service is running');
+      console.error('   → Verify the port number is correct (usually 3306)');
     } else if (error.code === 'ETIMEDOUT') {
       console.error('   → Connection timeout. Network or firewall issue.');
-      console.error('   → FIX: Check your internet connection and firewall settings');
-    } else if (error.code === '28P01') {
+      console.error('   → FIX: Check Remote MySQL access in Hostinger');
+    } else if (error.code === 'ER_ACCESS_DENIED_ERROR' || error.errno === 1045) {
       console.error('   → Authentication failed. Wrong username or password.');
-      console.error('   → FIX: Get the correct password from Aiven dashboard');
-    } else if (error.code === '3D000') {
+      console.error('   → FIX: Check your MySQL credentials in Hostinger');
+      console.error('   → Username:', dbConfig.user);
+      console.error('   → Host:', dbConfig.host);
+      console.error('   → Database:', dbConfig.database);
+      console.error('   → Check if user has permission to connect from this IP');
+    } else if (error.code === 'ER_NOT_SUPPORTED_AUTH_MODE') {
+      console.error('   → Authentication method not supported.');
+      console.error('   → FIX: MySQL server requires different authentication');
+    } else if (error.code === 'ER_BAD_DB_ERROR') {
       console.error('   → Database does not exist.');
       console.error('   → FIX: Check the database name in your DATABASE_URL');
+      console.error('   → Attempted database:', dbConfig.database);
     } else {
-      console.error('   → Unknown error. Check your DATABASE_URL in .env file');
+      console.error('   → Unknown error. Full error object:', JSON.stringify(error, null, 2));
     }
-    console.error('');
-    console.error('📝 QUICK FIX:');
-    console.error('   1. Go to https://console.aiven.io/');
-    console.error('   2. Select your PostgreSQL service');
-    console.error('   3. Click "Connection information"');
-    console.error('   4. Copy the "Service URI"');
-    console.error('   5. Paste it in backend/.env as: DATABASE_URL=<your-service-uri>');
-    console.error('');
     return false;
   }
 };
 
 // Initialize database tables
 export const initializeDatabase = async () => {
+  console.log('🔄 Initializing database...');
+  console.log('   Step 1: Testing database connection');
+  
   // First test the connection
   const connectionOk = await testConnection();
   if (!connectionOk) {
-    throw new Error('Database connection failed. Please check your database configuration in .env file.');
+    console.error('❌ Database initialization aborted - connection test failed');
+    throw new Error('Database connection failed. Please check your database configuration.');
   }
+  
+  console.log('   Step 2: Connection test passed, proceeding with table initialization');
 
   try {
     // Create users table if it doesn't exist
     await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
+        id INT AUTO_INCREMENT PRIMARY KEY,
         email VARCHAR(255) NOT NULL UNIQUE,
         name VARCHAR(255),
         phone VARCHAR(20),
         bio TEXT,
         picture TEXT,
         google_id VARCHAR(255),
+        role VARCHAR(50) DEFAULT 'user',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        CONSTRAINT chk_role CHECK (role IN ('main_admin', 'admin', 'user'))
       )
     `);
 
     // Add missing columns if they don't exist (for existing tables)
-    // Check and add picture column
-    const pictureColumnCheck = await pool.query(`
-      SELECT column_name 
-      FROM information_schema.columns 
-      WHERE table_name = 'users' AND column_name = 'picture'
-    `);
-    if (pictureColumnCheck.rows.length === 0) {
+    try {
       await pool.query(`ALTER TABLE users ADD COLUMN picture TEXT`);
       console.log('✅ Added missing "picture" column to users table');
+    } catch (e) {
+      // Column might already exist, ignore
     }
 
-    // Check and add google_id column
-    const googleIdColumnCheck = await pool.query(`
-      SELECT column_name 
-      FROM information_schema.columns 
-      WHERE table_name = 'users' AND column_name = 'google_id'
-    `);
-    if (googleIdColumnCheck.rows.length === 0) {
+    try {
       await pool.query(`ALTER TABLE users ADD COLUMN google_id VARCHAR(255)`);
       console.log('✅ Added missing "google_id" column to users table');
+    } catch (e) {
+      // Column might already exist, ignore
     }
 
-    // Check and add role column with default 'user'
-    const roleColumnCheck = await pool.query(`
-      SELECT column_name 
-      FROM information_schema.columns 
-      WHERE table_name = 'users' AND column_name = 'role'
-    `);
-    if (roleColumnCheck.rows.length === 0) {
+    try {
       await pool.query(`
         ALTER TABLE users 
-        ADD COLUMN role VARCHAR(50) DEFAULT 'user' 
-        CHECK (role IN ('main_admin', 'admin', 'user'))
+        ADD COLUMN role VARCHAR(50) DEFAULT 'user',
+        ADD CONSTRAINT chk_role CHECK (role IN ('main_admin', 'admin', 'user'))
       `);
       console.log('✅ Added missing "role" column to users table');
-    } else {
-      // Update existing role column to ensure it has the correct constraint
-      // First, drop existing constraint if any
-      try {
-        await pool.query(`
-          ALTER TABLE users 
-          DROP CONSTRAINT IF EXISTS users_role_check
-        `);
-      } catch (e) {
-        // Ignore if constraint doesn't exist
-      }
-      // Add new constraint
-      await pool.query(`
-        ALTER TABLE users 
-        ADD CONSTRAINT users_role_check 
-        CHECK (role IN ('main_admin', 'admin', 'user'))
-      `);
-      // Set default for existing rows without role
-      await pool.query(`
-        UPDATE users 
-        SET role = 'user' 
-        WHERE role IS NULL OR role NOT IN ('main_admin', 'admin', 'user')
-      `);
-      // Set default value for column
-      await pool.query(`
-        ALTER TABLE users 
-        ALTER COLUMN role SET DEFAULT 'user'
-      `);
-      console.log('✅ Updated "role" column constraints and defaults');
+    } catch (e) {
+      // Column might already exist, ignore
     }
 
     // Create otps table if it doesn't exist
     await pool.query(`
       CREATE TABLE IF NOT EXISTS otps (
-        id SERIAL PRIMARY KEY,
+        id INT AUTO_INCREMENT PRIMARY KEY,
         email VARCHAR(255) NOT NULL,
         otp VARCHAR(10) NOT NULL,
         expires_at TIMESTAMP NOT NULL,
@@ -281,10 +257,10 @@ export const initializeDatabase = async () => {
     // Create businesses table if it doesn't exist
     await pool.query(`
       CREATE TABLE IF NOT EXISTS businesses (
-        id SERIAL PRIMARY KEY,
+        id INT AUTO_INCREMENT PRIMARY KEY,
         business_name VARCHAR(255) NOT NULL,
         owner_name VARCHAR(255),
-        category VARCHAR(50) NOT NULL CHECK (category IN ('Shop', 'Restaurant', 'Hotel', 'Clinic', 'Library', 'Services', 'Temple', 'School', 'College', 'Gym', 'Salon', 'Spa', 'Pharmacy', 'Bank', 'Travel Agency', 'Real Estate', 'Law Firm', 'Accounting', 'IT Services', 'Photography', 'Event Management', 'Catering', 'Bakery', 'Jewelry', 'Fashion', 'Electronics', 'Furniture', 'Automobile', 'Repair Services', 'Education', 'Healthcare', 'Beauty', 'Fitness', 'Entertainment', 'Tourism', 'Food & Beverage', 'Retail', 'Wholesale', 'Manufacturing', 'Construction', 'Other')),
+        category VARCHAR(50) NOT NULL,
         mobile VARCHAR(20) NOT NULL,
         email VARCHAR(255) NOT NULL,
         address TEXT NOT NULL,
@@ -292,22 +268,24 @@ export const initializeDatabase = async () => {
         whatsapp VARCHAR(20),
         description TEXT NOT NULL,
         logo_url TEXT,
-        images_url JSONB DEFAULT '[]'::jsonb,
+        images_url JSON DEFAULT ('[]'),
         youtube_video TEXT,
-        social_links JSONB DEFAULT '{"instagram": "", "facebook": "", "website": ""}'::jsonb,
+        social_links JSON DEFAULT ('{"instagram": "", "facebook": "", "website": ""}'),
         slug VARCHAR(255) NOT NULL UNIQUE,
         subdomain_url TEXT NOT NULL,
         subdirectory_url TEXT NOT NULL,
-        status VARCHAR(50) DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'active')),
+        status VARCHAR(50) DEFAULT 'pending',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        CONSTRAINT chk_category CHECK (category IN ('Shop', 'Restaurant', 'Hotel', 'Clinic', 'Library', 'Services', 'Temple', 'School', 'College', 'Gym', 'Salon', 'Spa', 'Pharmacy', 'Bank', 'Travel Agency', 'Real Estate', 'Law Firm', 'Accounting', 'IT Services', 'Photography', 'Event Management', 'Catering', 'Bakery', 'Jewelry', 'Fashion', 'Electronics', 'Furniture', 'Automobile', 'Repair Services', 'Education', 'Healthcare', 'Beauty', 'Fitness', 'Entertainment', 'Tourism', 'Food & Beverage', 'Retail', 'Wholesale', 'Manufacturing', 'Construction', 'Other')),
+        CONSTRAINT chk_status CHECK (status IN ('pending', 'approved', 'rejected', 'active'))
       )
     `);
 
     // Create trips table if it doesn't exist
     await pool.query(`
       CREATE TABLE IF NOT EXISTS trips (
-        id SERIAL PRIMARY KEY,
+        id INT AUTO_INCREMENT PRIMARY KEY,
         title VARCHAR(255) NOT NULL,
         location VARCHAR(255) NOT NULL,
         duration VARCHAR(50) NOT NULL,
@@ -317,468 +295,389 @@ export const initializeDatabase = async () => {
         video_url TEXT,
         video_public_id TEXT,
         image_public_id TEXT,
-        gallery JSONB DEFAULT '[]'::jsonb,
-        gallery_public_ids JSONB DEFAULT '[]'::jsonb,
+        gallery JSON DEFAULT ('[]'),
+        gallery_public_ids JSON DEFAULT ('[]'),
         subtitle TEXT,
         intro TEXT,
-        why_visit JSONB DEFAULT '[]'::jsonb,
-        itinerary JSONB DEFAULT '[]'::jsonb,
-        included JSONB DEFAULT '[]'::jsonb,
-        not_included JSONB DEFAULT '[]'::jsonb,
-        notes JSONB DEFAULT '[]'::jsonb,
-        faq JSONB DEFAULT '[]'::jsonb,
-        reviews JSONB DEFAULT '[]'::jsonb,
-        category JSONB DEFAULT '[]'::jsonb,
+        why_visit JSON DEFAULT ('[]'),
+        itinerary JSON DEFAULT ('[]'),
+        included JSON DEFAULT ('[]'),
+        not_included JSON DEFAULT ('[]'),
+        notes JSON DEFAULT ('[]'),
+        faq JSON DEFAULT ('[]'),
+        reviews JSON DEFAULT ('[]'),
+        category JSON DEFAULT ('[]'),
+        recommended_trips JSON DEFAULT ('[]'),
         is_popular BOOLEAN DEFAULT FALSE,
         slug VARCHAR(255) UNIQUE,
-        status VARCHAR(50) DEFAULT 'active' CHECK (status IN ('active', 'draft', 'archived')),
-        created_by INTEGER REFERENCES users(id),
+        status VARCHAR(50) DEFAULT 'active',
+        created_by INT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        CONSTRAINT chk_status CHECK (status IN ('active', 'draft', 'archived')),
+        FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
       )
     `);
 
-    // Add category column if it doesn't exist (for existing databases)
+    // Add category column if it doesn't exist
     try {
-      await pool.query(`
-        ALTER TABLE trips 
-        ADD COLUMN IF NOT EXISTS category JSONB DEFAULT '[]'::jsonb
-      `);
-    } catch (error) {
-      // Column might already exist, ignore error
-      console.log('Category column check:', error.message);
+      await pool.query(`ALTER TABLE trips ADD COLUMN category JSON DEFAULT ('[]')`);
+    } catch (e) {
+      // Column might already exist, ignore
     }
 
-    // Add is_popular column if it doesn't exist (for existing databases)
+    // Add is_popular column if it doesn't exist
     try {
-      await pool.query(`
-        ALTER TABLE trips 
-        ADD COLUMN IF NOT EXISTS is_popular BOOLEAN DEFAULT FALSE
-      `);
-    } catch (error) {
-      // Column might already exist, ignore error
-      console.log('Is popular column check:', error.message);
+      await pool.query(`ALTER TABLE trips ADD COLUMN is_popular BOOLEAN DEFAULT FALSE`);
+    } catch (e) {
+      // Column might already exist, ignore
+    }
+
+    // Add recommended_trips column if it doesn't exist
+    try {
+      await pool.query(`ALTER TABLE trips ADD COLUMN recommended_trips JSON DEFAULT ('[]')`);
+      console.log('✅ Added recommended_trips column to trips table');
+    } catch (e) {
+      // Column might already exist, ignore
+    }
+
+    // Add seats_left column if it doesn't exist
+    try {
+      await pool.query(`ALTER TABLE trips ADD COLUMN seats_left INT DEFAULT NULL`);
+      console.log('✅ Added seats_left column to trips table');
+    } catch (e) {
+      // Column might already exist, ignore
     }
 
     // Create certificates table if it doesn't exist
     await pool.query(`
       CREATE TABLE IF NOT EXISTS certificates (
-        id SERIAL PRIMARY KEY,
+        id INT AUTO_INCREMENT PRIMARY KEY,
         title VARCHAR(255) NOT NULL,
         description TEXT,
-        images JSONB DEFAULT '[]'::jsonb,
-        images_public_ids JSONB DEFAULT '[]'::jsonb,
-        status VARCHAR(50) DEFAULT 'active' CHECK (status IN ('active', 'draft', 'archived')),
-        created_by INTEGER REFERENCES users(id),
+        images JSON DEFAULT ('[]'),
+        images_public_ids JSON DEFAULT ('[]'),
+        status VARCHAR(50) DEFAULT 'active',
+        created_by INT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        CONSTRAINT chk_status CHECK (status IN ('active', 'draft', 'archived')),
+        FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
       )
     `);
 
     // Create destinations table if it doesn't exist
     await pool.query(`
       CREATE TABLE IF NOT EXISTS destinations (
-        id SERIAL PRIMARY KEY,
+        id INT AUTO_INCREMENT PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
         image TEXT,
         image_public_id TEXT,
-        status VARCHAR(50) DEFAULT 'active' CHECK (status IN ('active', 'draft', 'archived')),
-        created_by INTEGER REFERENCES users(id),
+        status VARCHAR(50) DEFAULT 'active',
+        created_by INT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        CONSTRAINT chk_status CHECK (status IN ('active', 'draft', 'archived')),
+        FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
       )
     `);
 
     // Create reviews table if it doesn't exist
     await pool.query(`
       CREATE TABLE IF NOT EXISTS reviews (
-        id SERIAL PRIMARY KEY,
+        id INT AUTO_INCREMENT PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
-        rating INTEGER DEFAULT 5 CHECK (rating >= 1 AND rating <= 5),
+        rating INT DEFAULT 5,
         location VARCHAR(255),
         review TEXT NOT NULL,
         avatar TEXT,
         avatar_public_id TEXT,
-        type VARCHAR(50) DEFAULT 'video' CHECK (type IN ('text', 'video')),
+        type VARCHAR(50) DEFAULT 'video',
         video_url TEXT,
         video_public_id TEXT,
-        status VARCHAR(50) DEFAULT 'active' CHECK (status IN ('active', 'draft', 'archived')),
-        created_by INTEGER REFERENCES users(id),
+        status VARCHAR(50) DEFAULT 'active',
+        created_by INT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        CONSTRAINT chk_rating CHECK (rating >= 1 AND rating <= 5),
+        CONSTRAINT chk_type CHECK (type IN ('text', 'video')),
+        CONSTRAINT chk_status CHECK (status IN ('active', 'draft', 'archived')),
+        FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
       )
     `);
 
-    // Add missing columns if they don't exist (for existing reviews table)
-    const typeColumnCheck = await pool.query(`
-      SELECT column_name 
-      FROM information_schema.columns 
-      WHERE table_name = 'reviews' AND column_name = 'type'
-    `);
-    if (typeColumnCheck.rows.length === 0) {
-      await pool.query(`
-        ALTER TABLE reviews 
-        ADD COLUMN type VARCHAR(50) DEFAULT 'video' 
-        CHECK (type IN ('text', 'video'))
-      `);
-      console.log('✅ Added missing "type" column to reviews table');
+    // Add missing columns if they don't exist
+    try {
+      await pool.query(`ALTER TABLE reviews ADD COLUMN type VARCHAR(50) DEFAULT 'video'`);
+    } catch (e) {
+      // Column might already exist, ignore
     }
 
-    const videoUrlColumnCheck = await pool.query(`
-      SELECT column_name 
-      FROM information_schema.columns 
-      WHERE table_name = 'reviews' AND column_name = 'video_url'
-    `);
-    if (videoUrlColumnCheck.rows.length === 0) {
+    try {
       await pool.query(`ALTER TABLE reviews ADD COLUMN video_url TEXT`);
-      console.log('✅ Added missing "video_url" column to reviews table');
+    } catch (e) {
+      // Column might already exist, ignore
     }
 
-    const videoPublicIdColumnCheck = await pool.query(`
-      SELECT column_name 
-      FROM information_schema.columns 
-      WHERE table_name = 'reviews' AND column_name = 'video_public_id'
-    `);
-    if (videoPublicIdColumnCheck.rows.length === 0) {
+    try {
       await pool.query(`ALTER TABLE reviews ADD COLUMN video_public_id TEXT`);
-      console.log('✅ Added missing "video_public_id" column to reviews table');
+    } catch (e) {
+      // Column might already exist, ignore
     }
 
     // Create written_reviews table if it doesn't exist
     await pool.query(`
       CREATE TABLE IF NOT EXISTS written_reviews (
-        id SERIAL PRIMARY KEY,
+        id INT AUTO_INCREMENT PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
-        rating INTEGER DEFAULT 5 CHECK (rating >= 1 AND rating <= 5),
+        rating INT DEFAULT 5,
         date VARCHAR(50),
         title VARCHAR(255),
         review TEXT NOT NULL,
         location VARCHAR(255),
         avatar TEXT,
         avatar_public_id TEXT,
-        status VARCHAR(50) DEFAULT 'active' CHECK (status IN ('active', 'draft', 'archived')),
-        created_by INTEGER REFERENCES users(id),
+        status VARCHAR(50) DEFAULT 'active',
+        created_by INT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        CONSTRAINT chk_rating CHECK (rating >= 1 AND rating <= 5),
+        CONSTRAINT chk_status CHECK (status IN ('active', 'draft', 'archived')),
+        FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
       )
     `);
 
     // Create drivers table if it doesn't exist
     await pool.query(`
       CREATE TABLE IF NOT EXISTS drivers (
-        id SERIAL PRIMARY KEY,
+        id INT AUTO_INCREMENT PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
         car VARCHAR(255) NOT NULL,
         experience VARCHAR(255),
         photo_url TEXT,
         photo_public_id TEXT,
-        status VARCHAR(50) DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
-        display_order INTEGER DEFAULT 0,
+        status VARCHAR(50) DEFAULT 'active',
+        display_order INT DEFAULT 0,
         five_driver BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        CONSTRAINT chk_status CHECK (status IN ('active', 'inactive'))
       )
     `);
 
-    // Add five_driver column if it doesn't exist (for existing tables)
-    const fiveDriverColumnCheck = await pool.query(`
-      SELECT column_name 
-      FROM information_schema.columns 
-      WHERE table_name = 'drivers' AND column_name = 'five_driver'
-    `);
-    if (fiveDriverColumnCheck.rows.length === 0) {
+    // Add five_driver column if it doesn't exist
+    try {
       await pool.query(`ALTER TABLE drivers ADD COLUMN five_driver BOOLEAN DEFAULT FALSE`);
-      console.log('✅ Added missing "five_driver" column to drivers table');
+    } catch (e) {
+      // Column might already exist, ignore
     }
 
     // Create car_booking_settings table if it doesn't exist
     await pool.query(`
       CREATE TABLE IF NOT EXISTS car_booking_settings (
-        id SERIAL PRIMARY KEY,
+        id INT AUTO_INCREMENT PRIMARY KEY,
         setting_key VARCHAR(255) UNIQUE NOT NULL,
-        setting_value JSONB,
+        setting_value JSON,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
       )
     `);
 
     // Create product_page_settings table if it doesn't exist
     await pool.query(`
       CREATE TABLE IF NOT EXISTS product_page_settings (
-        id INTEGER PRIMARY KEY DEFAULT 1,
-        settings_data JSONB NOT NULL,
+        id INT PRIMARY KEY DEFAULT 1,
+        settings_data JSON NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         CONSTRAINT single_row CHECK (id = 1)
       )
     `);
 
     // Create indexes for better query performance
-    await pool.query(`
-      CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
-      CREATE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id);
-      CREATE INDEX IF NOT EXISTS idx_otps_email ON otps(email);
-      CREATE INDEX IF NOT EXISTS idx_otps_expires_at ON otps(expires_at);
-      CREATE INDEX IF NOT EXISTS idx_businesses_slug ON businesses(slug);
-      CREATE INDEX IF NOT EXISTS idx_businesses_email ON businesses(email);
-      CREATE INDEX IF NOT EXISTS idx_businesses_status ON businesses(status);
-      CREATE INDEX IF NOT EXISTS idx_trips_slug ON trips(slug);
-      CREATE INDEX IF NOT EXISTS idx_trips_status ON trips(status);
-      CREATE INDEX IF NOT EXISTS idx_trips_location ON trips(location);
-      CREATE INDEX IF NOT EXISTS idx_trips_created_at ON trips(created_at);
-      CREATE INDEX IF NOT EXISTS idx_certificates_status ON certificates(status);
-      CREATE INDEX IF NOT EXISTS idx_destinations_status ON destinations(status);
-      CREATE INDEX IF NOT EXISTS idx_reviews_status ON reviews(status);
-      CREATE INDEX IF NOT EXISTS idx_written_reviews_status ON written_reviews(status);
-      CREATE INDEX IF NOT EXISTS idx_drivers_status ON drivers(status);
-      CREATE INDEX IF NOT EXISTS idx_drivers_display_order ON drivers(display_order);
-    `);
-
-    // Create function to update updated_at timestamp
-    await pool.query(`
-      CREATE OR REPLACE FUNCTION update_updated_at_column()
-      RETURNS TRIGGER AS $$
-      BEGIN
-        NEW.updated_at = CURRENT_TIMESTAMP;
-        RETURN NEW;
-      END;
-      $$ language 'plpgsql';
-    `);
-
-    // Create triggers to automatically update updated_at
-    await pool.query(`
-      DROP TRIGGER IF EXISTS update_users_updated_at ON users;
-      CREATE TRIGGER update_users_updated_at
-      BEFORE UPDATE ON users
-      FOR EACH ROW
-      EXECUTE FUNCTION update_updated_at_column();
-    `);
-
-    await pool.query(`
-      DROP TRIGGER IF EXISTS update_businesses_updated_at ON businesses;
-      CREATE TRIGGER update_businesses_updated_at
-      BEFORE UPDATE ON businesses
-      FOR EACH ROW
-      EXECUTE FUNCTION update_updated_at_column();
-    `);
-
-    await pool.query(`
-      DROP TRIGGER IF EXISTS update_trips_updated_at ON trips;
-      CREATE TRIGGER update_trips_updated_at
-      BEFORE UPDATE ON trips
-      FOR EACH ROW
-      EXECUTE FUNCTION update_updated_at_column();
-    `);
-
-    await pool.query(`
-      DROP TRIGGER IF EXISTS update_certificates_updated_at ON certificates;
-      CREATE TRIGGER update_certificates_updated_at
-      BEFORE UPDATE ON certificates
-      FOR EACH ROW
-      EXECUTE FUNCTION update_updated_at_column();
-    `);
-
-    await pool.query(`
-      DROP TRIGGER IF EXISTS update_destinations_updated_at ON destinations;
-      CREATE TRIGGER update_destinations_updated_at
-      BEFORE UPDATE ON destinations
-      FOR EACH ROW
-      EXECUTE FUNCTION update_updated_at_column();
-    `);
-
-    await pool.query(`
-      DROP TRIGGER IF EXISTS update_reviews_updated_at ON reviews;
-      CREATE TRIGGER update_reviews_updated_at
-      BEFORE UPDATE ON reviews
-      FOR EACH ROW
-      EXECUTE FUNCTION update_updated_at_column();
-    `);
-
-    await pool.query(`
-      DROP TRIGGER IF EXISTS update_written_reviews_updated_at ON written_reviews;
-      CREATE TRIGGER update_written_reviews_updated_at
-      BEFORE UPDATE ON written_reviews
-      FOR EACH ROW
-      EXECUTE FUNCTION update_updated_at_column();
-    `);
-
-    await pool.query(`
-      DROP TRIGGER IF EXISTS update_drivers_updated_at ON drivers;
-      CREATE TRIGGER update_drivers_updated_at
-      BEFORE UPDATE ON drivers
-      FOR EACH ROW
-      EXECUTE FUNCTION update_updated_at_column();
-    `);
-
-    await pool.query(`
-      DROP TRIGGER IF EXISTS update_car_booking_settings_updated_at ON car_booking_settings;
-      CREATE TRIGGER update_car_booking_settings_updated_at
-      BEFORE UPDATE ON car_booking_settings
-      FOR EACH ROW
-      EXECUTE FUNCTION update_updated_at_column();
-    `);
-
-    await pool.query(`
-      DROP TRIGGER IF EXISTS update_product_page_settings_updated_at ON product_page_settings;
-      CREATE TRIGGER update_product_page_settings_updated_at
-      BEFORE UPDATE ON product_page_settings
-      FOR EACH ROW
-      EXECUTE FUNCTION update_updated_at_column();
-    `);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_otps_email ON otps(email)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_otps_expires_at ON otps(expires_at)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_businesses_slug ON businesses(slug)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_businesses_email ON businesses(email)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_businesses_status ON businesses(status)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_trips_slug ON trips(slug)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_trips_status ON trips(status)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_trips_location ON trips(location)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_trips_created_at ON trips(created_at)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_certificates_status ON certificates(status)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_destinations_status ON destinations(status)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_reviews_status ON reviews(status)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_written_reviews_status ON written_reviews(status)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_drivers_status ON drivers(status)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_drivers_display_order ON drivers(display_order)`);
 
     // Create enquiries table if it doesn't exist
     await pool.query(`
       CREATE TABLE IF NOT EXISTS enquiries (
-        id SERIAL PRIMARY KEY,
-        trip_id INTEGER REFERENCES trips(id),
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        trip_id INT,
         trip_title VARCHAR(255),
         trip_location VARCHAR(255),
         trip_price VARCHAR(50),
         selected_month VARCHAR(50),
-        number_of_travelers INTEGER DEFAULT 1,
+        number_of_travelers INT DEFAULT 1,
         name VARCHAR(255) NOT NULL,
         email VARCHAR(255) NOT NULL,
         phone VARCHAR(20),
         message TEXT,
-        status VARCHAR(50) DEFAULT 'pending' CHECK (status IN ('pending', 'contacted', 'booked', 'cancelled')),
+        status VARCHAR(50) DEFAULT 'pending',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        CONSTRAINT chk_status CHECK (status IN ('pending', 'contacted', 'booked', 'cancelled')),
+        FOREIGN KEY (trip_id) REFERENCES trips(id) ON DELETE SET NULL
       )
     `);
 
     // Create indexes for enquiries
-    await pool.query(`
-      CREATE INDEX IF NOT EXISTS idx_enquiries_trip_id ON enquiries(trip_id);
-      CREATE INDEX IF NOT EXISTS idx_enquiries_status ON enquiries(status);
-      CREATE INDEX IF NOT EXISTS idx_enquiries_created_at ON enquiries(created_at);
-      CREATE INDEX IF NOT EXISTS idx_enquiries_email ON enquiries(email);
-    `);
-
-    // Create trigger for enquiries updated_at
-    await pool.query(`
-      DROP TRIGGER IF EXISTS update_enquiries_updated_at ON enquiries;
-      CREATE TRIGGER update_enquiries_updated_at
-      BEFORE UPDATE ON enquiries
-      FOR EACH ROW
-      EXECUTE FUNCTION update_updated_at_column();
-    `);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_enquiries_trip_id ON enquiries(trip_id)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_enquiries_status ON enquiries(status)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_enquiries_created_at ON enquiries(created_at)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_enquiries_email ON enquiries(email)`);
 
     // Create app_settings table if it doesn't exist
     await pool.query(`
       CREATE TABLE IF NOT EXISTS app_settings (
         setting_key VARCHAR(255) PRIMARY KEY,
-        setting_value JSONB,
+        setting_value JSON,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
       )
-    `);
-
-    // Create trigger for app_settings updated_at
-    await pool.query(`
-      DROP TRIGGER IF EXISTS update_app_settings_updated_at ON app_settings;
-      CREATE TRIGGER update_app_settings_updated_at
-      BEFORE UPDATE ON app_settings
-      FOR EACH ROW
-      EXECUTE FUNCTION update_updated_at_column();
     `);
 
     // Create faqs table if it doesn't exist
     await pool.query(`
       CREATE TABLE IF NOT EXISTS faqs (
-        id SERIAL PRIMARY KEY,
+        id INT AUTO_INCREMENT PRIMARY KEY,
         question TEXT NOT NULL,
         answer TEXT NOT NULL,
-        display_order INTEGER DEFAULT 0,
-        status VARCHAR(50) DEFAULT 'active' CHECK (status IN ('active', 'draft', 'archived')),
-        created_by INTEGER REFERENCES users(id),
+        display_order INT DEFAULT 0,
+        status VARCHAR(50) DEFAULT 'active',
+        created_by INT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        CONSTRAINT chk_status CHECK (status IN ('active', 'draft', 'archived')),
+        FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
       )
-    `);
-
-    // Create trigger for faqs updated_at
-    await pool.query(`
-      DROP TRIGGER IF EXISTS update_faqs_updated_at ON faqs;
-      CREATE TRIGGER update_faqs_updated_at
-      BEFORE UPDATE ON faqs
-      FOR EACH ROW
-      EXECUTE FUNCTION update_updated_at_column();
     `);
 
     // Create banners table if it doesn't exist
     await pool.query(`
       CREATE TABLE IF NOT EXISTS banners (
-        id SERIAL PRIMARY KEY,
+        id INT AUTO_INCREMENT PRIMARY KEY,
         image_url TEXT,
         image_public_id TEXT,
         title TEXT,
         subtitle TEXT,
-        display_order INTEGER DEFAULT 0,
-        status VARCHAR(50) DEFAULT 'active' CHECK (status IN ('active', 'draft', 'archived')),
-        created_by INTEGER REFERENCES users(id),
+        display_order INT DEFAULT 0,
+        status VARCHAR(50) DEFAULT 'active',
+        created_by INT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        CONSTRAINT chk_status CHECK (status IN ('active', 'draft', 'archived')),
+        FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
       )
-    `);
-
-    // Create trigger for banners updated_at
-    await pool.query(`
-      DROP TRIGGER IF EXISTS update_banners_updated_at ON banners;
-      CREATE TRIGGER update_banners_updated_at
-      BEFORE UPDATE ON banners
-      FOR EACH ROW
-      EXECUTE FUNCTION update_updated_at_column();
     `);
 
     // Create branding_partners table if it doesn't exist
     await pool.query(`
       CREATE TABLE IF NOT EXISTS branding_partners (
-        id SERIAL PRIMARY KEY,
+        id INT AUTO_INCREMENT PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
         logo_url TEXT,
         logo_public_id TEXT,
         link TEXT,
-        display_order INTEGER DEFAULT 0,
-        status VARCHAR(50) DEFAULT 'active' CHECK (status IN ('active', 'draft', 'archived')),
-        created_by INTEGER REFERENCES users(id),
+        display_order INT DEFAULT 0,
+        status VARCHAR(50) DEFAULT 'active',
+        created_by INT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        CONSTRAINT chk_status CHECK (status IN ('active', 'draft', 'archived')),
+        FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
       )
-    `);
-
-    // Create trigger for branding_partners updated_at
-    await pool.query(`
-      DROP TRIGGER IF EXISTS update_branding_partners_updated_at ON branding_partners;
-      CREATE TRIGGER update_branding_partners_updated_at
-      BEFORE UPDATE ON branding_partners
-      FOR EACH ROW
-      EXECUTE FUNCTION update_updated_at_column();
     `);
 
     // Create hotel_partners table if it doesn't exist
     await pool.query(`
       CREATE TABLE IF NOT EXISTS hotel_partners (
-        id SERIAL PRIMARY KEY,
+        id INT AUTO_INCREMENT PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
         logo_url TEXT,
         logo_public_id TEXT,
         link TEXT,
-        display_order INTEGER DEFAULT 0,
-        status VARCHAR(50) DEFAULT 'active' CHECK (status IN ('active', 'draft', 'archived')),
-        created_by INTEGER REFERENCES users(id),
+        display_order INT DEFAULT 0,
+        status VARCHAR(50) DEFAULT 'active',
+        created_by INT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        CONSTRAINT chk_status CHECK (status IN ('active', 'draft', 'archived')),
+        FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
       )
     `);
 
-    // Create trigger for hotel_partners updated_at
+    // Create location_filters table if it doesn't exist
     await pool.query(`
-      DROP TRIGGER IF EXISTS update_hotel_partners_updated_at ON hotel_partners;
-      CREATE TRIGGER update_hotel_partners_updated_at
-      BEFORE UPDATE ON hotel_partners
-      FOR EACH ROW
-      EXECUTE FUNCTION update_updated_at_column();
+      CREATE TABLE IF NOT EXISTS location_filters (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        filters JSON NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
     `);
+
+    // Create vibe_videos table if it doesn't exist
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS vibe_videos (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        videos JSON NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create blogs table if it doesn't exist
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS blogs (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        slug VARCHAR(255) NOT NULL UNIQUE,
+        description TEXT,
+        content LONGTEXT NOT NULL,
+        hero_image TEXT,
+        hero_image_public_id TEXT,
+        category VARCHAR(100),
+        tags JSON DEFAULT ('[]'),
+        author VARCHAR(255),
+        author_id INT,
+        featured BOOLEAN DEFAULT FALSE,
+        status VARCHAR(50) DEFAULT 'draft',
+        display_order INT DEFAULT 0,
+        views INT DEFAULT 0,
+        meta_title VARCHAR(255),
+        meta_description TEXT,
+        meta_keywords JSON DEFAULT ('[]'),
+        published_at TIMESTAMP NULL,
+        created_by INT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        CONSTRAINT chk_status CHECK (status IN ('draft', 'published', 'archived')),
+        FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+      )
+    `);
+
+    // Create indexes for blogs
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_blogs_slug ON blogs(slug)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_blogs_status ON blogs(status)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_blogs_category ON blogs(category)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_blogs_featured ON blogs(featured)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_blogs_published_at ON blogs(published_at)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_blogs_display_order ON blogs(display_order)`);
 
     console.log('✅ Database tables initialized');
   } catch (error) {
@@ -788,4 +687,3 @@ export const initializeDatabase = async () => {
 };
 
 export default pool;
-

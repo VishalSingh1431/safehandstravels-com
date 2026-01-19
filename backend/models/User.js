@@ -1,7 +1,7 @@
 import pool from '../config/database.js';
 
 /**
- * User Model - PostgreSQL operations
+ * User Model - MySQL operations
  */
 class User {
   /**
@@ -11,8 +11,7 @@ class User {
     try {
       const query = `
         INSERT INTO users (email, name, phone, bio, picture, google_id)
-        VALUES ($1, $2, $3, $4, $5, $6)
-        RETURNING *
+        VALUES (?, ?, ?, ?, ?, ?)
       `;
 
       const values = [
@@ -24,8 +23,10 @@ class User {
         data.googleId || null,
       ];
 
-      const result = await pool.query(query, values);
-      return this.mapRowToUser(result.rows[0]);
+      const [result] = await pool.query(query, values);
+      // Get the inserted user
+      const [rows] = await pool.query('SELECT * FROM users WHERE id = ?', [result.insertId]);
+      return this.mapRowToUser(rows[0]);
     } catch (error) {
       console.error('User.create error:', error);
       console.error('Error code:', error.code);
@@ -51,9 +52,9 @@ class User {
    */
   static async findByEmail(email) {
     try {
-      const query = 'SELECT * FROM users WHERE email = $1';
-      const result = await pool.query(query, [email.toLowerCase()]);
-      return result.rows.length > 0 ? this.mapRowToUser(result.rows[0]) : null;
+      const query = 'SELECT * FROM users WHERE email = ?';
+      const [rows] = await pool.query(query, [email.toLowerCase()]);
+      return rows.length > 0 ? this.mapRowToUser(rows[0]) : null;
     } catch (error) {
       console.error('User.findByEmail error:', error);
       console.error('Error code:', error.code);
@@ -78,18 +79,18 @@ class User {
    * Find user by Google ID
    */
   static async findByGoogleId(googleId) {
-    const query = 'SELECT * FROM users WHERE google_id = $1';
-    const result = await pool.query(query, [googleId]);
-    return result.rows.length > 0 ? this.mapRowToUser(result.rows[0]) : null;
+    const query = 'SELECT * FROM users WHERE google_id = ?';
+    const [rows] = await pool.query(query, [googleId]);
+    return rows.length > 0 ? this.mapRowToUser(rows[0]) : null;
   }
 
   /**
    * Find user by ID
    */
   static async findById(id) {
-    const query = 'SELECT * FROM users WHERE id = $1';
-    const result = await pool.query(query, [id]);
-    return result.rows.length > 0 ? this.mapRowToUser(result.rows[0]) : null;
+    const query = 'SELECT * FROM users WHERE id = ?';
+    const [rows] = await pool.query(query, [id]);
+    return rows.length > 0 ? this.mapRowToUser(rows[0]) : null;
   }
 
   /**
@@ -99,30 +100,29 @@ class User {
     try {
       const updates = [];
       const values = [];
-      let paramCount = 1;
 
       if (data.name !== undefined) {
-        updates.push(`name = $${paramCount++}`);
+        updates.push(`name = ?`);
         values.push(data.name);
       }
       if (data.phone !== undefined) {
-        updates.push(`phone = $${paramCount++}`);
+        updates.push(`phone = ?`);
         values.push(data.phone);
       }
       if (data.bio !== undefined) {
-        updates.push(`bio = $${paramCount++}`);
+        updates.push(`bio = ?`);
         values.push(data.bio);
       }
       if (data.picture !== undefined) {
-        updates.push(`picture = $${paramCount++}`);
+        updates.push(`picture = ?`);
         values.push(data.picture);
       }
       if (data.googleId !== undefined) {
-        updates.push(`google_id = $${paramCount++}`);
+        updates.push(`google_id = ?`);
         values.push(data.googleId);
       }
       if (data.role !== undefined) {
-        updates.push(`role = $${paramCount++}`);
+        updates.push(`role = ?`);
         values.push(data.role);
       }
 
@@ -134,12 +134,13 @@ class User {
       const query = `
         UPDATE users 
         SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP
-        WHERE id = $${paramCount}
-        RETURNING *
+        WHERE id = ?
       `;
 
-      const result = await pool.query(query, values);
-      return this.mapRowToUser(result.rows[0]);
+      await pool.query(query, values);
+      // Get the updated user
+      const [rows] = await pool.query('SELECT * FROM users WHERE id = ?', [id]);
+      return this.mapRowToUser(rows[0]);
     } catch (error) {
       console.error('User.update error:', error);
       console.error('Error code:', error.code);
@@ -168,10 +169,10 @@ class User {
       const query = `
         SELECT * FROM users 
         ORDER BY created_at DESC 
-        LIMIT $1 OFFSET $2
+        LIMIT ? OFFSET ?
       `;
-      const result = await pool.query(query, [limit, offset]);
-      return result.rows.map(row => this.mapRowToUser(row));
+      const [rows] = await pool.query(query, [limit, offset]);
+      return rows.map(row => this.mapRowToUser(row));
     } catch (error) {
       console.error('User.findAll error:', error);
       throw error;
@@ -183,14 +184,15 @@ class User {
    */
   static async search(searchTerm, limit = 50) {
     try {
+      const searchPattern = `%${searchTerm}%`;
       const query = `
         SELECT * FROM users 
-        WHERE email ILIKE $1 OR name ILIKE $1
+        WHERE LOWER(email) LIKE LOWER(?) OR LOWER(name) LIKE LOWER(?)
         ORDER BY created_at DESC 
-        LIMIT $2
+        LIMIT ?
       `;
-      const result = await pool.query(query, [`%${searchTerm}%`, limit]);
-      return result.rows.map(row => this.mapRowToUser(row));
+      const [rows] = await pool.query(query, [searchPattern, searchPattern, limit]);
+      return rows.map(row => this.mapRowToUser(row));
     } catch (error) {
       console.error('User.search error:', error);
       throw error;
@@ -202,8 +204,8 @@ class User {
    */
   static async count() {
     try {
-      const result = await pool.query('SELECT COUNT(*) as count FROM users');
-      return parseInt(result.rows[0].count);
+      const [rows] = await pool.query('SELECT COUNT(*) as count FROM users');
+      return parseInt(rows[0].count);
     } catch (error) {
       console.error('User.count error:', error);
       throw error;
@@ -232,4 +234,3 @@ class User {
 }
 
 export default User;
-

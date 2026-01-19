@@ -1,7 +1,7 @@
 import pool, { queryWithRetry } from '../config/database.js';
 
 /**
- * Review Model - PostgreSQL operations
+ * Review Model - MySQL operations
  */
 class Review {
   /**
@@ -13,8 +13,7 @@ class Review {
         INSERT INTO reviews (
           name, rating, location, review, avatar, avatar_public_id, type, video_url, video_public_id, status, created_by
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-        RETURNING *
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
       const values = [
@@ -31,8 +30,10 @@ class Review {
         data.createdBy || null,
       ];
 
-      const result = await pool.query(query, values);
-      return this.mapRowToReview(result.rows[0]);
+      const [result] = await pool.query(query, values);
+      // Get the inserted review
+      const [rows] = await pool.query('SELECT * FROM reviews WHERE id = ?', [result.insertId]);
+      return this.mapRowToReview(rows[0]);
     } catch (error) {
       console.error('Review.create error:', error);
       throw error;
@@ -44,9 +45,9 @@ class Review {
    */
   static async findById(id) {
     try {
-      const query = 'SELECT * FROM reviews WHERE id = $1';
-      const result = await pool.query(query, [id]);
-      return result.rows.length > 0 ? this.mapRowToReview(result.rows[0]) : null;
+      const query = 'SELECT * FROM reviews WHERE id = ?';
+      const [rows] = await pool.query(query, [id]);
+      return rows.length > 0 ? this.mapRowToReview(rows[0]) : null;
     } catch (error) {
       console.error('Review.findById error:', error);
       throw error;
@@ -60,30 +61,29 @@ class Review {
     try {
       let query = 'SELECT * FROM reviews WHERE 1=1';
       const values = [];
-      let paramCount = 1;
 
       if (filters.status) {
-        query += ` AND status = $${paramCount++}`;
+        query += ` AND status = ?`;
         values.push(filters.status);
       } else if (!filters.includeDraft) {
-        query += ` AND status = $${paramCount++}`;
+        query += ` AND status = ?`;
         values.push('active');
       }
 
       query += ' ORDER BY created_at DESC';
 
       if (filters.limit) {
-        query += ` LIMIT $${paramCount++}`;
+        query += ` LIMIT ?`;
         values.push(filters.limit);
       }
 
       if (filters.offset) {
-        query += ` OFFSET $${paramCount++}`;
+        query += ` OFFSET ?`;
         values.push(filters.offset);
       }
 
-      const result = await queryWithRetry(() => pool.query(query, values));
-      return result.rows.map(row => this.mapRowToReview(row));
+      const [rows] = await queryWithRetry(() => pool.query(query, values));
+      return rows.map(row => this.mapRowToReview(row));
     } catch (error) {
       console.error('Review.findAll error:', error);
       throw error;
@@ -97,7 +97,6 @@ class Review {
     try {
       const updates = [];
       const values = [];
-      let paramCount = 1;
 
       const fieldMapping = {
         name: 'name',
@@ -114,7 +113,7 @@ class Review {
 
       for (const [key, dbKey] of Object.entries(fieldMapping)) {
         if (data[key] !== undefined) {
-          updates.push(`${dbKey} = $${paramCount++}`);
+          updates.push(`${dbKey} = ?`);
           values.push(data[key]);
         }
       }
@@ -127,12 +126,13 @@ class Review {
       const query = `
         UPDATE reviews 
         SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP
-        WHERE id = $${paramCount}
-        RETURNING *
+        WHERE id = ?
       `;
 
-      const result = await pool.query(query, values);
-      return this.mapRowToReview(result.rows[0]);
+      await pool.query(query, values);
+      // Get the updated review
+      const [rows] = await pool.query('SELECT * FROM reviews WHERE id = ?', [id]);
+      return this.mapRowToReview(rows[0]);
     } catch (error) {
       console.error('Review.update error:', error);
       throw error;
@@ -144,9 +144,12 @@ class Review {
    */
   static async delete(id) {
     try {
-      const query = 'DELETE FROM reviews WHERE id = $1 RETURNING *';
-      const result = await pool.query(query, [id]);
-      return result.rows.length > 0 ? this.mapRowToReview(result.rows[0]) : null;
+      // First get the review before deleting
+      const [rows] = await pool.query('SELECT * FROM reviews WHERE id = ?', [id]);
+      if (rows.length === 0) return null;
+      
+      await pool.query('DELETE FROM reviews WHERE id = ?', [id]);
+      return this.mapRowToReview(rows[0]);
     } catch (error) {
       console.error('Review.delete error:', error);
       throw error;

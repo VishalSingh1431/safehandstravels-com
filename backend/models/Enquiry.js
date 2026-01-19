@@ -1,7 +1,7 @@
 import pool from '../config/database.js';
 
 /**
- * Enquiry Model - PostgreSQL operations
+ * Enquiry Model - MySQL operations
  */
 class Enquiry {
   /**
@@ -15,8 +15,7 @@ class Enquiry {
           selected_month, number_of_travelers,
           name, email, phone, message
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-        RETURNING *
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
       const values = [
@@ -32,8 +31,10 @@ class Enquiry {
         data.message || null,
       ];
 
-      const result = await pool.query(query, values);
-      return this.mapRowToEnquiry(result.rows[0]);
+      const [result] = await pool.query(query, values);
+      // Get the inserted enquiry
+      const [rows] = await pool.query('SELECT * FROM enquiries WHERE id = ?', [result.insertId]);
+      return this.mapRowToEnquiry(rows[0]);
     } catch (error) {
       console.error('Enquiry.create error:', error);
       throw error;
@@ -45,9 +46,9 @@ class Enquiry {
    */
   static async findById(id) {
     try {
-      const query = 'SELECT * FROM enquiries WHERE id = $1';
-      const result = await pool.query(query, [id]);
-      return result.rows.length > 0 ? this.mapRowToEnquiry(result.rows[0]) : null;
+      const query = 'SELECT * FROM enquiries WHERE id = ?';
+      const [rows] = await pool.query(query, [id]);
+      return rows.length > 0 ? this.mapRowToEnquiry(rows[0]) : null;
     } catch (error) {
       console.error('Enquiry.findById error:', error);
       throw error;
@@ -61,32 +62,31 @@ class Enquiry {
     try {
       let query = 'SELECT * FROM enquiries WHERE 1=1';
       const values = [];
-      let paramCount = 1;
 
       if (filters.status) {
-        query += ` AND status = $${paramCount++}`;
+        query += ` AND status = ?`;
         values.push(filters.status);
       }
 
       if (filters.tripId) {
-        query += ` AND trip_id = $${paramCount++}`;
+        query += ` AND trip_id = ?`;
         values.push(filters.tripId);
       }
 
       query += ' ORDER BY created_at DESC';
 
       if (filters.limit) {
-        query += ` LIMIT $${paramCount++}`;
+        query += ` LIMIT ?`;
         values.push(filters.limit);
       }
 
       if (filters.offset) {
-        query += ` OFFSET $${paramCount++}`;
+        query += ` OFFSET ?`;
         values.push(filters.offset);
       }
 
-      const result = await pool.query(query, values);
-      return result.rows.map(row => this.mapRowToEnquiry(row));
+      const [rows] = await pool.query(query, values);
+      return rows.map(row => this.mapRowToEnquiry(row));
     } catch (error) {
       console.error('Enquiry.findAll error:', error);
       throw error;
@@ -100,12 +100,13 @@ class Enquiry {
     try {
       const query = `
         UPDATE enquiries 
-        SET status = $1, updated_at = CURRENT_TIMESTAMP
-        WHERE id = $2
-        RETURNING *
+        SET status = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
       `;
-      const result = await pool.query(query, [status, id]);
-      return result.rows.length > 0 ? this.mapRowToEnquiry(result.rows[0]) : null;
+      await pool.query(query, [status, id]);
+      // Get the updated enquiry
+      const [rows] = await pool.query('SELECT * FROM enquiries WHERE id = ?', [id]);
+      return rows.length > 0 ? this.mapRowToEnquiry(rows[0]) : null;
     } catch (error) {
       console.error('Enquiry.updateStatus error:', error);
       throw error;

@@ -34,12 +34,12 @@ async function addHotelPartners() {
       const partner = hotelPartners[i];
       
       // Check if partner already exists
-      const existing = await pool.query(
-        'SELECT id FROM hotel_partners WHERE name = $1',
+      const [existing] = await pool.query(
+        'SELECT id FROM hotel_partners WHERE name = ?',
         [partner.name]
       );
       
-      if (existing.rows.length > 0) {
+      if (existing.length > 0) {
         console.log(`✓ ${partner.name} already exists, skipping...`);
         continue;
       }
@@ -56,11 +56,9 @@ async function addHotelPartners() {
     }
     
     console.log('\n✅ All hotel partners added successfully!');
-    await pool.end();
     process.exit(0);
   } catch (error) {
     console.error('❌ Error adding hotel partners:', error);
-    await pool.end();
     process.exit(1);
   }
 }

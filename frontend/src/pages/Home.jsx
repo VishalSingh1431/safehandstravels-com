@@ -55,7 +55,7 @@ function Home() {
   return (
     <>
       <SEO
-        title="Safe Hands Travels - Your Trusted Travel Partner | VaranasiHub"
+        title="Safe Hands Travels - Your Trusted Travel Partner"
         description="Discover amazing travel experiences with Safe Hands Travels. Explore destinations across India, book adventure trips, spiritual journeys, Himalayan escapes, beach breaks, and wellness retreats. Your trusted travel partner for group tours, custom itineraries, and 24/7 support."
         keywords="travel, trips, destinations, adventure, tourism, India travel, travel agency, Varanasi travel, spiritual trips, Himalayan escapes, beach trips, wellness retreats, group travel, custom itineraries, safe hands travels"
         url="/"

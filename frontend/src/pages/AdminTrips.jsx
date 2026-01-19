@@ -1,9 +1,28 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Edit2, Trash2, Eye, Loader2, X, Save, Upload, Image as ImageIcon, Search } from 'lucide-react';
+import { Plus, Edit2, Trash2, Eye, Loader2, X, Save, Upload, Image as ImageIcon, Search, MapPin, ChevronDown } from 'lucide-react';
 import { tripsAPI, uploadAPI } from '../config/api';
 import { useToast } from '../contexts/ToastContext';
 import { authAPI } from '../config/api';
+
+// List of major Indian cities
+const INDIAN_CITIES = [
+  'Mumbai', 'Delhi', 'Bangalore', 'Hyderabad', 'Chennai', 'Kolkata', 'Pune', 'Ahmedabad',
+  'Jaipur', 'Surat', 'Lucknow', 'Kanpur', 'Nagpur', 'Indore', 'Thane', 'Bhopal',
+  'Visakhapatnam', 'Pimpri-Chinchwad', 'Patna', 'Vadodara', 'Ghaziabad', 'Ludhiana',
+  'Agra', 'Nashik', 'Faridabad', 'Meerut', 'Rajkot', 'Varanasi', 'Srinagar', 'Amritsar',
+  'Navi Mumbai', 'Allahabad', 'Howrah', 'Gwalior', 'Jabalpur', 'Coimbatore', 'Vijayawada',
+  'Jodhpur', 'Madurai', 'Raipur', 'Kota', 'Chandigarh', 'Guwahati', 'Solapur', 'Hubli-Dharwad',
+  'Tiruchirappalli', 'Bareilly', 'Moradabad', 'Mysore', 'Gurgaon', 'Aligarh', 'Jalandhar',
+  'Tirunelveli', 'Bhubaneswar', 'Salem', 'Warangal', 'Guntur', 'Bhiwandi', 'Saharanpur',
+  'Gorakhpur', 'Bikaner', 'Amravati', 'Noida', 'Jamshedpur', 'Bhilai', 'Cuttack',
+  'Firozabad', 'Kochi', 'Nellore', 'Bhavnagar', 'Dehradun', 'Durgapur', 'Asansol',
+  'Rourkela', 'Nanded', 'Kolhapur', 'Ajmer', 'Akola', 'Gulbarga', 'Jamnagar', 'Ujjain',
+  'Loni', 'Siliguri', 'Jhansi', 'Ulhasnagar', 'Jammu', 'Sangli-Miraj', 'Mangalore',
+  'Erode', 'Belgaum', 'Kurnool', 'Ambattur', 'Rajahmundry', 'Tiruppur', 'Kakinada',
+  'Nizamabad', 'Parbhani', 'Puducherry', 'Shimla', 'Panaji', 'Port Blair', 'Kavaratti',
+  'Aizawl', 'Agartala', 'Gangtok', 'Itanagar', 'Kohima', 'Imphal', 'Shillong', 'Dispur'
+].sort();
 
 const AdminTrips = () => {
   const navigate = useNavigate();
@@ -15,10 +34,15 @@ const AdminTrips = () => {
   const [editingTrip, setEditingTrip] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [uploading, setUploading] = useState({ image: false, gallery: false });
+  const [locationSearch, setLocationSearch] = useState('');
+  const [showLocationDropdown, setShowLocationDropdown] = useState(false);
+  const [recommendedTripsSearch, setRecommendedTripsSearch] = useState('');
+  const [showRecommendedTripsDropdown, setShowRecommendedTripsDropdown] = useState(false);
+  const [availableTrips, setAvailableTrips] = useState([]); // All trips for recommended trips dropdown
 
   const [formData, setFormData] = useState({
     title: '',
-    location: '',
+    location: [],
     duration: '',
     price: '',
     oldPrice: '',
@@ -35,14 +59,58 @@ const AdminTrips = () => {
     faq: [{ question: '', answer: '' }],
     reviews: [{ rating: 5, text: '', author: '' }],
     gallery: [],
+    recommendedTrips: [],
     status: 'active',
   });
 
-  const categoryOptions = ['Spiritual', 'Cultural', 'Heritage', 'Nature', 'Adventure'];
+  const categoryOptions = ['Spiritual', 'Cultural', 'Heritage', 'Wellness', 'Wildlife', 'Adventure'];
+  const locationDropdownRef = useRef(null);
+  const recommendedTripsDropdownRef = useRef(null);
 
   useEffect(() => {
     checkAuthAndLoad();
   }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (locationDropdownRef.current && !locationDropdownRef.current.contains(event.target)) {
+        setShowLocationDropdown(false);
+      }
+      if (recommendedTripsDropdownRef.current && !recommendedTripsDropdownRef.current.contains(event.target)) {
+        setShowRecommendedTripsDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const filteredCities = locationSearch
+    ? INDIAN_CITIES.filter(city =>
+        city.toLowerCase().includes(locationSearch.toLowerCase())
+      )
+    : INDIAN_CITIES;
+
+  const handleLocationSelect = (city) => {
+    setFormData(prev => {
+      const currentLocations = prev.location || [];
+      if (currentLocations.includes(city)) {
+        return prev; // Already selected
+      }
+      return { ...prev, location: [...currentLocations, city] };
+    });
+    setLocationSearch('');
+    setShowLocationDropdown(false);
+  };
+
+  const removeLocation = (city) => {
+    setFormData(prev => ({
+      ...prev,
+      location: (prev.location || []).filter(loc => loc !== city)
+    }));
+  };
 
   const checkAuthAndLoad = async () => {
     try {
@@ -68,6 +136,7 @@ const AdminTrips = () => {
       setLoading(true);
       const response = await tripsAPI.getAllTripsAdmin();
       setTrips(response.trips || []);
+      setAvailableTrips(response.trips || []); // Store all trips for recommended trips dropdown
     } catch (error) {
       console.error('Error fetching trips:', error);
       toast.error(error.message || 'Failed to load trips');
@@ -76,8 +145,49 @@ const AdminTrips = () => {
     }
   };
 
+  // Filter trips for recommended trips dropdown
+  const filteredRecommendedTrips = availableTrips.filter(trip => {
+    if (!trip || editingTrip?.id === trip.id) return false; // Exclude current trip
+    if (!recommendedTripsSearch) return true;
+    const searchLower = recommendedTripsSearch.toLowerCase();
+    return (
+      trip.title?.toLowerCase().includes(searchLower) ||
+      (Array.isArray(trip.location) ? trip.location.join(', ') : trip.location)?.toLowerCase().includes(searchLower)
+    );
+  });
+
+  const handleRecommendedTripSelect = (tripId) => {
+    const selectedTrip = availableTrips.find(t => t.id === tripId);
+    if (!selectedTrip) return;
+    
+    setFormData(prev => {
+      const currentRecommended = prev.recommendedTrips || [];
+      if (currentRecommended.includes(tripId)) {
+        return prev; // Already selected
+      }
+      return { ...prev, recommendedTrips: [...currentRecommended, tripId] };
+    });
+    setRecommendedTripsSearch('');
+    setShowRecommendedTripsDropdown(false);
+  };
+
+  const removeRecommendedTrip = (tripId) => {
+    setFormData(prev => ({
+      ...prev,
+      recommendedTrips: (prev.recommendedTrips || []).filter(id => id !== tripId)
+    }));
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    
+    // Handle location search separately (not in formData)
+    if (name === 'locationSearch') {
+      setLocationSearch(value);
+      setShowLocationDropdown(true);
+      return;
+    }
+    
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
@@ -170,6 +280,12 @@ const AdminTrips = () => {
       return;
     }
     
+    // Validate location
+    if (!formData.location || formData.location.length === 0) {
+      toast.error('Please select at least one location');
+      return;
+    }
+    
     try {
       const tripData = {
         ...formData,
@@ -181,7 +297,13 @@ const AdminTrips = () => {
         itinerary: formData.itinerary.filter(i => i.title.trim() || i.activities.trim()),
         faq: formData.faq.filter(f => f.question.trim() || f.answer.trim()),
         reviews: formData.reviews.filter(r => r.text.trim()),
+        recommendedTrips: Array.isArray(formData.recommendedTrips) ? formData.recommendedTrips : [], // Explicitly include recommended trips as array
+        seatsLeft: formData.seatsLeft ? formData.seatsLeft : null, // Convert empty string to null
       };
+      
+      console.log('Saving trip with seatsLeft:', tripData.seatsLeft); // Debug log
+
+      console.log('Saving trip with recommendedTrips:', tripData.recommendedTrips); // Debug log
 
       if (editingTrip) {
         await tripsAPI.updateTrip(editingTrip.id, tripData);
@@ -200,13 +322,19 @@ const AdminTrips = () => {
   };
 
   const handleEdit = (trip) => {
+    console.log('Editing trip - recommendedTrips:', trip.recommendedTrips); // Debug log
     setEditingTrip(trip);
+    const recommendedTripsData = Array.isArray(trip.recommendedTrips) 
+      ? trip.recommendedTrips 
+      : (trip.recommendedTrips ? [trip.recommendedTrips] : []);
+    console.log('Setting recommendedTrips in form:', recommendedTripsData); // Debug log
     setFormData({
       title: trip.title || '',
-      location: trip.location || '',
+      location: Array.isArray(trip.location) ? trip.location : (trip.location ? [trip.location] : []),
       duration: trip.duration || '',
       price: trip.price || '',
       oldPrice: trip.oldPrice || '',
+      seatsLeft: trip.seatsLeft || '',
       imageUrl: trip.imageUrl || trip.image || '',
       videoUrl: trip.videoUrl || trip.video || '',
       subtitle: trip.subtitle || '',
@@ -222,8 +350,10 @@ const AdminTrips = () => {
       gallery: trip.gallery || [],
       galleryPublicIds: trip.galleryPublicIds || [],
       imagePublicId: trip.imagePublicId,
+      recommendedTrips: recommendedTripsData,
       status: trip.status || 'active',
     });
+    setShowLocationDropdown(false);
     setShowForm(true);
   };
 
@@ -245,10 +375,11 @@ const AdminTrips = () => {
   const resetForm = () => {
     setFormData({
       title: '',
-      location: '',
+      location: [],
       duration: '',
       price: '',
       oldPrice: '',
+      seatsLeft: '',
       imageUrl: '',
       videoUrl: '',
       subtitle: '',
@@ -262,16 +393,24 @@ const AdminTrips = () => {
       faq: [{ question: '', answer: '' }],
       reviews: [{ rating: 5, text: '', author: '' }],
       gallery: [],
+      recommendedTrips: [],
       status: 'active',
     });
+    setLocationSearch('');
+    setShowLocationDropdown(false);
+    setRecommendedTripsSearch('');
+    setShowRecommendedTripsDropdown(false);
     setEditingTrip(null);
     setShowForm(false);
   };
 
-  const filteredTrips = trips.filter(trip =>
-    trip.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    trip.location.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredTrips = trips.filter(trip => {
+    const tripLocation = Array.isArray(trip.location) ? trip.location.join(', ') : (trip.location || '');
+    return (
+      trip.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      tripLocation.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  });
 
   if (loading) {
     return (
@@ -351,16 +490,80 @@ const AdminTrips = () => {
                       className="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Location *</label>
-                    <input
-                      type="text"
-                      name="location"
-                      value={formData.location}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                    />
+                  <div className="relative" ref={locationDropdownRef}>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Locations *</label>
+                    
+                    {/* Selected Locations */}
+                    {formData.location && formData.location.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {formData.location.map((city) => (
+                          <span
+                            key={city}
+                            className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-100 text-blue-800 rounded-lg text-sm font-medium"
+                          >
+                            <MapPin className="w-3 h-3" />
+                            <span>{city}</span>
+                            <button
+                              type="button"
+                              onClick={() => removeLocation(city)}
+                              className="ml-1 text-blue-600 hover:text-blue-800 hover:bg-blue-200 rounded-full p-0.5 transition-colors"
+                              title="Remove"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    
+                    <div className="relative">
+                      <input
+                        type="text"
+                        name="locationSearch"
+                        value={locationSearch}
+                        onChange={handleInputChange}
+                        onFocus={() => setShowLocationDropdown(true)}
+                        placeholder="Type to search and add cities..."
+                        className="w-full px-4 py-2 pr-10 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                      />
+                      <MapPin className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+                      
+                      {showLocationDropdown && (
+                        <div className="absolute z-50 w-full mt-1 bg-white border-2 border-gray-300 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                          {filteredCities.length > 0 ? (
+                            filteredCities
+                              .filter(city => !formData.location?.includes(city)) // Filter out already selected
+                              .slice(0, 50)
+                              .map((city) => (
+                                <button
+                                  key={city}
+                                  type="button"
+                                  onClick={() => handleLocationSelect(city)}
+                                  className="w-full px-4 py-2 text-left hover:bg-blue-50 hover:text-blue-600 transition-colors flex items-center gap-2 text-sm"
+                                >
+                                  <MapPin className="w-4 h-4 text-gray-400" />
+                                  <span>{city}</span>
+                                </button>
+                              ))
+                          ) : (
+                            <div className="px-4 py-3 text-sm text-gray-500 text-center">
+                              No cities found
+                            </div>
+                          )}
+                          {filteredCities.length > 50 && (
+                            <div className="px-4 py-2 text-xs text-gray-500 text-center border-t border-gray-200">
+                              Showing first 50 results. Type to filter more...
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {formData.location?.length > 0 
+                        ? `${formData.location.length} location(s) selected. Type to add more.`
+                        : 'Start typing or select from the list to add locations'
+                      }
+                    </p>
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Duration *</label>
@@ -375,14 +578,13 @@ const AdminTrips = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Price *</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Price</label>
                     <input
                       type="text"
                       name="price"
                       value={formData.price}
                       onChange={handleInputChange}
                       placeholder="e.g., ₹22,999"
-                      required
                       className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                     />
                   </div>
@@ -396,6 +598,19 @@ const AdminTrips = () => {
                       placeholder="e.g., ₹24,999"
                       className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                     />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Seats Left</label>
+                    <input
+                      type="number"
+                      name="seatsLeft"
+                      value={formData.seatsLeft}
+                      onChange={handleInputChange}
+                      placeholder="e.g., 5"
+                      min="0"
+                      className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Leave empty if seats are unlimited</p>
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Status</label>
@@ -771,6 +986,86 @@ const AdminTrips = () => {
                   </label>
                 </div>
 
+                {/* Recommended Trips */}
+                <div className="relative" ref={recommendedTripsDropdownRef}>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Recommended Trips</label>
+                  
+                  {/* Selected Recommended Trips */}
+                  {formData.recommendedTrips && formData.recommendedTrips.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {formData.recommendedTrips.map((tripId) => {
+                        const trip = availableTrips.find(t => t.id === tripId);
+                        if (!trip) return null;
+                        return (
+                          <span
+                            key={tripId}
+                            className="inline-flex items-center gap-2 px-3 py-1.5 bg-purple-100 text-purple-800 rounded-lg text-sm font-medium"
+                          >
+                            <span>{trip.title}</span>
+                            <button
+                              type="button"
+                              onClick={() => removeRecommendedTrip(tripId)}
+                              className="ml-1 text-purple-600 hover:text-purple-800 hover:bg-purple-200 rounded-full p-0.5 transition-colors"
+                              title="Remove"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
+                  
+                  <div className="relative">
+                    <input
+                      type="text"
+                      name="recommendedTripsSearch"
+                      value={recommendedTripsSearch}
+                      onChange={(e) => {
+                        setRecommendedTripsSearch(e.target.value);
+                        setShowRecommendedTripsDropdown(true);
+                      }}
+                      onFocus={() => setShowRecommendedTripsDropdown(true)}
+                      placeholder="Search and select trips to recommend..."
+                      className="w-full px-4 py-2 pr-10 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
+                    />
+                    <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+                    
+                    {showRecommendedTripsDropdown && (
+                      <div className="absolute z-50 w-full mt-1 bg-white border-2 border-gray-300 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                        {filteredRecommendedTrips.length > 0 ? (
+                          filteredRecommendedTrips
+                            .filter(trip => !formData.recommendedTrips?.includes(trip.id))
+                            .slice(0, 20)
+                            .map((trip) => (
+                              <button
+                                key={trip.id}
+                                type="button"
+                                onClick={() => handleRecommendedTripSelect(trip.id)}
+                                className="w-full px-4 py-3 text-left hover:bg-purple-50 hover:text-purple-600 transition-colors border-b border-gray-100 last:border-b-0"
+                              >
+                                <div className="font-semibold text-sm">{trip.title}</div>
+                                <div className="text-xs text-gray-500 mt-1">
+                                  {Array.isArray(trip.location) ? trip.location.join(', ') : trip.location} • {trip.duration}
+                                </div>
+                              </button>
+                            ))
+                        ) : (
+                          <div className="px-4 py-3 text-sm text-gray-500 text-center">
+                            No trips found
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {formData.recommendedTrips?.length > 0 
+                      ? `${formData.recommendedTrips.length} trip(s) selected. These will appear at the bottom of the trip detail page.`
+                      : 'Search and select trips to recommend to users viewing this trip'
+                    }
+                  </p>
+                </div>
+
                 {/* Submit Buttons */}
                 <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4 border-t">
                   <button
@@ -822,7 +1117,9 @@ const AdminTrips = () => {
                         </div>
                         <div className="flex-1 min-w-0">
                           <h3 className="font-semibold text-gray-900 truncate mb-1">{trip.title}</h3>
-                          <p className="text-sm text-gray-600 mb-2">{trip.location}</p>
+                          <p className="text-sm text-gray-600 mb-2">
+                            {Array.isArray(trip.location) ? trip.location.join(', ') : trip.location}
+                          </p>
                           <div className="flex items-center gap-2 mb-2 flex-wrap">
                             <span className="text-xs text-gray-500">{trip.duration}</span>
                             <span className="text-sm font-semibold text-gray-900">{trip.price}</span>
@@ -915,7 +1212,9 @@ const AdminTrips = () => {
                         <td className="px-4 lg:px-6 py-3 lg:py-4">
                           <span className="font-semibold text-gray-900 text-sm sm:text-base">{trip.title}</span>
                         </td>
-                        <td className="px-4 lg:px-6 py-3 lg:py-4 text-gray-700 text-sm sm:text-base">{trip.location}</td>
+                        <td className="px-4 lg:px-6 py-3 lg:py-4 text-gray-700 text-sm sm:text-base">
+                          {Array.isArray(trip.location) ? trip.location.join(', ') : trip.location}
+                        </td>
                         <td className="px-4 lg:px-6 py-3 lg:py-4 text-gray-700 text-sm sm:text-base">{trip.duration}</td>
                         <td className="px-4 lg:px-6 py-3 lg:py-4 text-gray-700 font-semibold text-sm sm:text-base">{trip.price}</td>
                         <td className="px-4 lg:px-6 py-3 lg:py-4">

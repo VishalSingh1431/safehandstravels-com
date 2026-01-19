@@ -5,6 +5,7 @@ import { Loader2, Calendar, Users, Mail, Phone, MessageSquare, Send, CheckCircle
 import { useToast } from '../contexts/ToastContext'
 import SEO from '../components/SEO'
 import { getTripSchema, getBreadcrumbSchema } from '../utils/structuredData'
+import TripCard from '../components/card/TripCard'
 
 function ProductPage() {
   const { id } = useParams()
@@ -32,6 +33,7 @@ function ProductPage() {
   const [lightboxIndex, setLightboxIndex] = useState(0)
   const [touchStart, setTouchStart] = useState(null)
   const [touchEnd, setTouchEnd] = useState(null)
+  const [recommendedTrips, setRecommendedTrips] = useState([])
 
   useEffect(() => {
     const fetchData = async () => {
@@ -43,6 +45,9 @@ function ProductPage() {
         ])
         
         const tripData = tripResponse.trip || tripResponse
+        console.log('ProductPage - Fetched trip data:', tripData); // Debug log
+        console.log('ProductPage - trip.recommendedTrips:', tripData?.recommendedTrips); // Debug log
+        console.log('ProductPage - trip.seatsLeft:', tripData?.seatsLeft, 'type:', typeof tripData?.seatsLeft); // Debug log
         setTrip(tripData)
         setPageSettings(settingsResponse.settings)
         
@@ -67,6 +72,50 @@ function ProductPage() {
       fetchData()
     }
   }, [id, toast])
+
+  // Fetch recommended trips
+  useEffect(() => {
+    const fetchRecommendedTrips = async () => {
+      console.log('ProductPage - trip.recommendedTrips:', trip?.recommendedTrips, 'type:', typeof trip?.recommendedTrips); // Debug log
+      
+      const recommendedTripsIds = Array.isArray(trip?.recommendedTrips) 
+        ? trip.recommendedTrips 
+        : (trip?.recommendedTrips ? [trip.recommendedTrips] : []);
+      
+      if (!recommendedTripsIds || recommendedTripsIds.length === 0) {
+        console.log('No recommended trips to fetch'); // Debug log
+        setRecommendedTrips([])
+        return
+      }
+
+      console.log('Fetching recommended trips with IDs:', recommendedTripsIds); // Debug log
+
+      try {
+        const tripPromises = recommendedTripsIds.map(tripId => 
+          tripsAPI.getTripById(tripId).catch(err => {
+            console.error(`Error fetching recommended trip ${tripId}:`, err)
+            return null
+          })
+        )
+        
+        const results = await Promise.all(tripPromises)
+        const trips = results
+          .filter(result => result && (result.trip || result))
+          .map(result => result.trip || result)
+          .filter(t => t && t.status === 'active') // Only show active trips
+        
+        console.log('Fetched recommended trips:', trips.length, trips); // Debug log
+        setRecommendedTrips(trips)
+      } catch (error) {
+        console.error('Error fetching recommended trips:', error)
+        setRecommendedTrips([])
+      }
+    }
+
+    if (trip) {
+      fetchRecommendedTrips()
+    }
+  }, [trip])
 
   // Get all gallery images for lightbox - moved before early returns
   const getAllGalleryImages = useCallback(() => {
@@ -482,7 +531,9 @@ function ProductPage() {
         },
         {
           question: 'What is the cost range?',
-          answer: `The trip costs ${trip.price} per person. Additional expenses for transportation, personal shopping, and optional activities apply.`
+          answer: trip.price 
+            ? `The trip costs ${trip.price} per person. Additional expenses for transportation, personal shopping, and optional activities apply.`
+            : 'Please contact us for pricing details. Additional expenses for transportation, personal shopping, and optional activities apply.'
         },
         {
           question: 'Can the itinerary be customized?',
@@ -925,19 +976,21 @@ function ProductPage() {
                         </h2>
                       </div>
                       <div className="space-y-6">
-                        <div className="bg-white rounded-xl p-6 shadow-md">
-                          <h3 className="text-xl font-bold text-gray-900 mb-4">Trip Pricing</h3>
-                          <div className="flex items-baseline gap-3">
-                            <span className="text-4xl font-bold text-[#017233]">{trip.price}</span>
-                            {trip.oldPrice && (
-                              <>
-                                <span className="text-xl text-gray-400 line-through">{trip.oldPrice}</span>
-                                <span className="text-sm text-red-600 font-semibold">₹ 2,000 Off</span>
-                              </>
-                            )}
+                        {trip.price && (
+                          <div className="bg-white rounded-xl p-6 shadow-md">
+                            <h3 className="text-xl font-bold text-gray-900 mb-4">Trip Pricing</h3>
+                            <div className="flex items-baseline gap-3">
+                              <span className="text-4xl font-bold text-[#017233]">{trip.price}</span>
+                              {trip.oldPrice && (
+                                <>
+                                  <span className="text-xl text-gray-400 line-through">{trip.oldPrice}</span>
+                                  <span className="text-sm text-red-600 font-semibold">₹ 2,000 Off</span>
+                                </>
+                              )}
+                            </div>
+                            <p className="text-gray-600 mt-2">Per Person</p>
                           </div>
-                          <p className="text-gray-600 mt-2">Per Person</p>
-                        </div>
+                        )}
                         <div className="bg-white rounded-xl p-6 shadow-md">
                           <h3 className="text-xl font-bold text-gray-900 mb-4">Available Dates</h3>
                           <p className="text-gray-700">Contact us for available dates and group bookings.</p>
@@ -1092,6 +1145,31 @@ function ProductPage() {
               </div>
             </section>
             )}
+
+            {/* Recommended Trips Section */}
+            {recommendedTrips && recommendedTrips.length > 0 && (
+              <section className="bg-gradient-to-br from-gray-50 to-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 md:p-8 lg:p-10 border border-[#017233]/10 mt-6 sm:mt-8">
+                <div className="mb-8 md:mb-12 text-center">
+                  <div className="flex items-center justify-center gap-3 mb-4">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-[#017233] to-[#01994d] flex items-center justify-center text-white text-lg sm:text-xl font-bold shadow-lg">
+                      ✨
+                    </div>
+                    <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900">
+                      Recommended Trips
+                    </h2>
+                  </div>
+                  <p className="text-gray-600 text-base sm:text-lg max-w-2xl mx-auto">
+                    Discover more amazing destinations that you might love
+                  </p>
+                </div>
+
+                <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 items-stretch">
+                  {recommendedTrips.map((recommendedTrip) => (
+                    <TripCard key={recommendedTrip.id} trip={recommendedTrip} />
+                  ))}
+                </div>
+              </section>
+            )}
                 </div>
               </div>
             </div>
@@ -1104,7 +1182,7 @@ function ProductPage() {
               <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-gray-200 overflow-hidden">
                 <div className="p-4 sm:p-6">
                   {/* Trip Starts From */}
-                  {pageSettings?.bookingCard?.showPrice && (
+                  {pageSettings?.bookingCard?.showPrice && trip.price && (
                   <div className="mb-4 sm:mb-6">
                     <h3 className="text-xs sm:text-sm font-semibold text-gray-600 mb-2 sm:mb-3">Trip Starts From</h3>
                     <div className="flex flex-wrap items-baseline gap-2 mb-1">
@@ -1184,7 +1262,9 @@ function ProductPage() {
                     <div className="flex items-center justify-between bg-gradient-to-r from-[#017233]/5 to-[#01994d]/5 rounded-lg p-3 sm:p-4 border border-[#017233]/20">
                       <div className="min-w-0 flex-1">
                         <p className="font-semibold text-gray-900 text-sm sm:text-base truncate">{selectedDate}</p>
-                        <p className="text-xs sm:text-sm text-gray-600 mt-1">Starting from {trip.price} /Person</p>
+                        {trip.price && (
+                          <p className="text-xs sm:text-sm text-gray-600 mt-1">Starting from {trip.price} /Person</p>
+                        )}
                       </div>
                       <div className="flex-shrink-0 ml-2">
                         <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-[#017233] to-[#01994d] flex items-center justify-center text-white shadow-md">
@@ -1262,6 +1342,38 @@ function ProductPage() {
                         </svg>
                       </button>
                     </div>
+                    {trip && typeof trip.seatsLeft !== 'undefined' && trip.seatsLeft !== null && trip.seatsLeft !== '' && (() => {
+                      const seatsValue = trip.seatsLeft;
+                      let seats = seatsValue;
+                      
+                      // Convert to number if it's a string
+                      if (typeof seatsValue === 'string') {
+                        seats = parseInt(seatsValue);
+                      }
+                      
+                      // Only show if seats is a valid number (0, 1, 2, etc.)
+                      if (typeof seats !== 'number' || isNaN(seats)) {
+                        console.log('seatsLeft display skipped - invalid value:', seatsValue, 'type:', typeof seatsValue);
+                        return null;
+                      }
+                      
+                      console.log('Showing seatsLeft:', seats); // Debug log
+                      
+                      return (
+                        <div className="mt-3 p-3 bg-gradient-to-r from-orange-50 to-red-50 rounded-lg border border-orange-200">
+                          <p className="text-sm font-semibold text-orange-700 flex items-center gap-2">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            {seats > 0 ? (
+                              <>Only <span className="font-bold text-orange-900">{seats}</span> {seats === 1 ? 'seat' : 'seats'} left!</>
+                            ) : (
+                              <>No seats available</>
+                            )}
+                          </p>
+                        </div>
+                      );
+                    })()}
                   </div>
                   )}
 

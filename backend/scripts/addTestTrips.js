@@ -434,16 +434,18 @@ async function addTestTrips() {
     await initializeDatabase();
     console.log('✅ Database initialized');
 
-    console.log('\n📝 Adding test trips...\n');
+    console.log('\n📝 Adding 5 sample trips...\n');
 
-    for (let i = 0; i < testTrips.length; i++) {
-      const tripData = testTrips[i];
+    // Add only first 5 trips
+    const tripsToAdd = testTrips.slice(0, 5);
+    for (let i = 0; i < tripsToAdd.length; i++) {
+      const tripData = tripsToAdd[i];
       try {
         const trip = await Trip.create(tripData);
         console.log(`✅ Trip ${i + 1} created: ${trip.title}`);
       } catch (error) {
         console.error(`❌ Error creating trip ${i + 1} (${tripData.title}):`, error.message);
-        if (error.code === '23505') {
+        if (error.code === 'ER_DUP_ENTRY' || error.errno === 1062) {
           console.log(`   ⚠️  Trip with this title already exists, skipping...`);
         }
       }
