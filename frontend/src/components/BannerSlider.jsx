@@ -55,7 +55,7 @@ function BannerSlider() {
 
   if (loading) {
     return (
-      <section className="w-full bg-gray-50 py-6 sm:py-8">
+      <section className="w-full bg-gray-50 py-3 sm:py-4">
         <div className="mx-auto w-full px-4 sm:px-6 lg:px-8">
           <div className="relative h-48 sm:h-64 md:h-80 lg:h-96 xl:h-[500px] rounded-xl sm:rounded-2xl overflow-hidden shadow-xl bg-gray-200 flex items-center justify-center">
             <Loader2 className="w-12 h-12 animate-spin text-gray-400" />
@@ -70,7 +70,7 @@ function BannerSlider() {
   }
 
   return (
-    <section className="w-full bg-gray-50 py-6 sm:py-8">
+    <section className="w-full bg-gray-50 py-3 sm:py-4">
       <div className="mx-auto w-full px-4 sm:px-6 lg:px-8">
         <div className="relative h-48 sm:h-64 md:h-80 lg:h-96 xl:h-[500px] rounded-xl sm:rounded-2xl overflow-hidden shadow-xl">
           {banners.map((banner, index) => (

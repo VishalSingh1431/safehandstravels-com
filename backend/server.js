@@ -27,6 +27,7 @@ import bannersRoutes from './routes/banners.js';
 import brandingPartnersRoutes from './routes/brandingPartners.js';
 import hotelPartnersRoutes from './routes/hotelPartners.js';
 import blogsRoutes from './routes/blogs.js';
+import teamsRoutes from './routes/teams.js';
 
 // Load .env from backend directory (works even when run from different directory)
 const __filename = fileURLToPath(import.meta.url);
@@ -170,6 +171,7 @@ app.use('/api/banners', bannersRoutes);
 app.use('/api/branding-partners', brandingPartnersRoutes);
 app.use('/api/hotel-partners', hotelPartnersRoutes);
 app.use('/api/blogs', blogsRoutes);
+app.use('/api/teams', teamsRoutes);
 
 // Serve React Frontend (Vite build is in frontend/dist)
 // Recursive function to find dist folder with index.html

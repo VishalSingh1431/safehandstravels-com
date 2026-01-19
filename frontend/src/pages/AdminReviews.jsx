@@ -70,28 +70,53 @@ const AdminReviews = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleFileUpload = async (file, type = 'image') => {
+  const extractYouTubeId = (url) => {
+    if (!url) return null;
+    
+    // If it's already just an ID, return it
+    if (!url.includes('youtube.com') && !url.includes('youtu.be')) {
+      return url.length === 11 ? url : null;
+    }
+    
+    // Extract ID from YouTube URL (including Shorts)
+    const regExp = /(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([^#&?\/\s]{11})/;
+    const match = url.match(regExp);
+    return (match && match[1] && match[1].length === 11) ? match[1] : null;
+  };
+
+  const handleYouTubeUrlChange = (url) => {
+    const youtubeId = extractYouTubeId(url);
+    if (youtubeId) {
+      setFormData(prev => ({
+        ...prev,
+        videoUrl: url.trim(),
+        videoPublicId: '' // Clear video public ID when using YouTube
+      }));
+    } else if (url.trim() === '') {
+      setFormData(prev => ({
+        ...prev,
+        videoUrl: '',
+        videoPublicId: ''
+      }));
+    } else {
+      // Allow typing, but will validate on submit
+      setFormData(prev => ({
+        ...prev,
+        videoUrl: url.trim()
+      }));
+    }
+  };
+
+  const handleFileUpload = async (file) => {
     try {
       setUploading(true);
-      let result;
-      
-      if (type === 'video') {
-        result = await uploadAPI.uploadVideo(file);
-        setFormData(prev => ({
-          ...prev,
-          videoUrl: result.url,
-          videoPublicId: result.public_id
-        }));
-        toast.success('Video uploaded successfully!');
-      } else {
-        result = await uploadAPI.uploadImage(file);
-        setFormData(prev => ({
-          ...prev,
-          avatar: result.url,
-          avatarPublicId: result.public_id
-        }));
-        toast.success('Avatar uploaded successfully!');
-      }
+      const result = await uploadAPI.uploadImage(file);
+      setFormData(prev => ({
+        ...prev,
+        avatar: result.url,
+        avatarPublicId: result.public_id
+      }));
+      toast.success('Avatar uploaded successfully!');
     } catch (error) {
       console.error('Error uploading file:', error);
       toast.error(error.message || 'Failed to upload file');
@@ -104,7 +129,13 @@ const AdminReviews = () => {
     e.preventDefault();
     
     if (!formData.videoUrl) {
-      toast.error('Please upload a video');
+      toast.error('Please enter a YouTube video link');
+      return;
+    }
+
+    const youtubeId = extractYouTubeId(formData.videoUrl);
+    if (!youtubeId) {
+      toast.error('Invalid YouTube URL. Please enter a valid YouTube or YouTube Shorts link');
       return;
     }
     
@@ -283,37 +314,34 @@ const AdminReviews = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Video *</label>
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
-                    <input
-                      type="file"
-                      accept="video/*"
-                      onChange={(e) => e.target.files[0] && handleFileUpload(e.target.files[0], 'video')}
-                      className="hidden"
-                      id="video-upload"
-                      required={!formData.videoUrl}
-                    />
-                    <label
-                      htmlFor="video-upload"
-                      className="px-3 sm:px-4 py-2 bg-purple-100 text-purple-700 rounded-lg font-semibold hover:bg-purple-200 transition-colors cursor-pointer flex items-center gap-2 text-sm sm:text-base"
-                    >
-                      {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Video className="w-4 h-4" />}
-                      {formData.videoUrl ? 'Change Video' : 'Upload Video'}
-                    </label>
-                    {formData.videoUrl && (
-                      <div className="flex items-center gap-2">
-                        <video
-                          src={formData.videoUrl}
-                          controls
-                          className="w-32 h-20 object-cover rounded-lg"
-                        >
-                          Your browser does not support the video tag.
-                        </video>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">YouTube Video Link *</label>
+                  <input
+                    type="text"
+                    value={formData.videoUrl}
+                    onChange={(e) => handleYouTubeUrlChange(e.target.value)}
+                    placeholder="Enter YouTube or YouTube Shorts URL (e.g., https://youtube.com/shorts/abc123 or https://youtu.be/abc123)"
+                    required
+                    className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Supports YouTube URLs (youtube.com, youtu.be) and YouTube Shorts links. Only YouTube links are accepted.
+                  </p>
+                  {formData.videoUrl && extractYouTubeId(formData.videoUrl) && (
+                    <div className="mt-3">
+                      <div className="relative w-full max-w-md aspect-video rounded-lg overflow-hidden border-2 border-gray-200">
+                        <iframe
+                          src={`https://www.youtube.com/embed/${extractYouTubeId(formData.videoUrl)}?rel=0&modestbranding=1`}
+                          className="w-full h-full"
+                          frameBorder="0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                          title="YouTube video preview"
+                        />
                       </div>
-                    )}
-                  </div>
-                  {!formData.videoUrl && (
-                    <p className="text-xs text-red-500 mt-1">Video is required</p>
+                    </div>
+                  )}
+                  {formData.videoUrl && !extractYouTubeId(formData.videoUrl) && (
+                    <p className="text-xs text-red-500 mt-1">Please enter a valid YouTube URL</p>
                   )}
                 </div>
 

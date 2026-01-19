@@ -734,6 +734,49 @@ export const hotelPartnersAPI = {
 };
 
 // Blogs API functions
+// Teams API functions
+export const teamsAPI = {
+  getAllTeams: async () => {
+    return apiCall('/teams', {
+      method: 'GET',
+    });
+  },
+
+  getAllTeamsAdmin: async (status = '') => {
+    const params = new URLSearchParams();
+    if (status) params.append('status', status);
+    return apiCall(`/teams/admin?${params.toString()}`, {
+      method: 'GET',
+    });
+  },
+
+  getTeamById: async (id) => {
+    return apiCall(`/teams/${id}`, {
+      method: 'GET',
+    });
+  },
+
+  createTeam: async (teamData) => {
+    return apiCall('/teams', {
+      method: 'POST',
+      body: JSON.stringify(teamData),
+    });
+  },
+
+  updateTeam: async (id, teamData) => {
+    return apiCall(`/teams/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(teamData),
+    });
+  },
+
+  deleteTeam: async (id) => {
+    return apiCall(`/teams/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
 export const blogsAPI = {
   getAllBlogs: async (category = '', featured = '', search = '', limit = 50, offset = 0) => {
     const params = new URLSearchParams();

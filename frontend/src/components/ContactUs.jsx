@@ -66,14 +66,14 @@ function ContactUs() {
   }
 
   return (
-    <section id="contact" className="w-full bg-gradient-to-b from-white to-gray-50 py-12 md:py-16">
+    <section id="contact" className="w-full bg-gradient-to-b from-white to-gray-50 py-4 md:py-6">
       <div className="mx-auto w-full px-4 sm:px-6 lg:px-8">
         {/* Main Card Container */}
         <div className="bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden">
           <div className="p-6 md:p-8 lg:p-12">
             {/* Header */}
-            <div className="mb-8">
-              <div className="flex items-center gap-4 mb-6">
+            <div className="mb-6">
+              <div className="flex items-center gap-4 mb-4">
                 <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#017233] to-[#01994d] flex items-center justify-center text-white text-xl font-bold shadow-lg">
                   📧
                 </div>

@@ -36,14 +36,14 @@ function FAQ() {
   }
 
   return (
-    <section className="w-full bg-gradient-to-b from-gray-50 to-white py-12 md:py-16">
+    <section className="w-full bg-gradient-to-b from-gray-50 to-white py-4 md:py-6">
       <div className="mx-auto w-full px-4 sm:px-6 lg:px-8">
         {/* Main Card Container */}
         <div className="bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden">
           <div className="p-6 md:p-8 lg:p-12">
             {/* Header */}
-            <div className="mb-8">
-              <div className="flex items-center gap-4 mb-6">
+            <div className="mb-6">
+              <div className="flex items-center gap-4 mb-4">
                 <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#017233] to-[#01994d] flex items-center justify-center text-white text-xl font-bold shadow-lg">
                   ❓
                 </div>
@@ -58,7 +58,7 @@ function FAQ() {
 
             {/* FAQ Items */}
             {loading ? (
-              <div className="flex justify-center items-center py-12">
+              <div className="flex justify-center items-center py-6">
                 <Loader2 className="w-8 h-8 animate-spin text-[#017233]" />
               </div>
             ) : faqs.length > 0 ? (
@@ -108,7 +108,7 @@ function FAQ() {
           ))}
         </div>
             ) : (
-              <div className="text-center py-12">
+              <div className="text-center py-6">
                 <p className="text-gray-500 text-lg">No FAQs available at the moment.</p>
               </div>
             )}

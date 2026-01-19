@@ -85,9 +85,9 @@ function HotelPartners() {
 
   if (loading) {
     return (
-      <section className="w-full bg-white py-6 md:py-8 border-b border-gray-100">
+      <section className="w-full bg-white py-3 md:py-4 border-b border-gray-100">
         <div className="mx-auto w-full px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-center py-12">
+          <div className="flex items-center justify-center py-6">
             <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
           </div>
         </div>
@@ -100,10 +100,10 @@ function HotelPartners() {
   }
 
   return (
-    <section className="w-full bg-white py-6 md:py-8 border-b border-gray-100">
+    <section className="w-full bg-white py-3 md:py-4 border-b border-gray-100">
       <div className="mx-auto w-full px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="mb-6 md:mb-8 text-center">
+        <div className="mb-4 md:mb-6 text-center">
           <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
             Our Hotel Partners
           </h2>

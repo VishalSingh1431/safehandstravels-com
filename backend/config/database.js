@@ -679,6 +679,32 @@ export const initializeDatabase = async () => {
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_blogs_published_at ON blogs(published_at)`);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_blogs_display_order ON blogs(display_order)`);
 
+    // Create teams table if it doesn't exist
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS teams (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        position VARCHAR(255),
+        bio TEXT,
+        photo_url TEXT,
+        photo_public_id TEXT,
+        email VARCHAR(255),
+        phone VARCHAR(20),
+        social_linkedin VARCHAR(255),
+        social_twitter VARCHAR(255),
+        social_facebook VARCHAR(255),
+        status VARCHAR(50) DEFAULT 'active',
+        display_order INT DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        CONSTRAINT chk_team_status CHECK (status IN ('active', 'inactive'))
+      )
+    `);
+
+    // Create indexes for teams
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_teams_status ON teams(status)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_teams_display_order ON teams(display_order)`);
+
     console.log('✅ Database tables initialized');
   } catch (error) {
     console.error('❌ Error initializing database:', error);

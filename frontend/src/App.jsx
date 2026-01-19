@@ -32,6 +32,7 @@ const CustomiseTrip = lazy(() => import('./pages/CustomiseTrip'))
 const CustomisedTrip = lazy(() => import('./pages/CustomisedTrip'))
 const WhySafeHandsTravels = lazy(() => import('./pages/WhySafeHandsTravels'))
 const BlogDetail = lazy(() => import('./pages/BlogDetail'))
+const ContactUs = lazy(() => import('./pages/ContactUs'))
 
 // Admin pages - lazy loaded separately (rarely accessed)
 const AdminTrips = lazy(() => import('./pages/AdminTrips'))
@@ -49,6 +50,7 @@ const AdminBanners = lazy(() => import('./pages/AdminBanners'))
 const AdminBrandingPartners = lazy(() => import('./pages/AdminBrandingPartners'))
 const AdminHotelPartners = lazy(() => import('./pages/AdminHotelPartners'))
 const AdminBlogs = lazy(() => import('./pages/AdminBlogs'))
+const AdminTeam = lazy(() => import('./pages/AdminTeam'))
 
 // Loading component
 const PageLoader = () => (
@@ -92,6 +94,7 @@ function App() {
               <Route path="/experiences" element={<Experiences />} />
               <Route path="/customise-trip" element={<CustomisedTrip />} />
               <Route path="/why-safehands-travels" element={<WhySafeHandsTravels />} />
+              <Route path="/contact-us" element={<ContactUs />} />
               <Route path="/blog/:id" element={<BlogDetail />} />
               <Route path="/blog/destination/:id" element={<BlogDetail />} />
               {/* Admin Routes */}
@@ -110,6 +113,7 @@ function App() {
               <Route path="/admin/branding-partners" element={<AdminBrandingPartners />} />
               <Route path="/admin/hotel-partners" element={<AdminHotelPartners />} />
               <Route path="/admin/blogs" element={<AdminBlogs />} />
+              <Route path="/admin/team" element={<AdminTeam />} />
               </Routes>
             </Suspense>
           </main>

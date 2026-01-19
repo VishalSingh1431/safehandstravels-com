@@ -20,23 +20,54 @@ function ReviewCard({ review }) {
   // Ensure video URL is properly formatted
   const videoUrl = review.videoUrl || review.video_url;
   
+  // Extract YouTube ID from URL
+  const extractYouTubeId = (url) => {
+    if (!url) return null;
+    
+    // If it's already just an ID, return it
+    if (!url.includes('youtube.com') && !url.includes('youtu.be')) {
+      return url.length === 11 ? url : null;
+    }
+    
+    // Extract ID from YouTube URL (including Shorts)
+    const regExp = /(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([^#&?\/\s]{11})/;
+    const match = url.match(regExp);
+    return (match && match[1] && match[1].length === 11) ? match[1] : null;
+  };
+
+  const youtubeId = videoUrl ? extractYouTubeId(videoUrl) : null;
+  const isYouTubeLink = youtubeId !== null;
+  
   return (
     <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border border-gray-200 overflow-hidden hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 group">
       {/* Video Section */}
       {videoUrl ? (
         <div className="relative w-full aspect-video bg-gray-900 overflow-hidden">
-          <video
-            controls
-            className="w-full h-full object-cover"
-            preload="metadata"
-            playsInline
-            onError={(e) => {
-              console.error('Video load error:', videoUrl, e);
-            }}
-          >
-            <source src={videoUrl} type="video/mp4" />
-            Your browser does not support the video tag.
-          </video>
+          {isYouTubeLink ? (
+            // YouTube Embed
+            <iframe
+              src={`https://www.youtube.com/embed/${youtubeId}?rel=0&modestbranding=1`}
+              className="w-full h-full"
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              title={`${review.name}'s review video`}
+            />
+          ) : (
+            // Fallback for non-YouTube videos (shouldn't happen if admin panel is fixed)
+            <video
+              controls
+              className="w-full h-full object-cover"
+              preload="metadata"
+              playsInline
+              onError={(e) => {
+                console.error('Video load error:', videoUrl, e);
+              }}
+            >
+              <source src={videoUrl} type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+          )}
           <div className="absolute top-2 right-2 sm:top-3 sm:right-3 bg-purple-600 text-white px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs font-bold flex items-center gap-1 z-10 pointer-events-none">
             <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3" fill="currentColor" viewBox="0 0 20 20">
               <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />

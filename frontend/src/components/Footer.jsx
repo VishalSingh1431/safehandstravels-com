@@ -21,7 +21,7 @@ function Footer() {
           <div className="absolute bottom-0 right-0 w-96 h-96 bg-white rounded-full translate-x-1/2 translate-y-1/2"></div>
         </div>
         
-        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 md:px-8 py-8 sm:py-12 md:py-16 relative z-10">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 md:px-8 py-4 sm:py-6 md:py-8 relative z-10">
           {/* Top Section - 5 Columns on Desktop, Stacked on Mobile */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 sm:gap-8 md:gap-12">
             {/* COLUMN 1: Brand Info */}
@@ -85,34 +85,34 @@ function Footer() {
               <h4 className="text-lg font-bold mb-4 text-white drop-shadow-md">Quick Links</h4>
               <ul className="space-y-3">
                 <li>
-                  <a href="/" className="text-white/90 hover:text-white transition-colors hover:underline">
+                  <Link to="/" className="text-white/90 hover:text-white transition-colors hover:underline">
                     Home
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a href="#destinations" className="text-white/90 hover:text-white transition-colors hover:underline">
-                    Destinations
-                  </a>
+                  <Link to="/all-india-trips" className="text-white/90 hover:text-white transition-colors hover:underline">
+                    All India Tours
+                  </Link>
                 </li>
                 <li>
-                  <a href="#trips" className="text-white/90 hover:text-white transition-colors hover:underline">
-                    Popular Trips
-                  </a>
+                  <Link to="/experiences" className="text-white/90 hover:text-white transition-colors hover:underline">
+                    Experiences
+                  </Link>
                 </li>
                 <li>
-                  <a href="#corporate" className="text-white/90 hover:text-white transition-colors hover:underline">
-                    Corporate Tours
-                  </a>
+                  <Link to="/customise-trip" className="text-white/90 hover:text-white transition-colors hover:underline">
+                    Customise your Trip
+                  </Link>
                 </li>
                 <li>
-                  <a href="#team" className="text-white/90 hover:text-white transition-colors hover:underline">
+                  <Link to="/why-safehands-travels" className="text-white/90 hover:text-white transition-colors hover:underline">
+                    Why SafeHands Travels
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/contact-us#our-team" className="text-white/90 hover:text-white transition-colors hover:underline">
                     Our Team
-                  </a>
-                </li>
-                <li>
-                  <a href="#reviews" className="text-white/90 hover:text-white transition-colors hover:underline">
-                    Reviews
-                  </a>
+                  </Link>
                 </li>
               </ul>
             </div>
@@ -122,9 +122,9 @@ function Footer() {
               <h4 className="text-lg font-bold mb-4 text-white drop-shadow-md">Our Services</h4>
               <ul className="space-y-3">
                 <li>
-                  <a href="#" className="text-white/90 hover:text-white transition-colors hover:underline">
+                  <Link to="/adventure-trips" className="text-white/90 hover:text-white transition-colors hover:underline">
                     Adventure Tours
-                  </a>
+                  </Link>
                 </li>
                 <li>
                   <a href="#" className="text-white/90 hover:text-white transition-colors hover:underline">
@@ -132,29 +132,24 @@ function Footer() {
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="text-white/90 hover:text-white transition-colors hover:underline">
+                  <Link to="/customise-trip" className="text-white/90 hover:text-white transition-colors hover:underline">
                     Customized Itineraries
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a href="#" className="text-white/90 hover:text-white transition-colors hover:underline">
+                  <Link to="/contact-us#visa-assistance" className="text-white/90 hover:text-white transition-colors hover:underline">
                     Visa Assistance
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a href="#" className="text-white/90 hover:text-white transition-colors hover:underline">
+                  <Link to="/contact-us#travel-insurance" className="text-white/90 hover:text-white transition-colors hover:underline">
                     Travel Insurance
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a href="#" className="text-white/90 hover:text-white transition-colors hover:underline">
+                  <Link to="/contact-us#support" className="text-white/90 hover:text-white transition-colors hover:underline">
                     24/7 Support
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="text-white/90 hover:text-white transition-colors hover:underline">
-                    Payment Options
-                  </a>
+                  </Link>
                 </li>
               </ul>
             </div>
@@ -164,19 +159,24 @@ function Footer() {
               <h4 className="text-lg font-bold mb-4 text-white drop-shadow-md">Policies & Support</h4>
               <ul className="space-y-3">
                 <li>
-                  <a href="#cancellation" className="text-white/90 hover:text-white transition-colors hover:underline">
+                  <Link to="/contact-us#policies" className="text-white/90 hover:text-white transition-colors hover:underline">
+                    Policies & Support
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/contact-us#cancellation" className="text-white/90 hover:text-white transition-colors hover:underline">
                     Cancellation & Refunds Policy
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a href="#privacy" className="text-white/90 hover:text-white transition-colors hover:underline">
+                  <Link to="/contact-us#privacy" className="text-white/90 hover:text-white transition-colors hover:underline">
                     Privacy Policy
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a href="#terms" className="text-white/90 hover:text-white transition-colors hover:underline">
+                  <Link to="/contact-us#terms" className="text-white/90 hover:text-white transition-colors hover:underline">
                     Terms & Conditions
-                  </a>
+                  </Link>
                 </li>
               </ul>
             </div>
@@ -217,15 +217,15 @@ function Footer() {
               © 2026 Safe Hands Travels. All rights reserved.
             </p>
             <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-xs sm:text-sm">
-              <a href="#privacy" className="text-white/90 hover:text-white transition-colors hover:underline">
+              <Link to="/contact-us#privacy" className="text-white/90 hover:text-white transition-colors hover:underline">
                 Privacy Policy
-              </a>
-              <a href="#terms" className="text-white/90 hover:text-white transition-colors hover:underline">
+              </Link>
+              <Link to="/contact-us#terms" className="text-white/90 hover:text-white transition-colors hover:underline">
                 Terms of Service
-              </a>
-              <a href="#cookies" className="text-white/90 hover:text-white transition-colors hover:underline">
-                Cookie Policy
-              </a>
+              </Link>
+              <Link to="/contact-us" className="text-white/90 hover:text-white transition-colors hover:underline">
+                Contact Us
+              </Link>
             </div>
           </div>
         </div>

@@ -27,9 +27,9 @@ function VibeWithUs() {
 
   if (loading) {
     return (
-      <section className="w-full bg-gradient-to-b from-white to-gray-50 py-12 md:py-16">
+      <section className="w-full bg-gradient-to-b from-white to-gray-50 py-4 md:py-6">
         <div className="mx-auto w-full px-4 sm:px-6 lg:px-8">
-          <div className="mb-8 md:mb-12 text-center">
+          <div className="mb-6 text-center">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-2">
               Vibe with Us
             </h2>
@@ -37,7 +37,7 @@ function VibeWithUs() {
               Experience the world through our lens
             </p>
           </div>
-          <div className="flex justify-center py-12">
+          <div className="flex justify-center py-6">
             <Loader2 className="w-8 h-8 animate-spin text-[#017233]" />
           </div>
         </div>
@@ -49,9 +49,9 @@ function VibeWithUs() {
     return null
   }
   return (
-    <section className="w-full bg-gradient-to-b from-white to-gray-50 py-12 md:py-16">
+    <section className="w-full bg-gradient-to-b from-white to-gray-50 py-4 md:py-6">
       <div className="mx-auto w-full px-4 sm:px-6 lg:px-8">
-        <div className="mb-8 md:mb-12 text-center">
+        <div className="mb-6 text-center">
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-2">
             Vibe with Us
           </h2>

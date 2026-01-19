@@ -28,7 +28,7 @@ function ExploreDestinations() {
 
   if (loading) {
     return (
-      <section className="w-full bg-gradient-to-b from-gray-50 to-white py-12 md:py-16">
+      <section className="w-full bg-gradient-to-b from-gray-50 to-white py-4 md:py-6">
         <div className="mx-auto w-full px-4 sm:px-6 lg:px-8">
           <div className="mb-8">
             <div className="flex items-center gap-4">
@@ -40,7 +40,7 @@ function ExploreDestinations() {
               </h2>
             </div>
           </div>
-          <div className="text-center py-12">
+          <div className="text-center py-6">
             <p className="text-gray-600">Loading destinations...</p>
           </div>
         </div>
@@ -53,10 +53,10 @@ function ExploreDestinations() {
   }
 
   return (
-    <section className="w-full bg-gradient-to-b from-gray-50 to-white py-12 md:py-16 overflow-x-hidden overflow-y-visible">
+    <section className="w-full bg-gradient-to-b from-gray-50 to-white py-4 md:py-6 overflow-x-hidden overflow-y-visible">
       <div className="mx-auto w-full px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-6">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center text-white text-xl font-bold shadow-lg">
               🌍
@@ -68,7 +68,7 @@ function ExploreDestinations() {
         </div>
 
         {/* Scrolling Marquee Container */}
-        <div className="relative py-8">
+          <div className="relative py-4">
           {/* Gradient overlays for fade effect */}
           <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-white via-gray-50/80 to-transparent z-10 pointer-events-none"></div>
           <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-white via-gray-50/80 to-transparent z-10 pointer-events-none"></div>

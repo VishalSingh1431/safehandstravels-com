@@ -100,13 +100,13 @@ function UpcomingTrips({ searchQuery = '' }) {
   }, [activeFilter, trips, searchQuery])
 
   return (
-    <section className="w-full bg-gradient-to-b from-gray-50 to-white py-12 md:py-16">
+    <section className="w-full bg-gradient-to-b from-gray-50 to-white py-4 md:py-6">
       <div className="mx-auto w-full px-4 sm:px-6 lg:px-8">
         {/* Main Card Container */}
         <div className="bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden">
           <div>
             {/* Header Card */}
-            <div className="p-4 md:p-5 lg:p-6 pb-0 mb-8">
+            <div className="p-4 md:p-5 lg:p-6 pb-0 mb-6">
               <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center text-white text-xl font-bold shadow-lg">
@@ -145,7 +145,7 @@ function UpcomingTrips({ searchQuery = '' }) {
 
             {/* Trips Grid */}
             {loading ? (
-              <div className="flex justify-center items-center py-12">
+              <div className="flex justify-center items-center py-6">
                 <Loader2 className="w-8 h-8 animate-spin text-[#017233]" />
               </div>
             ) : visibleTrips.length > 0 ? (

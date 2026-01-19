@@ -202,14 +202,14 @@ function CertificateLegal() {
 
   if (loading) {
     return (
-      <section className="w-full bg-white py-12">
+      <section className="w-full bg-white py-4">
         <div className="mx-auto w-full px-4 sm:px-6 lg:px-8">
-          <div className="mb-8">
+          <div className="mb-6">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900">
               Certificate & Legal
             </h2>
           </div>
-          <div className="text-center py-12">
+          <div className="text-center py-6">
             <p className="text-gray-600">Loading certificates...</p>
           </div>
         </div>
@@ -222,7 +222,7 @@ function CertificateLegal() {
   }
 
   return (
-    <section className="w-full bg-white py-12">
+    <section className="w-full bg-white py-4">
       <div className="mx-auto w-full px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900">

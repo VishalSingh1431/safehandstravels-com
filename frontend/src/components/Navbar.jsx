@@ -58,9 +58,12 @@ const Navbar = () => {
   const [isAdminDropdownOpen, setIsAdminDropdownOpen] = useState(false);
   const [isTravelDropdownOpen, setIsTravelDropdownOpen] = useState(false);
   const adminDropdownRef = useRef(null);
+  const adminButtonRef = useRef(null);
   const travelDropdownRef = useRef(null);
+  const navbarRef = useRef(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isScrolled, setIsScrolled] = useState(false);
+  const [dropdownTop, setDropdownTop] = useState(0);
   const searchInputRef = useRef(null);
 
   // Set initial search query from URL if on home page
@@ -98,14 +101,50 @@ const Navbar = () => {
     };
   }, []);
 
-  // Scroll behavior for navbar shadow
+  // Calculate Admin Panel button bottom position for dropdown
+  const calculateDropdownTop = () => {
+    if (adminButtonRef.current) {
+      const rect = adminButtonRef.current.getBoundingClientRect();
+      const top = rect.bottom;
+      return top;
+    }
+    return 0;
+  };
+
+  // Update dropdown position when it opens, on scroll, resize, or page change
+  useEffect(() => {
+    if (isAdminDropdownOpen && adminButtonRef.current) {
+      // Use requestAnimationFrame to ensure DOM is ready
+      requestAnimationFrame(() => {
+        setDropdownTop(calculateDropdownTop());
+      });
+    }
+  }, [isAdminDropdownOpen, location.pathname]);
+
+  // Scroll behavior for navbar shadow and dropdown position update
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
+      if (isAdminDropdownOpen && adminButtonRef.current) {
+        requestAnimationFrame(() => {
+          setDropdownTop(calculateDropdownTop());
+        });
+      }
+    };
+    const handleResize = () => {
+      if (isAdminDropdownOpen && adminButtonRef.current) {
+        requestAnimationFrame(() => {
+          setDropdownTop(calculateDropdownTop());
+        });
+      }
     };
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [isAdminDropdownOpen]);
 
   // Keyboard shortcut for search (Press / to focus)
   useEffect(() => {
@@ -177,9 +216,12 @@ const Navbar = () => {
           aria-hidden="true"
         />
       )}
-      <nav className={`w-full border-b border-gray-100/50 bg-white sticky top-0 z-50 transition-shadow duration-300 ${
-        isScrolled ? 'shadow-md' : ''
-      }`}>
+      <nav 
+        ref={navbarRef}
+        className={`w-full border-b border-gray-100/50 bg-white sticky top-0 z-50 transition-shadow duration-300 ${
+          isScrolled ? 'shadow-md' : ''
+        }`}
+      >
       <div className="mx-auto w-full px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-4 py-4 lg:flex-row lg:items-center lg:justify-between lg:gap-6 lg:min-h-[80px]">
           <div className="flex items-center justify-between gap-4 lg:justify-start lg:flex-shrink-0">
@@ -257,11 +299,37 @@ const Navbar = () => {
             {isLoggedIn ? (
               <>
                 {(user?.role === 'admin' || user?.role === 'main_admin') && (
-                  <div className="relative" ref={adminDropdownRef}>
+                  <div 
+                    className="relative" 
+                    ref={adminDropdownRef}
+                    onMouseEnter={() => {
+                      if (adminButtonRef.current) {
+                        requestAnimationFrame(() => {
+                          setDropdownTop(calculateDropdownTop());
+                          setIsAdminDropdownOpen(true);
+                        });
+                      }
+                    }}
+                    onMouseLeave={() => setIsAdminDropdownOpen(false)}
+                  >
                     <button
+                      ref={adminButtonRef}
                       onClick={(e) => {
                         e.stopPropagation();
-                        setIsAdminDropdownOpen(!isAdminDropdownOpen);
+                        if (adminButtonRef.current) {
+                          requestAnimationFrame(() => {
+                            setDropdownTop(calculateDropdownTop());
+                            setIsAdminDropdownOpen(!isAdminDropdownOpen);
+                          });
+                        }
+                      }}
+                      onMouseEnter={() => {
+                        if (adminButtonRef.current) {
+                          requestAnimationFrame(() => {
+                            setDropdownTop(calculateDropdownTop());
+                            setIsAdminDropdownOpen(true);
+                          });
+                        }
                       }}
                       className="flex items-center gap-1 px-4 py-2 text-sm font-semibold text-[#017233] bg-gradient-to-br from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 border border-[#017233]/20 hover:border-[#017233]/40 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md hover:scale-105 active:scale-95"
                     >
@@ -269,111 +337,135 @@ const Navbar = () => {
                       <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isAdminDropdownOpen ? 'rotate-180' : ''}`} />
                     </button>
                     {isAdminDropdownOpen && (
-                      <div className="absolute right-0 mt-2 min-w-fit w-auto bg-white/95 backdrop-blur-xl rounded-xl shadow-2xl border border-gray-200/50 py-2 z-[100] animate-fade-in">
-                        <Link
-                          to="/admin/trips"
-                          className="flex items-center gap-3 whitespace-nowrap px-5 py-2.5 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg mx-2 hover:scale-105 active:scale-95"
-                          onClick={() => setIsAdminDropdownOpen(false)}
-                        >
-                          <span className="text-base flex-shrink-0">🎒</span>
-                          <span>Manage Trips</span>
-                        </Link>
-                        <Link
-                          to="/admin/certificates"
-                          className="flex items-center gap-3 whitespace-nowrap px-5 py-2.5 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg mx-2 hover:scale-105 active:scale-95"
-                          onClick={() => setIsAdminDropdownOpen(false)}
-                        >
-                          <span className="text-base flex-shrink-0">📜</span>
-                          <span>Manage Certificates</span>
-                        </Link>
-                        <Link
-                          to="/admin/destinations"
-                          className="flex items-center gap-3 whitespace-nowrap px-5 py-2.5 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg mx-2 hover:scale-105 active:scale-95"
-                          onClick={() => setIsAdminDropdownOpen(false)}
-                        >
-                          <span className="text-base flex-shrink-0">🌍</span>
-                          <span>Manage Destinations</span>
-                        </Link>
-                        <Link
-                          to="/admin/enquiries"
-                          className="flex items-center gap-3 whitespace-nowrap px-5 py-2.5 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg mx-2 hover:scale-105 active:scale-95"
-                          onClick={() => setIsAdminDropdownOpen(false)}
-                        >
-                          <span className="text-base flex-shrink-0">📧</span>
-                          <span>Manage Enquiries</span>
-                        </Link>
-                        <Link
-                          to="/admin/drivers"
-                          className="flex items-center gap-3 whitespace-nowrap px-5 py-2.5 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg mx-2 hover:scale-105 active:scale-95"
-                          onClick={() => setIsAdminDropdownOpen(false)}
-                        >
-                          <span className="text-base flex-shrink-0">🚗</span>
-                          <span>Manage Drivers & Car Booking</span>
-                        </Link>
-                        <Link
-                          to="/admin/popular-trips"
-                          className="flex items-center gap-3 whitespace-nowrap px-5 py-2.5 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg mx-2 hover:scale-105 active:scale-95"
-                          onClick={() => setIsAdminDropdownOpen(false)}
-                        >
-                          <span className="text-base flex-shrink-0">⭐</span>
-                          <span>Manage Popular Trips</span>
-                        </Link>
-                        <Link
-                          to="/admin/vibe-videos"
-                          className="flex items-center gap-3 whitespace-nowrap px-5 py-2.5 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg mx-2 hover:scale-105 active:scale-95"
-                          onClick={() => setIsAdminDropdownOpen(false)}
-                        >
-                          <span className="text-base flex-shrink-0">🎬</span>
-                          <span>Manage Vibe Videos</span>
-                        </Link>
-                        <Link
-                          to="/admin/traveller-reviews"
-                          className="flex items-center gap-3 whitespace-nowrap px-5 py-2.5 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg mx-2 hover:scale-105 active:scale-95"
-                          onClick={() => setIsAdminDropdownOpen(false)}
-                        >
-                          <span className="text-base flex-shrink-0">⭐</span>
-                          <span>Manage Traveller Reviews</span>
-                        </Link>
-                        <Link
-                          to="/admin/faqs"
-                          className="flex items-center gap-3 whitespace-nowrap px-5 py-2.5 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg mx-2 hover:scale-105 active:scale-95"
-                          onClick={() => setIsAdminDropdownOpen(false)}
-                        >
-                          <span className="text-base flex-shrink-0">❓</span>
-                          <span>Manage FAQs</span>
-                        </Link>
-                        <Link
-                          to="/admin/banners"
-                          className="flex items-center gap-3 whitespace-nowrap px-5 py-2.5 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg mx-2 hover:scale-105 active:scale-95"
-                          onClick={() => setIsAdminDropdownOpen(false)}
-                        >
-                          <span className="text-base flex-shrink-0">🖼️</span>
-                          <span>Manage Banners</span>
-                        </Link>
-                        <Link
-                          to="/admin/branding-partners"
-                          className="flex items-center gap-3 whitespace-nowrap px-5 py-2.5 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg mx-2 hover:scale-105 active:scale-95"
-                          onClick={() => setIsAdminDropdownOpen(false)}
-                        >
-                          <span className="text-base flex-shrink-0">🤝</span>
-                          <span>Manage Branding Partners</span>
-                        </Link>
-                        <Link
-                          to="/admin/hotel-partners"
-                          className="flex items-center gap-3 whitespace-nowrap px-5 py-2.5 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg mx-2 hover:scale-105 active:scale-95"
-                          onClick={() => setIsAdminDropdownOpen(false)}
-                        >
-                          <span className="text-base flex-shrink-0">🏨</span>
-                          <span>Manage Hotel Partners</span>
-                        </Link>
-                        <Link
-                          to="/admin/blogs"
-                          className="flex items-center gap-3 whitespace-nowrap px-5 py-2.5 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg mx-2 hover:scale-105 active:scale-95"
-                          onClick={() => setIsAdminDropdownOpen(false)}
-                        >
-                          <span className="text-base flex-shrink-0">📝</span>
-                          <span>Manage Blog Posts</span>
-                        </Link>
+                      <div 
+                        className="fixed left-0 right-0 pt-2 bg-white/95 backdrop-blur-xl shadow-2xl border-b border-gray-200/50 p-4 sm:p-6 z-[100] animate-fade-in overflow-y-auto max-h-[80vh] sm:max-h-none"
+                        style={{ top: `${dropdownTop || calculateDropdownTop()}px`, width: '100vw', left: 0, right: 0 }}
+                        onMouseEnter={() => {
+                          if (adminButtonRef.current) {
+                            requestAnimationFrame(() => {
+                              setDropdownTop(calculateDropdownTop());
+                              setIsAdminDropdownOpen(true);
+                            });
+                          }
+                        }}
+                        onMouseLeave={() => setIsAdminDropdownOpen(false)}
+                      >
+                        <div className="w-full px-4 sm:px-6 lg:px-8 mx-auto max-w-full">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 sm:gap-3">
+                          <Link
+                            to="/admin/trips"
+                            className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg hover:scale-105 active:scale-95"
+                            onClick={() => setIsAdminDropdownOpen(false)}
+                          >
+                            <span className="text-sm sm:text-base flex-shrink-0">🎒</span>
+                            <span className="whitespace-normal break-words">Manage Trips</span>
+                          </Link>
+                          <Link
+                            to="/admin/certificates"
+                            className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg hover:scale-105 active:scale-95"
+                            onClick={() => setIsAdminDropdownOpen(false)}
+                          >
+                            <span className="text-sm sm:text-base flex-shrink-0">📜</span>
+                            <span className="whitespace-normal break-words">Manage Certificates</span>
+                          </Link>
+                          <Link
+                            to="/admin/destinations"
+                            className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg hover:scale-105 active:scale-95"
+                            onClick={() => setIsAdminDropdownOpen(false)}
+                          >
+                            <span className="text-sm sm:text-base flex-shrink-0">🌍</span>
+                            <span className="whitespace-normal break-words">Manage Destinations</span>
+                          </Link>
+                          <Link
+                            to="/admin/enquiries"
+                            className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg hover:scale-105 active:scale-95"
+                            onClick={() => setIsAdminDropdownOpen(false)}
+                          >
+                            <span className="text-sm sm:text-base flex-shrink-0">📧</span>
+                            <span className="whitespace-normal break-words">Manage Enquiries</span>
+                          </Link>
+                          <Link
+                            to="/admin/drivers"
+                            className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg hover:scale-105 active:scale-95"
+                            onClick={() => setIsAdminDropdownOpen(false)}
+                          >
+                            <span className="text-sm sm:text-base flex-shrink-0">🚗</span>
+                            <span className="whitespace-normal break-words">Manage Drivers & Car Booking</span>
+                          </Link>
+                          <Link
+                            to="/admin/popular-trips"
+                            className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg hover:scale-105 active:scale-95"
+                            onClick={() => setIsAdminDropdownOpen(false)}
+                          >
+                            <span className="text-sm sm:text-base flex-shrink-0">⭐</span>
+                            <span className="whitespace-normal break-words">Manage Popular Trips</span>
+                          </Link>
+                          <Link
+                            to="/admin/vibe-videos"
+                            className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg hover:scale-105 active:scale-95"
+                            onClick={() => setIsAdminDropdownOpen(false)}
+                          >
+                            <span className="text-sm sm:text-base flex-shrink-0">🎬</span>
+                            <span className="whitespace-normal break-words">Manage Vibe Videos</span>
+                          </Link>
+                          <Link
+                            to="/admin/traveller-reviews"
+                            className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg hover:scale-105 active:scale-95"
+                            onClick={() => setIsAdminDropdownOpen(false)}
+                          >
+                            <span className="text-sm sm:text-base flex-shrink-0">⭐</span>
+                            <span className="whitespace-normal break-words">Manage Traveller Reviews</span>
+                          </Link>
+                          <Link
+                            to="/admin/faqs"
+                            className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg hover:scale-105 active:scale-95"
+                            onClick={() => setIsAdminDropdownOpen(false)}
+                          >
+                            <span className="text-sm sm:text-base flex-shrink-0">❓</span>
+                            <span className="whitespace-normal break-words">Manage FAQs</span>
+                          </Link>
+                          <Link
+                            to="/admin/banners"
+                            className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg hover:scale-105 active:scale-95"
+                            onClick={() => setIsAdminDropdownOpen(false)}
+                          >
+                            <span className="text-sm sm:text-base flex-shrink-0">🖼️</span>
+                            <span className="whitespace-normal break-words">Manage Banners</span>
+                          </Link>
+                          <Link
+                            to="/admin/branding-partners"
+                            className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg hover:scale-105 active:scale-95"
+                            onClick={() => setIsAdminDropdownOpen(false)}
+                          >
+                            <span className="text-sm sm:text-base flex-shrink-0">🤝</span>
+                            <span className="whitespace-normal break-words">Manage Branding Partners</span>
+                          </Link>
+                          <Link
+                            to="/admin/hotel-partners"
+                            className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg hover:scale-105 active:scale-95"
+                            onClick={() => setIsAdminDropdownOpen(false)}
+                          >
+                            <span className="text-sm sm:text-base flex-shrink-0">🏨</span>
+                            <span className="whitespace-normal break-words">Manage Hotel Partners</span>
+                          </Link>
+                          <Link
+                            to="/admin/blogs"
+                            className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg hover:scale-105 active:scale-95"
+                            onClick={() => setIsAdminDropdownOpen(false)}
+                          >
+                            <span className="text-sm sm:text-base flex-shrink-0">📝</span>
+                            <span className="whitespace-normal break-words">Manage Blog Posts</span>
+                          </Link>
+                          <Link
+                            to="/admin/team"
+                            className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 transition-all duration-200 rounded-lg hover:scale-105 active:scale-95"
+                            onClick={() => setIsAdminDropdownOpen(false)}
+                          >
+                            <span className="text-sm sm:text-base flex-shrink-0">👥</span>
+                            <span className="whitespace-normal break-words">Manage Team Members</span>
+                          </Link>
+                          </div>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -454,8 +546,9 @@ const Navbar = () => {
               )}
             </button>
             {isTravelDropdownOpen && (
-              <div className="absolute top-full left-0 mt-2 w-80 bg-white/95 backdrop-blur-xl rounded-xl shadow-2xl border border-gray-200/50 p-3 z-[100] animate-fade-in overflow-hidden">
-                <div className="grid grid-cols-2 gap-2">
+              <div className="absolute top-full left-0 pt-2 w-80 z-[100] animate-fade-in">
+                <div className="bg-white/95 backdrop-blur-xl rounded-xl shadow-2xl border border-gray-200/50 p-3 overflow-hidden">
+                  <div className="grid grid-cols-2 gap-2">
                   {travelDropdownItems.map((item, index) => (
                     <Link
                       key={item.label}
@@ -481,6 +574,7 @@ const Navbar = () => {
                       )}
                     </Link>
                   ))}
+                  </div>
                 </div>
               </div>
             )}
@@ -566,101 +660,124 @@ const Navbar = () => {
               {isLoggedIn ? (
                 <>
                   {(user?.role === 'admin' || user?.role === 'main_admin') && (
-                    <div className="mb-2 space-y-1">
-                      <div className="px-4 py-2 text-sm font-semibold text-[#017233] bg-gradient-to-br from-green-50 to-emerald-50 border border-[#017233]/20 rounded-xl">
+                    <div className="mb-2">
+                      <div className="px-4 py-2 text-sm font-semibold text-[#017233] bg-gradient-to-br from-green-50 to-emerald-50 border border-[#017233]/20 rounded-xl mb-2">
                         Admin Panel
                       </div>
-                      <Link
-                        to="/admin/trips"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                      >
-                        🎒 Manage Trips
-                      </Link>
-                      <Link
-                        to="/admin/certificates"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                      >
-                        📜 Manage Certificates
-                      </Link>
-                      <Link
-                        to="/admin/destinations"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                      >
-                        🌍 Manage Destinations
-                      </Link>
-                      <Link
-                        to="/admin/enquiries"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                      >
-                        📧 Manage Enquiries
-                      </Link>
-                      <Link
-                        to="/admin/drivers"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                      >
-                        🚗 Manage Drivers & Car Booking
-                      </Link>
-                      <Link
-                        to="/admin/popular-trips"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                      >
-                        ⭐ Manage Popular Trips
-                      </Link>
-                      <Link
-                        to="/admin/vibe-videos"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                      >
-                        🎬 Manage Vibe Videos
-                      </Link>
-                      <Link
-                        to="/admin/traveller-reviews"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                      >
-                        ⭐ Manage Traveller Reviews
-                      </Link>
-                      <Link
-                        to="/admin/faqs"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                      >
-                        ❓ Manage FAQs
-                      </Link>
-                      <Link
-                        to="/admin/banners"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                      >
-                        🖼️ Manage Banners
-                      </Link>
-                      <Link
-                        to="/admin/branding-partners"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                      >
-                        🤝 Manage Branding Partners
-                      </Link>
-                      <Link
-                        to="/admin/hotel-partners"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                      >
-                        🏨 Manage Hotel Partners
-                      </Link>
-                      <Link
-                        to="/admin/blogs"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                      >
-                        📝 Manage Blog Posts
-                      </Link>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 px-2">
+                        <Link
+                          to="/admin/trips"
+                          className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          <span className="text-base">🎒</span>
+                          <span>Manage Trips</span>
+                        </Link>
+                        <Link
+                          to="/admin/certificates"
+                          className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          <span className="text-base">📜</span>
+                          <span>Manage Certificates</span>
+                        </Link>
+                        <Link
+                          to="/admin/destinations"
+                          className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          <span className="text-base">🌍</span>
+                          <span>Manage Destinations</span>
+                        </Link>
+                        <Link
+                          to="/admin/enquiries"
+                          className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          <span className="text-base">📧</span>
+                          <span>Manage Enquiries</span>
+                        </Link>
+                        <Link
+                          to="/admin/drivers"
+                          className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          <span className="text-base">🚗</span>
+                          <span>Manage Drivers & Car Booking</span>
+                        </Link>
+                        <Link
+                          to="/admin/popular-trips"
+                          className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          <span className="text-base">⭐</span>
+                          <span>Manage Popular Trips</span>
+                        </Link>
+                        <Link
+                          to="/admin/vibe-videos"
+                          className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          <span className="text-base">🎬</span>
+                          <span>Manage Vibe Videos</span>
+                        </Link>
+                        <Link
+                          to="/admin/traveller-reviews"
+                          className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          <span className="text-base">⭐</span>
+                          <span>Manage Traveller Reviews</span>
+                        </Link>
+                        <Link
+                          to="/admin/faqs"
+                          className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          <span className="text-base">❓</span>
+                          <span>Manage FAQs</span>
+                        </Link>
+                        <Link
+                          to="/admin/banners"
+                          className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          <span className="text-base">🖼️</span>
+                          <span>Manage Banners</span>
+                        </Link>
+                        <Link
+                          to="/admin/branding-partners"
+                          className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          <span className="text-base">🤝</span>
+                          <span>Manage Branding Partners</span>
+                        </Link>
+                        <Link
+                          to="/admin/hotel-partners"
+                          className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          <span className="text-base">🏨</span>
+                          <span>Manage Hotel Partners</span>
+                        </Link>
+                        <Link
+                          to="/admin/blogs"
+                          className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          <span className="text-base">📝</span>
+                          <span>Manage Blog Posts</span>
+                        </Link>
+                        <Link
+                          to="/admin/team"
+                          className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          <span className="text-base">👥</span>
+                          <span>Manage Team Members</span>
+                        </Link>
+                      </div>
                     </div>
                   )}
                   <div className="pt-2 border-t border-gray-200 mt-2">

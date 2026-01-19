@@ -202,7 +202,7 @@ const LeadCaptureForm = () => {
                 </h2>
 
                 {/* Subtitle */}
-                <p className="text-gray-600 text-center text-sm sm:text-base mb-8 leading-relaxed">
+                <p className="text-gray-600 text-center text-sm sm:text-base mb-6 leading-relaxed">
                   Share a few details and our expert will connect with you
                 </p>
 

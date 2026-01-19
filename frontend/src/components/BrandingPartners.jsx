@@ -85,9 +85,9 @@ function BrandingPartners() {
 
   if (loading) {
     return (
-      <section className="w-full bg-white py-6 md:py-8 border-b border-gray-100">
+      <section className="w-full bg-white py-3 md:py-4 border-b border-gray-100">
         <div className="mx-auto w-full px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-center py-12">
+          <div className="flex items-center justify-center py-6">
             <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
           </div>
         </div>
@@ -100,7 +100,7 @@ function BrandingPartners() {
   }
 
   return (
-    <section className="w-full bg-white py-6 md:py-8 border-b border-gray-100">
+    <section className="w-full bg-white py-3 md:py-4 border-b border-gray-100">
       <div className="mx-auto w-full px-4 sm:px-6 lg:px-8">
         <div className="relative overflow-hidden">
           {/* Infinite Scrolling Logo Container */}

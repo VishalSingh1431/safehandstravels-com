@@ -1342,22 +1342,17 @@ function ProductPage() {
                         </svg>
                       </button>
                     </div>
-                    {trip && typeof trip.seatsLeft !== 'undefined' && trip.seatsLeft !== null && trip.seatsLeft !== '' && (() => {
-                      const seatsValue = trip.seatsLeft;
-                      let seats = seatsValue;
+                    {(() => {
+                      // Check if seatsLeft is set (not null, undefined, or empty string)
+                      const seatsLeftValue = trip.seatsLeft;
+                      const hasSeatsLeft = seatsLeftValue !== null && seatsLeftValue !== undefined && seatsLeftValue !== '';
                       
-                      // Convert to number if it's a string
-                      if (typeof seatsValue === 'string') {
-                        seats = parseInt(seatsValue);
-                      }
+                      if (!hasSeatsLeft) return null;
                       
-                      // Only show if seats is a valid number (0, 1, 2, etc.)
-                      if (typeof seats !== 'number' || isNaN(seats)) {
-                        console.log('seatsLeft display skipped - invalid value:', seatsValue, 'type:', typeof seatsValue);
-                        return null;
-                      }
+                      const seats = typeof seatsLeftValue === 'number' ? seatsLeftValue : parseInt(seatsLeftValue);
                       
-                      console.log('Showing seatsLeft:', seats); // Debug log
+                      // Only show if seats is a valid number (including 0)
+                      if (isNaN(seats)) return null;
                       
                       return (
                         <div className="mt-3 p-3 bg-gradient-to-r from-orange-50 to-red-50 rounded-lg border border-orange-200">

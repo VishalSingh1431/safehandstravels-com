@@ -135,6 +135,16 @@
   background: #015a28;
 }
 
+/* Hide Scrollbar */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* Snake Border Animation - Light Green Glow */
 .snake-border-card {
   position: relative;
