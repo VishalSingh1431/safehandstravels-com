@@ -121,10 +121,17 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use('/api', (req, res, next) => {
   // Only cache GET requests
   if (req.method === 'GET' && !req.path.includes('/admin')) {
-    // Cache public API responses for 5 minutes
-    // This helps reduce server load and improves response times
-    res.set('Cache-Control', 'public, max-age=300, s-maxage=300'); // 5 minutes
-    res.set('ETag', false); // Disable ETag to prevent validation requests
+    if (NODE_ENV === 'production') {
+      // Cache public API responses for 5 minutes in production
+      // This helps reduce server load and improves response times
+      res.set('Cache-Control', 'public, max-age=300, s-maxage=300'); // 5 minutes
+      res.set('ETag', false); // Disable ETag to prevent validation requests
+    } else {
+      // No caching in development - always get fresh data
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
+    }
   }
   next();
 });
@@ -299,10 +306,26 @@ if (buildPath) {
   console.log('✅ Serving React frontend from:', buildPath);
   
   // Serve static files (CSS, JS, images, etc.) with proper MIME types
+  // In development: no cache to see changes immediately
+  // In production: cache hashed assets for 1 year, but never cache index.html
   app.use(express.static(buildPath, {
-    maxAge: '1y', // Cache static assets for 1 year (better for production)
-    etag: true,
-    immutable: true, // Files with hash in name are immutable
+    maxAge: NODE_ENV === 'production' ? '1y' : '0', // No cache in dev, 1 year in prod
+    etag: NODE_ENV === 'production',
+    immutable: NODE_ENV === 'production', // Files with hash in name are immutable
+    setHeaders: (res, path) => {
+      // Never cache index.html - always serve fresh version
+      if (path.endsWith('index.html')) {
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+      }
+      // In development, disable caching for all files
+      else if (NODE_ENV === 'development') {
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+      }
+    },
   }));
   
   // Serve index.html for all non-API routes (React Router)
@@ -315,6 +338,10 @@ if (buildPath) {
     // Serve React app for all other routes
     const indexPath = join(buildPath, 'index.html');
     if (fs.existsSync(indexPath)) {
+      // Explicitly set no-cache headers for index.html
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
       res.sendFile(indexPath);
     } else {
       console.error('❌ index.html not found at:', indexPath);
