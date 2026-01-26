@@ -13,10 +13,10 @@ class Trip {
         INSERT INTO trips (
           title, location, duration, price, old_price, image_url, video_url,
           video_public_id, image_public_id, gallery, gallery_public_ids,
-          subtitle, intro, why_visit, itinerary, included, not_included,
-          notes, faq, reviews, category, recommended_trips, seats_left, is_popular, slug, status, created_by
+          hero_images, hero_images_public_ids, subtitle, intro, why_visit, itinerary, included, not_included,
+          notes, faq, reviews, category, recommended_trips, related_blogs, seats_left, is_popular, slug, status, created_by
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
       const values = [
@@ -31,6 +31,8 @@ class Trip {
         data.imagePublicId || null,
         JSON.stringify(data.gallery || []),
         JSON.stringify(data.galleryPublicIds || []),
+        JSON.stringify(data.heroImages || []),
+        JSON.stringify(data.heroImagesPublicIds || []),
         data.subtitle || null,
         data.intro || null,
         JSON.stringify(data.whyVisit || []),
@@ -42,6 +44,7 @@ class Trip {
         JSON.stringify(data.reviews || []),
         JSON.stringify(data.category || []),
         JSON.stringify(data.recommendedTrips || []),
+        JSON.stringify(data.relatedBlogs || []),
         data.seatsLeft ? parseInt(data.seatsLeft) : null,
         data.isPopular || false,
         data.slug || this.generateSlug(data.title),
@@ -150,6 +153,8 @@ class Trip {
         imagePublicId: 'image_public_id',
         gallery: 'gallery',
         galleryPublicIds: 'gallery_public_ids',
+        heroImages: 'hero_images',
+        heroImagesPublicIds: 'hero_images_public_ids',
         subtitle: 'subtitle',
         intro: 'intro',
         whyVisit: 'why_visit',
@@ -161,6 +166,7 @@ class Trip {
         reviews: 'reviews',
         category: 'category',
         recommendedTrips: 'recommended_trips',
+        relatedBlogs: 'related_blogs',
         seatsLeft: 'seats_left',
         isPopular: 'is_popular',
         slug: 'slug',
@@ -168,7 +174,7 @@ class Trip {
       };
 
       // JSON fields that need to be stringified
-      const jsonFields = ['gallery', 'galleryPublicIds', 'whyVisit', 'itinerary', 'included', 'notIncluded', 'notes', 'faq', 'reviews', 'category', 'location', 'recommendedTrips'];
+      const jsonFields = ['gallery', 'galleryPublicIds', 'heroImages', 'heroImagesPublicIds', 'whyVisit', 'itinerary', 'included', 'notIncluded', 'notes', 'faq', 'reviews', 'category', 'location', 'recommendedTrips', 'relatedBlogs'];
 
       // Explicitly handle recommendedTrips first - always update if present in data (even if empty array)
       let recommendedTripsAdded = false;
@@ -178,6 +184,16 @@ class Trip {
         values.push(JSON.stringify(recTrips));
         recommendedTripsAdded = true;
         console.log('Updating recommended_trips:', recTrips); // Debug log
+      }
+
+      // Explicitly handle relatedBlogs - always update if present in data (even if empty array)
+      let relatedBlogsAdded = false;
+      if ('relatedBlogs' in data) {
+        updates.push('related_blogs = ?');
+        const relBlogs = Array.isArray(data.relatedBlogs) ? data.relatedBlogs : [];
+        values.push(JSON.stringify(relBlogs));
+        relatedBlogsAdded = true;
+        console.log('Updating related_blogs:', relBlogs); // Debug log
       }
 
       // Explicitly handle seatsLeft - convert empty string to null
@@ -193,8 +209,9 @@ class Trip {
       }
 
       for (const [key, dbColumn] of Object.entries(fieldMapping)) {
-        // Skip recommendedTrips and seatsLeft if already added above
+        // Skip recommendedTrips, relatedBlogs, and seatsLeft if already added above
         if ((key === 'recommendedTrips' && recommendedTripsAdded) || 
+            (key === 'relatedBlogs' && relatedBlogsAdded) ||
             (key === 'seatsLeft' && seatsLeftAdded)) {
           continue;
         }
@@ -306,6 +323,8 @@ class Trip {
         imagePublicId: row.image_public_id,
         gallery: Array.isArray(row.gallery) ? row.gallery : (row.gallery ? JSON.parse(row.gallery) : []),
         galleryPublicIds: Array.isArray(row.gallery_public_ids) ? row.gallery_public_ids : (row.gallery_public_ids ? JSON.parse(row.gallery_public_ids) : []),
+        heroImages: Array.isArray(row.hero_images) ? row.hero_images : (row.hero_images ? JSON.parse(row.hero_images) : []),
+        heroImagesPublicIds: Array.isArray(row.hero_images_public_ids) ? row.hero_images_public_ids : (row.hero_images_public_ids ? JSON.parse(row.hero_images_public_ids) : []),
         subtitle: row.subtitle,
         intro: row.intro,
         whyVisit: Array.isArray(row.why_visit) ? row.why_visit : (row.why_visit ? JSON.parse(row.why_visit) : []),
@@ -350,6 +369,42 @@ class Trip {
             }
           } catch (e) {
             console.error('Error parsing recommended_trips:', e, 'Value:', row.recommended_trips, 'Type:', typeof row.recommended_trips);
+            return [];
+          }
+        })(),
+        relatedBlogs: (() => {
+          try {
+            const relBlogs = row.related_blogs;
+            
+            // If already an array, return it
+            if (Array.isArray(relBlogs)) {
+              return relBlogs;
+            }
+            
+            // If it's a string, try to parse it
+            if (relBlogs && typeof relBlogs === 'string') {
+              // Handle empty string or '[]'
+              if (relBlogs.trim() === '' || relBlogs.trim() === '[]') {
+                return [];
+              }
+              const parsed = JSON.parse(relBlogs);
+              return Array.isArray(parsed) ? parsed : [];
+            }
+            
+            // If null or undefined, return empty array
+            if (!relBlogs) {
+              return [];
+            }
+            
+            // Fallback: try to parse as JSON (might be a JSON object already parsed by MySQL)
+            try {
+              const parsed = JSON.parse(relBlogs);
+              return Array.isArray(parsed) ? parsed : [];
+            } catch {
+              return [];
+            }
+          } catch (e) {
+            console.error('Error parsing related_blogs:', e, 'Value:', row.related_blogs, 'Type:', typeof row.related_blogs);
             return [];
           }
         })(),

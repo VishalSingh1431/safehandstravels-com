@@ -59,7 +59,9 @@ const Profile = () => {
   const validateForm = () => {
     const newErrors = {};
     
-    if (formData.phone && formData.phone.trim()) {
+    if (!formData.phone || !formData.phone.trim()) {
+      newErrors.phone = 'Phone number is required';
+    } else {
       const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/;
       if (!phoneRegex.test(formData.phone.trim())) {
         newErrors.phone = 'Please enter a valid phone number';
@@ -98,7 +100,7 @@ const Profile = () => {
       setSaving(true);
       const response = await authAPI.updateProfile({
         name: formData.name.trim() || null,
-        phone: formData.phone.trim() || null,
+        phone: formData.phone.trim(),
         bio: formData.bio.trim() || null,
       });
 
@@ -347,7 +349,7 @@ const Profile = () => {
               {/* Phone Field */}
               <div>
                 <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
-                  Phone Number
+                  Phone Number <span className="text-red-500">*</span>
                 </label>
                 {isEditing ? (
                   <div>
@@ -358,8 +360,11 @@ const Profile = () => {
                         name="phone"
                         value={formData.phone}
                         onChange={handleInputChange}
+                        required
                         placeholder="Enter your phone number"
-                        className="flex-1 px-3 sm:px-4 py-2 sm:py-3 border-2 border-gray-200 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-[#017233] focus:border-[#017233] outline-none transition-all duration-300 text-sm sm:text-base"
+                        className={`flex-1 px-3 sm:px-4 py-2 sm:py-3 border-2 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-[#017233] focus:border-[#017233] outline-none transition-all duration-300 text-sm sm:text-base ${
+                          errors.phone ? 'border-red-500' : 'border-gray-200'
+                        }`}
                       />
                     </div>
                     {errors.phone && (

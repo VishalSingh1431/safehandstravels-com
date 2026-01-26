@@ -19,6 +19,7 @@ const AdminHotelPartners = () => {
   const [formData, setFormData] = useState({
     name: '',
     logoUrl: '',
+    logoPublicId: '',
     link: '',
     displayOrder: 0,
     status: 'active',
@@ -104,6 +105,11 @@ const AdminHotelPartners = () => {
       return;
     }
     
+    if (!formData.logoUrl || !formData.logoUrl.trim()) {
+      toast.error('Please upload a logo image. Logo is required.');
+      return;
+    }
+    
     try {
       if (editingPartner) {
         await hotelPartnersAPI.updatePartner(editingPartner.id, formData);
@@ -170,6 +176,7 @@ const AdminHotelPartners = () => {
     setFormData({
       name: '',
       logoUrl: '',
+      logoPublicId: '',
       link: '',
       displayOrder: 0,
       status: 'active',
@@ -266,15 +273,24 @@ const AdminHotelPartners = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Hotel Partner Logo</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Hotel Partner Logo <span className="text-red-500">*</span>
+                  </label>
                   <div className="space-y-3">
                     {formData.logoUrl && (
-                      <div className="relative w-32 h-32 rounded-lg overflow-hidden border-2 border-gray-200">
+                      <div className="relative w-32 h-32 rounded-lg overflow-hidden border-2 border-gray-200 bg-white">
                         <img
                           src={formData.logoUrl}
                           alt="Logo preview"
-                          className="w-full h-full object-contain"
+                          className="w-full h-full object-contain p-2"
                         />
+                      </div>
+                    )}
+                    {!formData.logoUrl && (
+                      <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <p className="text-sm text-yellow-800">
+                          <span className="font-semibold">Logo is required.</span> Please upload a logo image.
+                        </p>
                       </div>
                     )}
                     <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
@@ -287,7 +303,7 @@ const AdminHotelPartners = () => {
                         <p className="mb-2 text-sm text-gray-500">
                           <span className="font-semibold">Click to upload</span> or drag and drop
                         </p>
-                        <p className="text-xs text-gray-500">PNG, JPG, GIF up to 5MB</p>
+                        <p className="text-xs text-gray-500">PNG, JPG, GIF up to 5MB <span className="text-red-500">*Required</span></p>
                       </div>
                       <input
                         type="file"
@@ -295,6 +311,7 @@ const AdminHotelPartners = () => {
                         accept="image/*"
                         onChange={handleLogoUpload}
                         disabled={uploading}
+                        required
                       />
                     </label>
                   </div>
@@ -372,11 +389,29 @@ const AdminHotelPartners = () => {
                   {sortedPartners.map((partner) => (
                     <div key={partner.id} className="p-4 hover:bg-gray-50">
                       <div className="flex gap-4">
-                        <div className="w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden border border-gray-200 bg-white flex items-center justify-center">
+                        <div className="w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden border border-gray-200 bg-white flex items-center justify-center relative">
                           {partner.logoUrl ? (
-                            <img src={partner.logoUrl} alt={partner.name} className="w-full h-full object-contain p-2" />
+                            <>
+                              <img 
+                                src={partner.logoUrl} 
+                                alt={partner.name} 
+                                className="w-full h-full object-contain p-2"
+                                onError={(e) => {
+                                  e.target.style.display = 'none';
+                                  const errorDiv = e.target.parentElement?.querySelector('.image-error');
+                                  if (errorDiv) errorDiv.classList.remove('hidden');
+                                }}
+                              />
+                              <div className="hidden image-error absolute inset-0 flex flex-col items-center justify-center bg-red-50 border-2 border-red-200 rounded-lg p-2">
+                                <ImageIcon className="w-6 h-6 text-red-500 mb-1" />
+                                <span className="text-xs text-red-600 font-semibold">Error</span>
+                              </div>
+                            </>
                           ) : (
-                            <ImageIcon className="w-8 h-8 text-gray-400" />
+                            <div className="flex flex-col items-center justify-center bg-red-50 border-2 border-red-200 rounded-lg p-2">
+                              <ImageIcon className="w-6 h-6 text-red-500 mb-1" />
+                              <span className="text-xs text-red-600 font-semibold">Missing</span>
+                            </div>
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -486,11 +521,29 @@ const AdminHotelPartners = () => {
                           </div>
                         </td>
                         <td className="px-4 lg:px-6 py-3 lg:py-4">
-                          <div className="w-20 h-16 rounded-lg overflow-hidden border border-gray-200 bg-white flex items-center justify-center">
+                          <div className="w-20 h-16 rounded-lg overflow-hidden border border-gray-200 bg-white flex items-center justify-center relative">
                             {partner.logoUrl ? (
-                              <img src={partner.logoUrl} alt={partner.name} className="w-full h-full object-contain p-2" />
+                              <>
+                                <img 
+                                  src={partner.logoUrl} 
+                                  alt={partner.name} 
+                                  className="w-full h-full object-contain p-2"
+                                  onError={(e) => {
+                                    e.target.style.display = 'none';
+                                    const errorDiv = e.target.parentElement?.querySelector('.image-error');
+                                    if (errorDiv) errorDiv.classList.remove('hidden');
+                                  }}
+                                />
+                                <div className="hidden image-error absolute inset-0 flex flex-col items-center justify-center bg-red-50 border-2 border-red-200 rounded-lg p-1">
+                                  <ImageIcon className="w-5 h-5 text-red-500 mb-0.5" />
+                                  <span className="text-xs text-red-600 font-semibold">Error</span>
+                                </div>
+                              </>
                             ) : (
-                              <ImageIcon className="w-6 h-6 text-gray-400" />
+                              <div className="flex flex-col items-center justify-center bg-red-50 border-2 border-red-200 rounded-lg p-1">
+                                <ImageIcon className="w-5 h-5 text-red-500 mb-0.5" />
+                                <span className="text-xs text-red-600 font-semibold">Missing</span>
+                              </div>
                             )}
                           </div>
                         </td>

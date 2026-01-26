@@ -1,71 +1,91 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { X, Plane } from 'lucide-react'
 import { enquiriesAPI } from '../config/api'
 import { useToast } from '../contexts/ToastContext'
 
 const LeadCaptureForm = () => {
   const toast = useToast()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const prevLocationRef = useRef(location.pathname)
   const [isVisible, setIsVisible] = useState(false)
   const [formData, setFormData] = useState({ name: '', phone: '' })
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [hasShown, setHasShown] = useState(false)
+
+  // Check if current page is a trip page
+  const isTripPage = location.pathname.startsWith('/trip/')
 
   // Function to manually open the form (for trigger button)
   const openForm = () => {
     setIsVisible(true)
   }
 
-  // Check if form has been shown or submitted before in this session
+  // Track scroll on trip pages only
   useEffect(() => {
-    const shown = sessionStorage.getItem('leadFormShown')
-    const submitted = sessionStorage.getItem('leadFormSubmitted')
+    if (!isTripPage) return
+
+    // Reset scroll tracking for this trip page visit
+    sessionStorage.removeItem('tripPageScrolled35')
     
-    if (shown === 'true' || submitted === 'true') {
-      return // Don't show if already shown or submitted in this session
+    // Reset leadFormShown only if user hasn't submitted
+    // This allows form to show again for new trip page visits
+    const alreadySubmitted = sessionStorage.getItem('leadFormSubmitted') === 'true'
+    if (!alreadySubmitted) {
+      sessionStorage.removeItem('leadFormShown')
     }
 
-    let timeTrigger = null
-    let hasTriggered = false
-
-    const showForm = () => {
-      if (!hasTriggered && !hasShown) {
-        hasTriggered = true
-        setIsVisible(true)
-        setHasShown(true)
-        sessionStorage.setItem('leadFormShown', 'true')
-        
-        // Clean up
-        if (timeTrigger) clearTimeout(timeTrigger)
-        window.removeEventListener('scroll', handleScroll)
-      }
-    }
-
-    // Time-based trigger (4-8 seconds)
-    timeTrigger = setTimeout(showForm, Math.random() * 4000 + 4000) // Random between 4-8 seconds
-
-    // Scroll-based trigger (35% scroll)
     const handleScroll = () => {
       const scrollPercent = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100
       
       if (scrollPercent >= 35) {
-        showForm()
+        // Mark that user scrolled 35% on trip page
+        sessionStorage.setItem('tripPageScrolled35', 'true')
+        window.removeEventListener('scroll', handleScroll)
       }
     }
 
     window.addEventListener('scroll', handleScroll, { passive: true })
 
     return () => {
-      if (timeTrigger) clearTimeout(timeTrigger)
       window.removeEventListener('scroll', handleScroll)
     }
-  }, [hasShown])
+  }, [isTripPage, location.pathname])
+
+  // Detect navigation from trip page to non-trip page
+  useEffect(() => {
+    const prevPath = prevLocationRef.current
+    const currentPath = location.pathname
+    const prevWasTripPage = prevPath.startsWith('/trip/')
+    const currentIsTripPage = currentPath.startsWith('/trip/')
+
+    // Check if user navigated from trip page to non-trip page
+    if (prevWasTripPage && !currentIsTripPage) {
+      // User just left a trip page
+      const scrolled35 = sessionStorage.getItem('tripPageScrolled35') === 'true'
+      const alreadySubmitted = sessionStorage.getItem('leadFormSubmitted') === 'true'
+      const alreadyShown = sessionStorage.getItem('leadFormShown') === 'true'
+
+      // If user scrolled 35% on trip page and didn't submit, show form
+      if (scrolled35 && !alreadySubmitted && !alreadyShown) {
+        setIsVisible(true)
+        sessionStorage.setItem('leadFormShown', 'true')
+        // Clear the flag so it doesn't show again
+        sessionStorage.removeItem('tripPageScrolled35')
+      }
+    }
+
+    // Update previous location AFTER checking
+    prevLocationRef.current = currentPath
+  }, [location.pathname])
 
   const handleClose = () => {
     setIsVisible(false)
     // Mark as shown in session so it won't appear again in this session
-    // But will show again on page refresh (new session)
     sessionStorage.setItem('leadFormShown', 'true')
+    // Clear the flag
+    sessionStorage.removeItem('tripPageScrolled35')
   }
 
   const handleInputChange = (e) => {
@@ -104,16 +124,24 @@ const LeadCaptureForm = () => {
       })
 
       // Mark as submitted so it won't show again in this session
-      // Will show again on page refresh (new session)
       sessionStorage.setItem('leadFormSubmitted', 'true')
       setIsVisible(false)
+      // Clear the flag
+      sessionStorage.removeItem('tripPageScrolled35')
       
       toast.success('Thank you! Our travel expert will connect with you soon.')
+      
+      // Redirect to home page after 2 seconds
+      setTimeout(() => {
+        navigate('/')
+      }, 2000)
     } catch (error) {
       console.error('Error submitting lead:', error)
       toast.error(error.message || 'Failed to submit. Please try again later.')
       // Even on error, mark as shown to prevent repeated popups in this session
       sessionStorage.setItem('leadFormShown', 'true')
+      // Clear the flag
+      sessionStorage.removeItem('tripPageScrolled35')
     } finally {
       setIsSubmitting(false)
     }

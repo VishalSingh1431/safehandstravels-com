@@ -1,6 +1,7 @@
 import express from 'express';
 import { verifyToken, verifyAdmin } from '../middleware/auth.js';
 import HotelPartner from '../models/HotelPartner.js';
+import { deleteFile } from '../utils/cloudinaryService.js';
 
 const router = express.Router();
 
@@ -65,6 +66,15 @@ router.get('/:id', async (req, res) => {
 // Create hotel partner (Admin only)
 router.post('/', verifyToken, verifyAdmin, async (req, res) => {
   try {
+    // Validate required fields
+    if (!req.body.name || !req.body.name.trim()) {
+      return res.status(400).json({ error: 'Hotel partner name is required' });
+    }
+
+    if (!req.body.logoUrl || !req.body.logoUrl.trim()) {
+      return res.status(400).json({ error: 'Logo image is required' });
+    }
+
     const partnerData = {
       ...req.body,
       createdBy: req.user.userId,
@@ -89,11 +99,31 @@ router.post('/', verifyToken, verifyAdmin, async (req, res) => {
 router.put('/:id', verifyToken, verifyAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const partner = await HotelPartner.update(id, req.body);
-
-    if (!partner) {
+    
+    const existingPartner = await HotelPartner.findById(id);
+    if (!existingPartner) {
       return res.status(404).json({ error: 'Hotel partner not found' });
     }
+
+    // Validate that logo is not being removed
+    const updateData = { ...req.body };
+    
+    // If logoUrl is being updated, ensure it's not empty
+    if (updateData.logoUrl !== undefined && (!updateData.logoUrl || !updateData.logoUrl.trim())) {
+      return res.status(400).json({ error: 'Logo image is required and cannot be removed' });
+    }
+
+    // If new logo uploaded, delete old one from Cloudinary
+    if (updateData.logoUrl && existingPartner.logoPublicId && updateData.logoUrl !== existingPartner.logoUrl) {
+      try {
+        await deleteFile(existingPartner.logoPublicId, 'image');
+      } catch (err) {
+        console.error('Error deleting old logo:', err);
+        // Continue with update even if deletion fails
+      }
+    }
+
+    const partner = await HotelPartner.update(id, updateData);
 
     res.json({
       message: 'Hotel partner updated successfully',
@@ -112,11 +142,25 @@ router.put('/:id', verifyToken, verifyAdmin, async (req, res) => {
 router.delete('/:id', verifyToken, verifyAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const partner = await HotelPartner.delete(id);
-
+    
+    // Get partner first to check if exists and get logoPublicId
+    const partner = await HotelPartner.findById(id);
     if (!partner) {
       return res.status(404).json({ error: 'Hotel partner not found' });
     }
+
+    // Delete logo from Cloudinary if it exists
+    if (partner.logoPublicId) {
+      try {
+        await deleteFile(partner.logoPublicId, 'image');
+      } catch (err) {
+        console.error('Error deleting logo from Cloudinary:', err);
+        // Continue with deletion even if Cloudinary deletion fails
+      }
+    }
+
+    // Delete from database
+    await HotelPartner.delete(id);
 
     res.json({
       message: 'Hotel partner deleted successfully',

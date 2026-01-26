@@ -35,15 +35,22 @@ router.get('/admin', verifyToken, verifyAdmin, async (req, res) => {
   try {
     const { status, category, featured, search, limit, offset } = req.query;
     
+    console.log('GET /blogs/admin - Query params:', { status, category, featured, search, limit, offset });
+    
     const blogs = await Blog.findAll({
-      status,
-      category,
+      status: status || undefined, // Convert empty string to undefined
+      category: category || undefined,
       featured: featured === 'true' ? true : featured === 'false' ? false : undefined,
-      search,
+      search: search || undefined,
       limit: limit ? parseInt(limit) : undefined,
       offset: offset ? parseInt(offset) : undefined,
       includeDraft: true,
     });
+
+    console.log('GET /blogs/admin - Found blogs:', blogs.length);
+    if (blogs.length > 0) {
+      console.log('First blog:', blogs[0].title, blogs[0].status);
+    }
 
     res.json({
       blogs,

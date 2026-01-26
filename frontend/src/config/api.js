@@ -792,13 +792,17 @@ export const blogsAPI = {
 
   getAllBlogsAdmin: async (status = '', category = '', featured = '', search = '', limit = 50, offset = 0) => {
     const params = new URLSearchParams();
-    if (status) params.append('status', status);
-    if (category) params.append('category', category);
-    if (featured) params.append('featured', featured);
-    if (search) params.append('search', search);
-    params.append('limit', limit);
-    params.append('offset', offset);
-    return apiCall(`/blogs/admin?${params.toString()}`, {
+    // Only add params if they have truthy values (not empty strings)
+    if (status && status.trim()) params.append('status', status);
+    if (category && category.trim()) params.append('category', category);
+    if (featured && featured.toString().trim()) params.append('featured', featured);
+    if (search && search.trim()) params.append('search', search);
+    if (limit) params.append('limit', limit);
+    if (offset) params.append('offset', offset);
+    const queryString = params.toString();
+    const url = queryString ? `/blogs/admin?${queryString}` : '/blogs/admin';
+    console.log('Calling getAllBlogsAdmin with URL:', url);
+    return apiCall(url, {
       method: 'GET',
     });
   },

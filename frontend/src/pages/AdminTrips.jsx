@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Edit2, Trash2, Eye, Loader2, X, Save, Upload, Image as ImageIcon, Search, MapPin, ChevronDown } from 'lucide-react';
-import { tripsAPI, uploadAPI } from '../config/api';
+import { tripsAPI, uploadAPI, blogsAPI } from '../config/api';
 import { useToast } from '../contexts/ToastContext';
 import { authAPI } from '../config/api';
 
@@ -33,12 +33,15 @@ const AdminTrips = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingTrip, setEditingTrip] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [uploading, setUploading] = useState({ image: false, gallery: false });
+  const [uploading, setUploading] = useState({ image: false, gallery: false, heroImages: false });
   const [locationSearch, setLocationSearch] = useState('');
   const [showLocationDropdown, setShowLocationDropdown] = useState(false);
   const [recommendedTripsSearch, setRecommendedTripsSearch] = useState('');
   const [showRecommendedTripsDropdown, setShowRecommendedTripsDropdown] = useState(false);
   const [availableTrips, setAvailableTrips] = useState([]); // All trips for recommended trips dropdown
+  const [relatedBlogsSearch, setRelatedBlogsSearch] = useState('');
+  const [showRelatedBlogsDropdown, setShowRelatedBlogsDropdown] = useState(false);
+  const [availableBlogs, setAvailableBlogs] = useState([]); // All blogs for related blogs dropdown
 
   const [formData, setFormData] = useState({
     title: '',
@@ -59,6 +62,8 @@ const AdminTrips = () => {
     faq: [{ question: '', answer: '' }],
     reviews: [{ rating: 5, text: '', author: '' }],
     gallery: [],
+    heroImages: [],
+    heroImagesPublicIds: [],
     recommendedTrips: [],
     status: 'active',
   });
@@ -66,6 +71,7 @@ const AdminTrips = () => {
   const categoryOptions = ['Spiritual', 'Cultural', 'Heritage', 'Wellness', 'Wildlife', 'Adventure'];
   const locationDropdownRef = useRef(null);
   const recommendedTripsDropdownRef = useRef(null);
+  const relatedBlogsDropdownRef = useRef(null);
 
   useEffect(() => {
     checkAuthAndLoad();
@@ -78,6 +84,9 @@ const AdminTrips = () => {
       }
       if (recommendedTripsDropdownRef.current && !recommendedTripsDropdownRef.current.contains(event.target)) {
         setShowRecommendedTripsDropdown(false);
+      }
+      if (relatedBlogsDropdownRef.current && !relatedBlogsDropdownRef.current.contains(event.target)) {
+        setShowRelatedBlogsDropdown(false);
       }
     };
 
@@ -137,6 +146,78 @@ const AdminTrips = () => {
       const response = await tripsAPI.getAllTripsAdmin();
       setTrips(response.trips || []);
       setAvailableTrips(response.trips || []); // Store all trips for recommended trips dropdown
+      
+      // Also fetch blogs for related blogs dropdown
+      try {
+        console.log('Fetching blogs for related blogs dropdown...');
+        // Don't pass empty strings - pass undefined or null to get all blogs
+        const blogsResponse = await blogsAPI.getAllBlogsAdmin(undefined, undefined, undefined, undefined, 100, 0);
+        console.log('Blogs API raw response:', blogsResponse); // Debug log
+        console.log('Response type:', typeof blogsResponse, 'Is array:', Array.isArray(blogsResponse)); // Debug log
+        console.log('Response keys:', Object.keys(blogsResponse || {})); // Debug log
+        console.log('blogsResponse.blogs:', blogsResponse.blogs); // Debug log
+        console.log('blogsResponse.blogs type:', typeof blogsResponse.blogs, 'Is array:', Array.isArray(blogsResponse.blogs)); // Debug log
+        console.log('blogsResponse.blogs length:', blogsResponse.blogs?.length); // Debug log
+        console.log('Full response JSON:', JSON.stringify(blogsResponse, null, 2)); // Debug log
+        
+        // Handle different response structures
+        let blogs = [];
+        if (Array.isArray(blogsResponse)) {
+          blogs = blogsResponse;
+          console.log('Response is direct array');
+        } else if (blogsResponse && blogsResponse.blogs) {
+          // Check if blogs is an array
+          if (Array.isArray(blogsResponse.blogs)) {
+            blogs = blogsResponse.blogs;
+            console.log('Response has .blogs property (array)');
+          } else {
+            // If blogs is not an array, try to convert it
+            console.log('blogsResponse.blogs is not an array, type:', typeof blogsResponse.blogs);
+            blogs = [];
+          }
+        } else if (blogsResponse && blogsResponse.data && Array.isArray(blogsResponse.data)) {
+          blogs = blogsResponse.data;
+          console.log('Response has .data property');
+        } else {
+          console.warn('Unexpected response structure:', blogsResponse);
+          // Try to extract blogs from any property
+          if (blogsResponse && typeof blogsResponse === 'object') {
+            console.log('Available keys in response:', Object.keys(blogsResponse));
+            // Try common property names
+            for (const key of ['blogs', 'data', 'items', 'results']) {
+              if (Array.isArray(blogsResponse[key])) {
+                blogs = blogsResponse[key];
+                console.log(`Found blogs in .${key} property`);
+                break;
+              }
+            }
+          }
+        }
+        
+        console.log('Parsed available blogs:', blogs.length, 'blogs');
+        if (blogs.length > 0) {
+          console.log('First blog sample:', blogs[0]);
+        } else {
+          console.log('⚠️ Blogs array is empty. Full response:', JSON.stringify(blogsResponse, null, 2));
+        }
+        
+        if (blogs.length === 0) {
+          console.warn('⚠️ No blogs found in database. Make sure blogs are created and published.');
+        } else {
+          console.log('✅ Successfully loaded', blogs.length, 'blogs for related blogs dropdown');
+        }
+        
+        setAvailableBlogs(blogs);
+      } catch (error) {
+        console.error('❌ Error fetching blogs:', error);
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+        if (error.response) {
+          console.error('Error response:', error.response);
+        }
+        // Don't show error toast for blogs - it's not critical
+        setAvailableBlogs([]);
+      }
     } catch (error) {
       console.error('Error fetching trips:', error);
       toast.error(error.message || 'Failed to load trips');
@@ -175,6 +256,47 @@ const AdminTrips = () => {
     setFormData(prev => ({
       ...prev,
       recommendedTrips: (prev.recommendedTrips || []).filter(id => id !== tripId)
+    }));
+  };
+
+  // Filter blogs for related blogs dropdown
+  const filteredRelatedBlogs = availableBlogs.filter(blog => {
+    if (!blog) {
+      console.log('Filter: blog is null/undefined');
+      return false;
+    }
+    // Include all blogs (published, draft) for admin - blogs use 'published' status, not 'active'
+    if (!relatedBlogsSearch) {
+      return true; // Show all blogs when no search
+    }
+    const searchLower = relatedBlogsSearch.toLowerCase();
+    const matches = (
+      blog.title?.toLowerCase().includes(searchLower) ||
+      blog.description?.toLowerCase().includes(searchLower) ||
+      (blog.category && typeof blog.category === 'string' && blog.category.toLowerCase().includes(searchLower))
+    );
+    return matches;
+  });
+
+  const handleRelatedBlogSelect = (blogId) => {
+    const selectedBlog = availableBlogs.find(b => b.id === blogId);
+    if (!selectedBlog) return;
+    
+    setFormData(prev => {
+      const currentRelated = prev.relatedBlogs || [];
+      if (currentRelated.includes(blogId)) {
+        return prev; // Already selected
+      }
+      return { ...prev, relatedBlogs: [...currentRelated, blogId] };
+    });
+    setRelatedBlogsSearch('');
+    setShowRelatedBlogsDropdown(false);
+  };
+
+  const removeRelatedBlog = (blogId) => {
+    setFormData(prev => ({
+      ...prev,
+      relatedBlogs: (prev.relatedBlogs || []).filter(id => id !== blogId)
     }));
   };
 
@@ -229,7 +351,7 @@ const AdminTrips = () => {
       setUploading(prev => ({ ...prev, [type]: true }));
       
       let result;
-      if (type === 'image' || type === 'gallery') {
+      if (type === 'image' || type === 'gallery' || type === 'heroImages') {
         result = await uploadAPI.uploadImage(file);
       }
 
@@ -247,12 +369,46 @@ const AdminTrips = () => {
           galleryPublicIds: [...(prev.galleryPublicIds || []), result.public_id]
         }));
         toast.success('Gallery image uploaded!');
+      } else if (type === 'heroImages') {
+        setFormData(prev => ({
+          ...prev,
+          heroImages: [...(prev.heroImages || []), result.url],
+          heroImagesPublicIds: [...(prev.heroImagesPublicIds || []), result.public_id]
+        }));
+        toast.success('Hero image uploaded!');
       }
     } catch (error) {
       console.error('Error uploading file:', error);
       toast.error(error.message || 'Failed to upload file');
     } finally {
       setUploading(prev => ({ ...prev, [type]: false }));
+    }
+  };
+
+  const handleMultipleGalleryUpload = async (files) => {
+    if (!files || files.length === 0) return;
+    
+    try {
+      setUploading(prev => ({ ...prev, gallery: true }));
+      
+      const uploadPromises = Array.from(files).map(file => uploadAPI.uploadImage(file));
+      const results = await Promise.all(uploadPromises);
+      
+      const newUrls = results.map(r => r.url);
+      const newPublicIds = results.map(r => r.public_id);
+      
+      setFormData(prev => ({
+        ...prev,
+        gallery: [...prev.gallery, ...newUrls],
+        galleryPublicIds: [...(prev.galleryPublicIds || []), ...newPublicIds]
+      }));
+      
+      toast.success(`${results.length} gallery image(s) uploaded successfully!`);
+    } catch (error) {
+      console.error('Error uploading gallery images:', error);
+      toast.error(error.message || 'Failed to upload gallery images');
+    } finally {
+      setUploading(prev => ({ ...prev, gallery: false }));
     }
   };
 
@@ -298,12 +454,14 @@ const AdminTrips = () => {
         faq: formData.faq.filter(f => f.question.trim() || f.answer.trim()),
         reviews: formData.reviews.filter(r => r.text.trim()),
         recommendedTrips: Array.isArray(formData.recommendedTrips) ? formData.recommendedTrips : [], // Explicitly include recommended trips as array
+        relatedBlogs: Array.isArray(formData.relatedBlogs) ? formData.relatedBlogs : [], // Explicitly include related blogs as array
         seatsLeft: formData.seatsLeft ? formData.seatsLeft : null, // Convert empty string to null
       };
       
       console.log('Saving trip with seatsLeft:', tripData.seatsLeft); // Debug log
 
       console.log('Saving trip with recommendedTrips:', tripData.recommendedTrips); // Debug log
+      console.log('Saving trip with relatedBlogs:', tripData.relatedBlogs); // Debug log
 
       if (editingTrip) {
         await tripsAPI.updateTrip(editingTrip.id, tripData);
@@ -321,13 +479,17 @@ const AdminTrips = () => {
     }
   };
 
-  const handleEdit = (trip) => {
+  const handleEdit = async (trip) => {
     console.log('Editing trip - recommendedTrips:', trip.recommendedTrips); // Debug log
     setEditingTrip(trip);
     const recommendedTripsData = Array.isArray(trip.recommendedTrips) 
       ? trip.recommendedTrips 
       : (trip.recommendedTrips ? [trip.recommendedTrips] : []);
+    const relatedBlogsData = Array.isArray(trip.relatedBlogs) 
+      ? trip.relatedBlogs 
+      : (trip.relatedBlogs ? [trip.relatedBlogs] : []);
     console.log('Setting recommendedTrips in form:', recommendedTripsData); // Debug log
+    console.log('Setting relatedBlogs in form:', relatedBlogsData); // Debug log
     setFormData({
       title: trip.title || '',
       location: Array.isArray(trip.location) ? trip.location : (trip.location ? [trip.location] : []),
@@ -349,12 +511,45 @@ const AdminTrips = () => {
       reviews: trip.reviews && trip.reviews.length > 0 ? trip.reviews : [{ rating: 5, text: '', author: '' }],
       gallery: trip.gallery || [],
       galleryPublicIds: trip.galleryPublicIds || [],
+      heroImages: trip.heroImages || [],
+      heroImagesPublicIds: trip.heroImagesPublicIds || [],
       imagePublicId: trip.imagePublicId,
       recommendedTrips: recommendedTripsData,
+      relatedBlogs: relatedBlogsData,
       status: trip.status || 'active',
     });
     setShowLocationDropdown(false);
     setShowForm(true);
+    
+    // Ensure blogs are loaded when form opens
+    if (availableBlogs.length === 0) {
+      try {
+        console.log('Fetching blogs when opening form...');
+        // Don't pass empty strings - pass undefined to get all blogs
+        const blogsResponse = await blogsAPI.getAllBlogsAdmin(undefined, undefined, undefined, undefined, 100, 0);
+        console.log('Blogs response when opening form:', blogsResponse);
+        let blogs = [];
+        if (Array.isArray(blogsResponse)) {
+          blogs = blogsResponse;
+        } else if (blogsResponse && Array.isArray(blogsResponse.blogs)) {
+          blogs = blogsResponse.blogs;
+        } else if (blogsResponse && blogsResponse.data && Array.isArray(blogsResponse.data)) {
+          blogs = blogsResponse.data;
+        }
+        console.log('Parsed blogs when opening form:', blogs.length);
+        if (blogs.length > 0) {
+          setAvailableBlogs(blogs);
+          console.log('✅ Blogs loaded when opening form');
+        } else {
+          console.warn('⚠️ No blogs found when opening form');
+        }
+      } catch (error) {
+        console.error('❌ Error fetching blogs when opening form:', error);
+        console.error('Error details:', error.message);
+      }
+    } else {
+      console.log('Blogs already loaded:', availableBlogs.length);
+    }
   };
 
   const handleDelete = async (id) => {
@@ -393,12 +588,16 @@ const AdminTrips = () => {
       faq: [{ question: '', answer: '' }],
       reviews: [{ rating: 5, text: '', author: '' }],
       gallery: [],
+      heroImages: [],
+      heroImagesPublicIds: [],
       recommendedTrips: [],
+      relatedBlogs: [],
       status: 'active',
     });
     setLocationSearch('');
     setShowLocationDropdown(false);
     setRecommendedTripsSearch('');
+    setRelatedBlogsSearch('');
     setShowRecommendedTripsDropdown(false);
     setEditingTrip(null);
     setShowForm(false);
@@ -800,8 +999,16 @@ const AdminTrips = () => {
                           setFormData(prev => ({ ...prev, itinerary: newItinerary }));
                         }}
                         placeholder="Activities description"
-                        rows={2}
-                        className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                        rows={3}
+                        className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none"
+                        style={{ 
+                          lineHeight: '1.5', 
+                          paddingTop: '0.5rem', 
+                          paddingBottom: '0.5rem',
+                          margin: '0',
+                          whiteSpace: 'pre-wrap',
+                          wordWrap: 'break-word'
+                        }}
                       />
                     </div>
                   ))}
@@ -949,9 +1156,50 @@ const AdminTrips = () => {
                   </button>
                 </div>
 
+                {/* Hero Images (for Slider) */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Hero Images (for Slider) <span className="text-gray-500 text-xs">(Recommended: 5 images)</span>
+                  </label>
+                  <p className="text-xs text-gray-500 mb-2">These images will be displayed in the hero slider at the top of the trip page</p>
+                  <div className="flex flex-wrap gap-4 mb-4">
+                    {formData.heroImages && formData.heroImages.map((url, index) => (
+                      <div key={index} className="relative">
+                        <img src={url} alt={`Hero ${index + 1}`} className="w-24 h-24 object-cover rounded-lg" />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newHeroImages = formData.heroImages.filter((_, i) => i !== index);
+                            const newPublicIds = (formData.heroImagesPublicIds || []).filter((_, i) => i !== index);
+                            setFormData(prev => ({ ...prev, heroImages: newHeroImages, heroImagesPublicIds: newPublicIds }));
+                          }}
+                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => e.target.files[0] && handleFileUpload(e.target.files[0], 'heroImages')}
+                    className="hidden"
+                    id="hero-images-upload"
+                  />
+                  <label
+                    htmlFor="hero-images-upload"
+                    className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg font-semibold hover:bg-blue-200 transition-colors cursor-pointer inline-flex items-center gap-2"
+                  >
+                    {uploading.heroImages ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
+                    Add Hero Image
+                  </label>
+                </div>
+
                 {/* Gallery */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Gallery Images</label>
+                  <p className="text-xs text-gray-500 mb-2">These images will be displayed in the gallery section below the hero slider</p>
                   <div className="flex flex-wrap gap-4 mb-4">
                     {formData.gallery.map((url, index) => (
                       <div key={index} className="relative">
@@ -973,7 +1221,14 @@ const AdminTrips = () => {
                   <input
                     type="file"
                     accept="image/*"
-                    onChange={(e) => e.target.files[0] && handleFileUpload(e.target.files[0], 'gallery')}
+                    multiple
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files.length > 0) {
+                        handleMultipleGalleryUpload(e.target.files);
+                        // Reset input so same files can be selected again
+                        e.target.value = '';
+                      }
+                    }}
                     className="hidden"
                     id="gallery-upload"
                   />
@@ -982,13 +1237,14 @@ const AdminTrips = () => {
                     className="px-4 py-2 bg-green-100 text-green-700 rounded-lg font-semibold hover:bg-green-200 transition-colors cursor-pointer inline-flex items-center gap-2"
                   >
                     {uploading.gallery ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
-                    Add Gallery Image
+                    Add Gallery Images (Multiple)
                   </label>
+                  <p className="text-xs text-gray-500 mt-1">You can select multiple images at once</p>
                 </div>
 
-                {/* Recommended Trips */}
+                {/* Related Trips */}
                 <div className="relative" ref={recommendedTripsDropdownRef}>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Recommended Trips</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Related Trips</label>
                   
                   {/* Selected Recommended Trips */}
                   {formData.recommendedTrips && formData.recommendedTrips.length > 0 && (
@@ -1062,6 +1318,104 @@ const AdminTrips = () => {
                     {formData.recommendedTrips?.length > 0 
                       ? `${formData.recommendedTrips.length} trip(s) selected. These will appear at the bottom of the trip detail page.`
                       : 'Search and select trips to recommend to users viewing this trip'
+                    }
+                  </p>
+                </div>
+
+                {/* Related Blogs */}
+                <div className="relative" ref={relatedBlogsDropdownRef}>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Related Blogs</label>
+                  
+                  {/* Selected Related Blogs */}
+                  {formData.relatedBlogs && formData.relatedBlogs.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {formData.relatedBlogs.map((blogId) => {
+                        const blog = availableBlogs.find(b => b.id === blogId);
+                        if (!blog) return null;
+                        return (
+                          <span
+                            key={blogId}
+                            className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-100 text-blue-800 rounded-lg text-sm font-medium"
+                          >
+                            <span>{blog.title}</span>
+                            <button
+                              type="button"
+                              onClick={() => removeRelatedBlog(blogId)}
+                              className="ml-1 text-blue-600 hover:text-blue-800 hover:bg-blue-200 rounded-full p-0.5 transition-colors"
+                              title="Remove"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
+                  
+                  <div className="relative">
+                    <input
+                      type="text"
+                      name="relatedBlogsSearch"
+                      value={relatedBlogsSearch}
+                      onChange={(e) => {
+                        setRelatedBlogsSearch(e.target.value);
+                        setShowRelatedBlogsDropdown(true);
+                      }}
+                      onFocus={() => setShowRelatedBlogsDropdown(true)}
+                      placeholder="Search and select blogs to relate to this trip..."
+                      className="w-full px-4 py-2 pr-10 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                    />
+                    <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+                    
+                    {showRelatedBlogsDropdown && (
+                      <div className="absolute z-50 w-full mt-1 bg-white border-2 border-gray-300 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                        {(() => {
+                          console.log('Dropdown opened - availableBlogs:', availableBlogs.length, 'filteredRelatedBlogs:', filteredRelatedBlogs.length);
+                          const availableToSelect = filteredRelatedBlogs.filter(blog => !formData.relatedBlogs?.includes(blog.id));
+                          console.log('Available blogs to select:', availableToSelect.length);
+                          
+                          // Show all available blogs if no search
+                          const blogsToShow = relatedBlogsSearch ? availableToSelect : filteredRelatedBlogs.filter(blog => !formData.relatedBlogs?.includes(blog.id));
+                          
+                          if (availableBlogs.length === 0) {
+                            return (
+                              <div className="px-4 py-3 text-sm text-gray-500 text-center">
+                                No blogs available. Please create blogs first.
+                              </div>
+                            );
+                          }
+                          
+                          if (blogsToShow.length > 0) {
+                            return blogsToShow.slice(0, 20).map((blog) => (
+                              <button
+                                key={blog.id}
+                                type="button"
+                                onClick={() => handleRelatedBlogSelect(blog.id)}
+                                className="w-full px-4 py-3 text-left hover:bg-blue-50 hover:text-blue-600 transition-colors border-b border-gray-100 last:border-b-0"
+                              >
+                                <div className="font-semibold text-sm">{blog.title || 'Untitled Blog'}</div>
+                                {blog.description && (
+                                  <div className="text-xs text-gray-500 mt-1 line-clamp-1">
+                                    {blog.description}
+                                  </div>
+                                )}
+                              </button>
+                            ));
+                          }
+                          
+                          return (
+                            <div className="px-4 py-3 text-sm text-gray-500 text-center">
+                              {relatedBlogsSearch ? 'No blogs found matching your search' : 'All blogs are already selected'}
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {formData.relatedBlogs?.length > 0 
+                      ? `${formData.relatedBlogs.length} blog(s) selected. These will appear in the related blogs section on the trip detail page.`
+                      : 'Search and select blogs to relate to this trip'
                     }
                   </p>
                 </div>

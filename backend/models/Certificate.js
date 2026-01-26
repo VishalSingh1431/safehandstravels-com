@@ -93,19 +93,18 @@ class Certificate {
       const updates = [];
       const values = [];
 
-      const fields = {
-        title: data.title,
-        description: data.description,
-        images: data.images,
+      const fieldMapping = {
+        title: 'title',
+        description: 'description',
+        images: 'images',
         imagesPublicIds: 'images_public_ids',
-        status: data.status,
+        status: 'status',
       };
 
-      for (const [key, value] of Object.entries(fields)) {
-        if (value !== undefined && data[key] !== undefined) {
-          const dbKey = typeof value === 'string' ? value : key;
-          if (['images', 'imagesPublicIds'].includes(key)) {
-            updates.push(`${dbKey === 'imagesPublicIds' ? 'images_public_ids' : dbKey} = ?`);
+      for (const [key, dbKey] of Object.entries(fieldMapping)) {
+        if (data[key] !== undefined) {
+          if (key === 'images' || key === 'imagesPublicIds') {
+            updates.push(`${dbKey} = ?`);
             values.push(JSON.stringify(data[key]));
           } else {
             updates.push(`${dbKey} = ?`);

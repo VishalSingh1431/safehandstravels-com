@@ -1,9 +1,11 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { enquiriesAPI } from '../config/api'
 import { useToast } from '../contexts/ToastContext'
 
 function ContactUs() {
   const toast = useToast()
+  const navigate = useNavigate()
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -23,7 +25,7 @@ function ContactUs() {
     e.preventDefault()
     
     // Validation
-    if (!formData.name.trim() || !formData.email.trim() || !formData.message.trim()) {
+    if (!formData.name.trim() || !formData.email.trim() || !formData.phone.trim() || !formData.message.trim()) {
       toast.error('Please fill in all required fields')
       return
     }
@@ -35,6 +37,13 @@ function ContactUs() {
       return
     }
 
+    // Phone validation
+    const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/
+    if (!phoneRegex.test(formData.phone.trim())) {
+      toast.error('Please enter a valid phone number')
+      return
+    }
+
     try {
       setIsSubmitting(true)
       
@@ -42,7 +51,7 @@ function ContactUs() {
       await enquiriesAPI.createEnquiry({
         name: formData.name.trim(),
         email: formData.email.trim(),
-        phone: formData.phone.trim() || undefined,
+        phone: formData.phone.trim(),
         message: formData.message.trim(),
         // No trip-specific fields for general contact form
       })
@@ -57,6 +66,11 @@ function ContactUs() {
         phone: '',
         message: ''
       })
+      
+      // Redirect to home page after 2 seconds
+      setTimeout(() => {
+        navigate('/')
+      }, 2000)
     } catch (error) {
       console.error('Error submitting contact form:', error)
       toast.error(error.message || 'Failed to send message. Please try again later.')
@@ -125,7 +139,7 @@ function ContactUs() {
 
                   <div>
                     <label htmlFor="phone" className="block text-sm font-semibold text-gray-700 mb-2">
-                      Phone Number
+                      Phone Number <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="tel"
@@ -133,6 +147,7 @@ function ContactUs() {
                       name="phone"
                       value={formData.phone}
                       onChange={handleChange}
+                      required
                       className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-[#017233] focus:ring-2 focus:ring-[#017233]/20 outline-none transition-all duration-300 bg-white"
                       placeholder="Enter your phone number"
                     />

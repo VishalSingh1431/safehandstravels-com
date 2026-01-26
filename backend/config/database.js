@@ -349,6 +349,30 @@ export const initializeDatabase = async () => {
       // Column might already exist, ignore
     }
 
+    // Add hero_images column if it doesn't exist
+    try {
+      await pool.query(`ALTER TABLE trips ADD COLUMN hero_images JSON DEFAULT ('[]')`);
+      console.log('✅ Added hero_images column to trips table');
+    } catch (e) {
+      // Column might already exist, ignore
+    }
+
+    // Add hero_images_public_ids column if it doesn't exist
+    try {
+      await pool.query(`ALTER TABLE trips ADD COLUMN hero_images_public_ids JSON DEFAULT ('[]')`);
+      console.log('✅ Added hero_images_public_ids column to trips table');
+    } catch (e) {
+      // Column might already exist, ignore
+    }
+
+    // Add related_blogs column if it doesn't exist
+    try {
+      await pool.query(`ALTER TABLE trips ADD COLUMN related_blogs JSON DEFAULT ('[]')`);
+      console.log('✅ Added related_blogs column to trips table');
+    } catch (e) {
+      // Column might already exist, ignore
+    }
+
     // Create certificates table if it doesn't exist
     await pool.query(`
       CREATE TABLE IF NOT EXISTS certificates (

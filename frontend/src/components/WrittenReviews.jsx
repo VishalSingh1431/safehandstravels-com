@@ -62,9 +62,9 @@ function WrittenReviews() {
 
             {/* Horizontal Scrolling Row - All Screen Sizes */}
             <div className="overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide">
-              <div className="flex gap-4 md:gap-6 min-w-max">
+              <div className="flex gap-3 sm:gap-4 md:gap-5 min-w-max">
                 {writtenReviews.map((review) => (
-                  <div key={review.id} className="flex-shrink-0 w-[280px] sm:w-[320px] md:w-[400px] lg:w-[450px]">
+                  <div key={review.id} className="flex-shrink-0 w-[240px] xs:w-[260px] sm:w-[280px] md:w-[300px] lg:w-[320px]">
                     <WrittenReviewCard review={review} />
                   </div>
                 ))}

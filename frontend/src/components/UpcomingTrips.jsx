@@ -107,21 +107,13 @@ function UpcomingTrips({ searchQuery = '' }) {
           <div>
             {/* Header Card */}
             <div className="p-4 md:p-5 lg:p-6 pb-0 mb-6">
-              <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center text-white text-xl font-bold shadow-lg">
-                    ✈️
-                  </div>
-                  <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900">
-                    {searchQuery.trim() ? `Search Results for "${searchQuery}"` : 'Popular Trips'}
-                  </h2>
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center text-white text-xl font-bold shadow-lg">
+                  ✈️
                 </div>
-                <Link
-                  to="/popular-trips"
-                  className="rounded-full border-2 border-[#017233] bg-white text-[#017233] px-6 py-2 text-sm font-semibold transition-all duration-300 whitespace-nowrap hover:bg-[#017233] hover:text-white shadow-md hover:shadow-lg"
-                >
-                  See All
-                </Link>
+                <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900">
+                  {searchQuery.trim() ? `Search Results for "${searchQuery}"` : 'Popular Trips'}
+                </h2>
               </div>
 
               {/* Filter Buttons */}
@@ -163,6 +155,16 @@ function UpcomingTrips({ searchQuery = '' }) {
                 </p>
               </div>
             )}
+
+            {/* See All Button - Below Container */}
+            <div className="flex justify-end p-4 md:p-6 pt-0">
+              <Link
+                to="/popular-trips"
+                className="rounded-full border-2 border-[#017233] bg-white text-[#017233] px-6 py-2 text-sm font-semibold transition-all duration-300 whitespace-nowrap hover:bg-[#017233] hover:text-white shadow-md hover:shadow-lg"
+              >
+                See All
+              </Link>
+            </div>
           </div>
         </div>
       </div>

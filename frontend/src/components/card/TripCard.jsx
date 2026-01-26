@@ -9,10 +9,10 @@ function TripCard({ trip }) {
   return (
     <Link
       to={`/trip/${trip.id}`}
-      className="group relative flex flex-col h-full overflow-hidden rounded-2xl shadow-lg border-2 border-gray-200/50 transition-all duration-300 hover:border-[#017233]/50 hover:shadow-[0_20px_50px_rgba(1,114,51,0.3)] cursor-pointer"
+      className="group relative flex flex-col h-full w-full min-h-[420px] sm:min-h-[440px] overflow-hidden rounded-2xl shadow-lg border-2 border-gray-200/50 transition-all duration-300 hover:border-[#017233]/50 hover:shadow-[0_20px_50px_rgba(1,114,51,0.3)] cursor-pointer"
     >
       {/* Image Section */}
-      <div className="relative h-40 sm:h-44 w-full overflow-hidden">
+      <div className="relative h-40 sm:h-44 w-full overflow-hidden flex-shrink-0">
         <img 
           src={optimizedImageUrl} 
           alt={trip.title} 
@@ -28,7 +28,7 @@ function TripCard({ trip }) {
       </div>
 
       {/* Content Section */}
-      <div className="flex flex-col gap-2 p-3 sm:p-4">
+      <div className="flex flex-col gap-2 p-3 sm:p-4 flex-1 flex-grow">
         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
           <span className="bg-gray-100 px-2 py-0.5 rounded-full text-[10px] sm:text-xs">⏱️ {trip.duration}</span>
         </div>

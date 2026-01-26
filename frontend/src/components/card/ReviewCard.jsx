@@ -39,10 +39,10 @@ function ReviewCard({ review }) {
   const isYouTubeLink = youtubeId !== null;
   
   return (
-    <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border border-gray-200 overflow-hidden hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 group">
+    <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border border-gray-200 overflow-hidden hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 group flex flex-col h-full w-full min-h-[480px] sm:min-h-[520px]">
       {/* Video Section */}
       {videoUrl ? (
-        <div className="relative w-full aspect-video bg-gray-900 overflow-hidden">
+        <div className="relative w-full h-48 sm:h-56 bg-gray-900 overflow-hidden flex-shrink-0">
           {isYouTubeLink ? (
             // YouTube Embed
             <iframe
@@ -77,13 +77,13 @@ function ReviewCard({ review }) {
           </div>
         </div>
       ) : (
-        <div className="relative w-full aspect-video bg-gray-200 flex items-center justify-center">
+        <div className="relative w-full h-48 sm:h-56 bg-gray-200 flex items-center justify-center flex-shrink-0">
           <p className="text-xs sm:text-sm text-gray-500">No video available</p>
         </div>
       )}
       
       {/* Card Content */}
-      <div className="p-4 sm:p-6">
+      <div className="p-4 sm:p-6 flex-1 flex flex-col">
         <div className="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
           <div className="relative flex-shrink-0">
             <img

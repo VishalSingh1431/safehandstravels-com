@@ -88,12 +88,14 @@ function VideoCard({ video, isTall = false, index = 0, shouldPreload = false }) 
   return (
     <div 
       ref={containerRef}
-      className="bg-white rounded-2xl shadow-lg border-2 border-gray-200/50 overflow-hidden hover:border-[#017233]/50 hover:shadow-[0_20px_50px_rgba(1,114,51,0.3)] transition-all duration-300 group m-0 p-0"
+      className="bg-white rounded-2xl shadow-lg border-2 border-gray-200/50 overflow-hidden hover:border-[#017233]/50 hover:shadow-[0_20px_50px_rgba(1,114,51,0.3)] transition-all duration-300 group m-0 p-0 flex-shrink-0"
+      style={{
+        width: isTall ? '280px' : '450px',
+      }}
     >
       <div 
-        className="relative overflow-hidden rounded-2xl"
+        className="relative overflow-hidden rounded-2xl w-full"
         style={{
-          width: isTall ? '280px' : '450px', // Narrower for vertical videos (Shorts), wider for horizontal
           height: isTall ? '500px' : '253px', // Taller for vertical videos, maintains 16:9 for horizontal
         }}
       >

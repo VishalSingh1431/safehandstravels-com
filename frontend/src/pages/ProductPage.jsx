@@ -1,6 +1,6 @@
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useState, useEffect, useCallback } from 'react'
-import { tripsAPI, enquiriesAPI, productPageSettingsAPI } from '../config/api'
+import { tripsAPI, enquiriesAPI, productPageSettingsAPI, blogsAPI } from '../config/api'
 import { Loader2, Calendar, Users, Mail, Phone, MessageSquare, Send, CheckCircle, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useToast } from '../contexts/ToastContext'
 import SEO from '../components/SEO'
@@ -34,6 +34,8 @@ function ProductPage() {
   const [touchStart, setTouchStart] = useState(null)
   const [touchEnd, setTouchEnd] = useState(null)
   const [recommendedTrips, setRecommendedTrips] = useState([])
+  const [relatedBlogs, setRelatedBlogs] = useState([])
+  const [loadingBlogs, setLoadingBlogs] = useState(false)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -114,6 +116,52 @@ function ProductPage() {
 
     if (trip) {
       fetchRecommendedTrips()
+    }
+  }, [trip])
+
+  // Fetch related blogs - only show blogs that were explicitly added in admin panel
+  useEffect(() => {
+    const fetchRelatedBlogs = async () => {
+      try {
+        setLoadingBlogs(true)
+        
+        // Get related blog IDs from trip
+        const relatedBlogIds = Array.isArray(trip?.relatedBlogs) 
+          ? trip.relatedBlogs 
+          : (trip?.relatedBlogs ? [trip.relatedBlogs] : []);
+        
+        // Only show blogs if they were explicitly added in admin panel
+        if (!relatedBlogIds || relatedBlogIds.length === 0) {
+          setRelatedBlogs([])
+          setLoadingBlogs(false)
+          return
+        }
+
+        // Fetch blogs by IDs
+        const blogPromises = relatedBlogIds.map(blogId => 
+          blogsAPI.getBlogById(blogId).catch(err => {
+            console.error(`Error fetching related blog ${blogId}:`, err)
+            return null
+          })
+        )
+        
+        const results = await Promise.all(blogPromises)
+        const blogs = results
+          .filter(result => result && (result.blog || result))
+          .map(result => result.blog || result)
+          .filter(blog => blog && (blog.status === 'active' || blog.status === 'published' || !blog.status))
+        
+        setRelatedBlogs(blogs)
+      } catch (error) {
+        console.error('Error fetching related blogs:', error)
+        setRelatedBlogs([])
+      } finally {
+        setLoadingBlogs(false)
+      }
+    }
+
+    if (trip) {
+      fetchRelatedBlogs()
     }
   }, [trip])
 
@@ -616,6 +664,15 @@ function ProductPage() {
       newErrors.email = 'Please enter a valid email address';
     }
     
+    if (!enquiryData.phone.trim()) {
+      newErrors.phone = 'Phone number is required';
+    } else {
+      const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/
+      if (!phoneRegex.test(enquiryData.phone.trim())) {
+        newErrors.phone = 'Please enter a valid phone number';
+      }
+    }
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -643,12 +700,12 @@ function ProductPage() {
         numberOfTravelers: numTravelers,
         name: enquiryData.name.trim(),
         email: enquiryData.email.trim(),
-        phone: enquiryData.phone.trim() || null,
+        phone: enquiryData.phone.trim(),
         message: enquiryData.message.trim() || null,
       });
 
       setSubmitted(true);
-      toast.success('Enquiry submitted successfully! We\'ll get back to you soon.');
+      toast.success('Thank you! Your enquiry has been submitted successfully. We\'ll get back to you soon.');
       setTimeout(() => {
         setShowEnquiryForm(false);
         setSubmitted(false);
@@ -659,6 +716,8 @@ function ProductPage() {
           message: '',
           selectedMonth: ''
         });
+        // Redirect to home page
+        navigate('/');
       }, 2000);
     } catch (error) {
       console.error('Error submitting enquiry:', error);
@@ -695,8 +754,13 @@ function ProductPage() {
         <div className="relative w-full bg-gray-50 py-8 md:py-12">
           <div className="mx-auto w-full px-4 sm:px-6 lg:px-8">
             {(() => {
-              // Get all gallery images - use content.gallery if available, otherwise use getAllGalleryImages
-              const getImagesFromContent = () => {
+              // Get hero images for slider - use trip.heroImages if available, otherwise fallback to gallery
+              const getHeroImages = () => {
+                // First priority: use heroImages if available
+                if (trip.heroImages && trip.heroImages.length > 0) {
+                  return trip.heroImages
+                }
+                // Second priority: use content.gallery if available
                 if (content && content.gallery && content.gallery.length > 0) {
                   const galleryImages = content.gallery
                   const mainImage = trip.imageUrl || trip.image
@@ -705,15 +769,16 @@ function ProductPage() {
                   }
                   return galleryImages
                 }
+                // Fallback: use getAllGalleryImages
                 return getAllGalleryImages()
               }
-              const allImages = getImagesFromContent()
-              const totalImages = allImages.length
+              const heroImages = getHeroImages()
+              const totalImages = heroImages.length
               const hasMoreThanFive = totalImages > 5
               const remainingImages = hasMoreThanFive ? totalImages - 5 : 0
               
               // Get images to display: first 5 images
-              const imagesToDisplay = allImages.slice(0, 5)
+              const imagesToDisplay = heroImages.slice(0, 5)
               
               return (
                 <div className="flex flex-col lg:flex-row gap-3 sm:gap-4 md:gap-6 h-auto lg:h-[70vh]">
@@ -908,35 +973,35 @@ function ProductPage() {
 
                   {/* Inclusion/Exclusion Section */}
                   {pageSettings?.tabs?.find(t => t.id === 'inclusion')?.enabled && (
-                    <div className="grid md:grid-cols-2 gap-6">
-              <section className="bg-gradient-to-br from-[#017233]/5 to-white rounded-2xl shadow-lg p-8 border border-[#017233]/10">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#017233] to-[#01994d] flex items-center justify-center text-white text-xl font-bold shadow-lg">
+                    <div className="flex flex-col gap-4 sm:gap-6">
+              <section className="bg-gradient-to-br from-[#017233]/5 to-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 md:p-8 border border-[#017233]/10">
+                <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-[#017233] to-[#01994d] flex items-center justify-center text-white text-lg sm:text-xl font-bold shadow-lg">
                     ✓
                   </div>
-                  <h2 className="text-2xl md:text-3xl font-bold text-gray-900">What's Included</h2>
+                  <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">What's Included</h2>
                 </div>
-                <ul className="space-y-4">
+                <ul className="space-y-3 sm:space-y-4">
                   {content.included.map((item, index) => (
-                    <li key={index} className="flex items-start gap-3 group">
-                      <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#017233] text-white text-sm flex items-center justify-center mt-0.5 group-hover:scale-110 transition-transform">✓</span>
-                      <span className="text-gray-700 leading-relaxed">{item}</span>
+                    <li key={index} className="flex items-start gap-2 sm:gap-3 group">
+                      <span className="flex-shrink-0 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-[#017233] text-white text-xs sm:text-sm flex items-center justify-center mt-0.5 group-hover:scale-110 transition-transform">✓</span>
+                      <span className="text-gray-700 leading-relaxed text-sm sm:text-base">{item}</span>
                     </li>
                   ))}
                 </ul>
               </section>
-              <section className="bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-lg p-8 border border-gray-200">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-600 to-gray-700 flex items-center justify-center text-white text-xl font-bold shadow-lg">
+              <section className="bg-gradient-to-br from-gray-50 to-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 md:p-8 border border-gray-200">
+                <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-gray-600 to-gray-700 flex items-center justify-center text-white text-lg sm:text-xl font-bold shadow-lg">
                     ✗
                   </div>
-                  <h2 className="text-2xl md:text-3xl font-bold text-gray-900">What's Not Included</h2>
+                  <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">What's Not Included</h2>
                 </div>
-                <ul className="space-y-4">
+                <ul className="space-y-3 sm:space-y-4">
                   {content.notIncluded.map((item, index) => (
-                    <li key={index} className="flex items-start gap-3 group">
-                      <span className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-500 text-white text-sm flex items-center justify-center mt-0.5 group-hover:scale-110 transition-transform">✗</span>
-                      <span className="text-gray-700 leading-relaxed">{item}</span>
+                    <li key={index} className="flex items-start gap-2 sm:gap-3 group">
+                      <span className="flex-shrink-0 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gray-500 text-white text-xs sm:text-sm flex items-center justify-center mt-0.5 group-hover:scale-110 transition-transform">✗</span>
+                      <span className="text-gray-700 leading-relaxed text-sm sm:text-base">{item}</span>
                     </li>
                   ))}
                 </ul>
@@ -1016,54 +1081,68 @@ function ProductPage() {
                 pageSettings?.displaySettings?.galleryColumns === 2 ? 'md:grid-cols-2' :
                 'md:grid-cols-4'
               }`}>
-                {content.gallery.map((image, index) => {
-                  // Calculate the correct index in the full gallery (including main image)
-                  const getImagesForLightbox = () => {
+                {(() => {
+                  // Get gallery images (exclude hero images to avoid duplicates)
+                  const getGalleryImages = () => {
                     if (content && content.gallery && content.gallery.length > 0) {
-                      const galleryImages = [...content.gallery] // Create a copy
-                      const mainImage = trip.imageUrl || trip.image
-                      if (mainImage && !galleryImages.includes(mainImage)) {
-                        return [mainImage, ...galleryImages]
-                      }
-                      return galleryImages
+                      return content.gallery
                     }
                     return getAllGalleryImages()
                   }
+                  const galleryImages = getGalleryImages()
                   
-                  return (
-                    <div 
-                      key={index} 
-                      className="aspect-square rounded-lg sm:rounded-xl shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105 overflow-hidden group relative cursor-pointer"
-                      onClick={() => {
-                        // Get all images for lightbox
-                        const allImages = getImagesForLightbox()
-                        // Find the index of this specific image in the full gallery
-                        let imageIndex = allImages.findIndex(img => img === image)
-                        // If not found, use the index from content.gallery and adjust if main image is prepended
-                        if (imageIndex === -1) {
-                          const mainImage = trip.imageUrl || trip.image
-                          if (mainImage && !content.gallery.includes(mainImage)) {
-                            imageIndex = index + 1 // +1 because main image is at index 0
-                          } else {
-                            imageIndex = index
+                  return galleryImages.map((image, index) => {
+                    // Calculate the correct index in the full gallery for lightbox
+                    const getImagesForLightbox = () => {
+                      // For lightbox, combine hero images and gallery images
+                      const heroImages = trip.heroImages && trip.heroImages.length > 0 ? trip.heroImages : []
+                      const galleryImages = content && content.gallery && content.gallery.length > 0 
+                        ? content.gallery 
+                        : getAllGalleryImages()
+                      
+                      // Combine hero images first, then gallery images (avoid duplicates)
+                      const allImages = [...heroImages]
+                      galleryImages.forEach(img => {
+                        if (!allImages.includes(img)) {
+                          allImages.push(img)
+                        }
+                      })
+                      
+                      return allImages
+                    }
+                    
+                    return (
+                      <div 
+                        key={index} 
+                        className="aspect-square rounded-lg sm:rounded-xl shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105 overflow-hidden group relative cursor-pointer"
+                        onClick={() => {
+                          // Get all images for lightbox
+                          const allImages = getImagesForLightbox()
+                          // Find the index of this specific image in the full gallery
+                          let imageIndex = allImages.findIndex(img => img === image)
+                          // If not found, use the index from gallery
+                          if (imageIndex === -1) {
+                            // Start index after hero images
+                            const heroImages = trip.heroImages && trip.heroImages.length > 0 ? trip.heroImages : []
+                            imageIndex = heroImages.length + index
                           }
-                        }
-                        // Ensure index is valid
-                        if (imageIndex >= 0 && imageIndex < allImages.length) {
-                          setLightboxIndex(imageIndex)
-                          setLightboxOpen(true)
-                        }
-                      }}
-                    >
-                      <img 
-                        src={image} 
-                        alt={`${trip.title} gallery ${index + 1}`}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-br from-[#017233]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                    </div>
-                  )
-                })}
+                          // Ensure index is valid
+                          if (imageIndex >= 0 && imageIndex < allImages.length) {
+                            setLightboxIndex(imageIndex)
+                            setLightboxOpen(true)
+                          }
+                        }}
+                      >
+                        <img 
+                          src={image} 
+                          alt={`${trip.title} gallery ${index + 1}`}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-br from-[#017233]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                      </div>
+                    )
+                  })
+                })()}
               </div>
             </section>
             )}
@@ -1146,30 +1225,6 @@ function ProductPage() {
             </section>
             )}
 
-            {/* Recommended Trips Section */}
-            {recommendedTrips && recommendedTrips.length > 0 && (
-              <section className="bg-gradient-to-br from-gray-50 to-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 md:p-8 lg:p-10 border border-[#017233]/10 mt-6 sm:mt-8">
-                <div className="mb-8 md:mb-12 text-center">
-                  <div className="flex items-center justify-center gap-3 mb-4">
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-[#017233] to-[#01994d] flex items-center justify-center text-white text-lg sm:text-xl font-bold shadow-lg">
-                      ✨
-                    </div>
-                    <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900">
-                      Recommended Trips
-                    </h2>
-                  </div>
-                  <p className="text-gray-600 text-base sm:text-lg max-w-2xl mx-auto">
-                    Discover more amazing destinations that you might love
-                  </p>
-                </div>
-
-                <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 items-stretch">
-                  {recommendedTrips.map((recommendedTrip) => (
-                    <TripCard key={recommendedTrip.id} trip={recommendedTrip} />
-                  ))}
-                </div>
-              </section>
-            )}
                 </div>
               </div>
             </div>
@@ -1418,6 +1473,112 @@ function ProductPage() {
       </div>
       </div>
 
+      {/* Related Trips Section - Full Width */}
+      {recommendedTrips && recommendedTrips.length > 0 && (
+        <section className="w-full bg-gradient-to-br from-gray-50 to-white pt-8 sm:pt-12 md:pt-16 pb-4 sm:pb-6 md:pb-8 mt-8 sm:mt-12">
+          <div className="mx-auto w-full px-4 sm:px-6 lg:px-8">
+            <div className="mb-8 md:mb-12 text-center">
+              <div className="flex items-center justify-center gap-3 mb-4">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-[#017233] to-[#01994d] flex items-center justify-center text-white text-lg sm:text-xl font-bold shadow-lg">
+                  ✨
+                </div>
+                <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900">
+                  Related Trips
+                </h2>
+              </div>
+              <p className="text-gray-600 text-base sm:text-lg max-w-2xl mx-auto">
+                Discover more amazing destinations that you might love
+              </p>
+            </div>
+
+            <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 items-stretch">
+              {recommendedTrips.map((recommendedTrip) => (
+                <TripCard key={recommendedTrip.id} trip={recommendedTrip} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Related Blogs Section - Full Width */}
+      {relatedBlogs && relatedBlogs.length > 0 && (
+        <section className="w-full bg-gradient-to-br from-gray-50 to-white pt-4 sm:pt-6 md:pt-8 pb-8 sm:pb-12 md:pb-16 -mt-2 sm:-mt-4">
+          <div className="mx-auto w-full px-4 sm:px-6 lg:px-8">
+            <div className="mb-8 md:mb-12 text-center">
+              <div className="flex items-center justify-center gap-3 mb-4">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-[#017233] to-[#01994d] flex items-center justify-center text-white text-lg sm:text-xl font-bold shadow-lg">
+                  📝
+                </div>
+                <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900">
+                  Related Blogs
+                </h2>
+              </div>
+              <p className="text-gray-600 text-base sm:text-lg max-w-2xl mx-auto">
+                Explore travel stories and experiences from our journeys
+              </p>
+            </div>
+
+            {loadingBlogs ? (
+              <div className="flex justify-center items-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-[#017233]" />
+              </div>
+            ) : (
+              <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 items-stretch">
+                {relatedBlogs.map((blog) => (
+                  <Link
+                    key={blog.id}
+                    to={`/blog/${blog.id}`}
+                    className="group relative flex flex-col h-full w-full min-h-[400px] sm:min-h-[420px] overflow-hidden rounded-2xl shadow-lg border-2 border-gray-200/50 transition-all duration-300 hover:border-[#017233]/50 hover:shadow-[0_20px_50px_rgba(1,114,51,0.3)] cursor-pointer bg-white"
+                  >
+                    {/* Image Section */}
+                    <div className="relative h-48 sm:h-52 w-full overflow-hidden flex-shrink-0">
+                      <img 
+                        src={blog.heroImage || blog.imageUrl || blog.image || 'https://images.unsplash.com/photo-1501594907352-04cda38ebc29?auto=format&fit=crop&w=900&q=60'} 
+                        alt={blog.title} 
+                        loading="lazy"
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" 
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      {blog.category && (
+                        <span className="absolute left-3 top-3 rounded-full bg-gradient-to-br from-[#017233] to-[#01994d] px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-lg">
+                          {blog.category}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Content Section */}
+                    <div className="flex flex-col gap-2 p-4 sm:p-5 flex-1 flex-grow">
+                      <h3 className="text-lg sm:text-xl font-bold text-gray-900 line-clamp-2 group-hover:text-[#017233] transition-colors">
+                        {blog.title}
+                      </h3>
+                      {blog.description && (
+                        <p className="text-sm sm:text-base text-gray-600 line-clamp-3 flex-1">
+                          {blog.description}
+                        </p>
+                      )}
+                      <div className="mt-auto pt-3 flex items-center justify-between">
+                        {blog.createdAt && (
+                          <span className="text-xs sm:text-sm text-gray-500">
+                            {new Date(blog.createdAt).toLocaleDateString('en-US', { 
+                              month: 'short', 
+                              day: 'numeric', 
+                              year: 'numeric' 
+                            })}
+                          </span>
+                        )}
+                        <span className="text-[#017233] font-semibold text-sm sm:text-base group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
+                          Read More
+                          <ChevronRight className="w-4 h-4" />
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* Enquiry Form Modal */}
       {showEnquiryForm && (
@@ -1484,16 +1645,20 @@ function ProductPage() {
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Phone Number
+                    Phone Number <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="tel"
                     name="phone"
                     value={enquiryData.phone}
                     onChange={handleEnquiryInputChange}
-                    className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#017233] focus:border-[#017233] outline-none"
-                    placeholder="Enter your phone number (optional)"
+                    required
+                    className={`w-full px-4 py-2 border-2 rounded-lg focus:ring-2 focus:ring-[#017233] focus:border-[#017233] outline-none ${
+                      errors.phone ? 'border-red-500' : 'border-gray-200'
+                    }`}
+                    placeholder="Enter your phone number"
                   />
+                  {errors.phone && <p className="mt-1 text-sm text-red-500">{errors.phone}</p>}
                 </div>
 
                 <div>
@@ -1637,17 +1802,22 @@ function ProductPage() {
             onClick={(e) => e.stopPropagation()}
           >
             {(() => {
-              // Use content.gallery if available, otherwise use getAllGalleryImages
+              // Combine hero images and gallery images for lightbox
               const getImagesForLightbox = () => {
-                if (content && content.gallery && content.gallery.length > 0) {
-                  const galleryImages = content.gallery
-                  const mainImage = trip.imageUrl || trip.image
-                  if (mainImage && !galleryImages.includes(mainImage)) {
-                    return [mainImage, ...galleryImages]
+                const heroImages = trip.heroImages && trip.heroImages.length > 0 ? trip.heroImages : []
+                const galleryImages = content && content.gallery && content.gallery.length > 0 
+                  ? content.gallery 
+                  : getAllGalleryImages()
+                
+                // Combine hero images first, then gallery images (avoid duplicates)
+                const allImages = [...heroImages]
+                galleryImages.forEach(img => {
+                  if (!allImages.includes(img)) {
+                    allImages.push(img)
                   }
-                  return galleryImages
-                }
-                return getAllGalleryImages()
+                })
+                
+                return allImages
               }
               const allImages = getImagesForLightbox()
               const currentImage = allImages[lightboxIndex]

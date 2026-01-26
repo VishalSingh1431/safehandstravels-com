@@ -12,7 +12,7 @@ function CertificateCard({ certificate, currentIndex, onIndexChange }) {
   const shouldTruncate = description.length > 150 // Adjust threshold as needed
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg border-2 border-gray-200/50 overflow-hidden hover:border-[#017233]/50 hover:shadow-[0_20px_50px_rgba(1,114,51,0.3)] transition-all duration-300 flex flex-col h-full">
+    <div className="bg-white rounded-2xl shadow-lg border-2 border-gray-200/50 overflow-hidden hover:border-[#017233]/50 hover:shadow-[0_20px_50px_rgba(1,114,51,0.3)] transition-all duration-300 flex flex-col h-full w-full min-h-[500px] md:min-h-[540px]">
       <div className="relative h-64 md:h-72 overflow-hidden rounded-t-2xl flex-shrink-0">
         {/* Main Image Display */}
         {certificate.images.map((image, index) => (
@@ -68,7 +68,7 @@ function CertificateCard({ certificate, currentIndex, onIndexChange }) {
           })}
         </div>
       </div>
-      <div className="p-6 flex flex-col flex-grow min-h-[140px]">
+      <div className="p-6 flex flex-col flex-1 min-h-[180px]">
         <h3 className="text-xl font-bold text-gray-900 mb-3 flex-shrink-0">
           {certificate.title}
         </h3>

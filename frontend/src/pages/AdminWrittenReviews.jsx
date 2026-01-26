@@ -206,10 +206,10 @@ const AdminWrittenReviews = () => {
         )}
 
         {showForm && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-center justify-center p-2 sm:p-4 overflow-y-auto pt-20 sm:pt-4">
-            <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl max-w-2xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto my-4">
-              <div className="sticky top-0 bg-white border-b border-gray-200 p-4 sm:p-6 flex items-center justify-between z-10 shadow-sm">
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-center justify-center p-2 sm:p-4">
+            <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl w-[500px] h-[600px] overflow-hidden flex flex-col">
+              <div className="bg-white border-b border-gray-200 p-4 flex items-center justify-between z-10 shadow-sm flex-shrink-0">
+                <h2 className="text-lg font-bold text-gray-900">
                   {editingReview ? 'Edit Written Review' : 'Create New Written Review'}
                 </h2>
                 <button
@@ -217,31 +217,31 @@ const AdminWrittenReviews = () => {
                   className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                   aria-label="Close"
                 >
-                  <X className="w-5 h-5 sm:w-6 sm:h-6" />
+                  <X className="w-5 h-5" />
                 </button>
               </div>
 
-              <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <form onSubmit={handleSubmit} className="p-4 space-y-3 overflow-y-auto flex-1">
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Name *</label>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">Name *</label>
                     <input
                       type="text"
                       name="name"
                       value={formData.name}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                      className="w-full px-3 py-1.5 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Rating *</label>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">Rating *</label>
                     <select
                       name="rating"
                       value={formData.rating}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                      className="w-full px-3 py-1.5 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                     >
                       <option value={5}>5 Stars</option>
                       <option value={4}>4 Stars</option>
@@ -252,56 +252,56 @@ const AdminWrittenReviews = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Date</label>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">Date</label>
                     <input
                       type="text"
                       name="date"
                       value={formData.date}
                       onChange={handleInputChange}
                       placeholder="e.g., 2 weeks ago"
-                      className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                      className="w-full px-3 py-1.5 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Location</label>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">Location</label>
                     <input
                       type="text"
                       name="location"
                       value={formData.location}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                      className="w-full px-3 py-1.5 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Title</label>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Title</label>
                   <input
                     type="text"
                     name="title"
                     value={formData.title}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                    className="w-full px-3 py-1.5 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Review *</label>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Review *</label>
                   <textarea
                     name="review"
                     value={formData.review}
                     onChange={handleInputChange}
                     required
-                    rows={4}
-                    className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                    rows={3}
+                    className="w-full px-3 py-1.5 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Avatar</label>
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Avatar</label>
+                  <div className="flex items-center gap-2">
                     <input
                       type="file"
                       accept="image/*"
@@ -311,24 +311,24 @@ const AdminWrittenReviews = () => {
                     />
                     <label
                       htmlFor="avatar-upload"
-                      className="px-3 sm:px-4 py-2 bg-blue-100 text-blue-700 rounded-lg font-semibold hover:bg-blue-200 transition-colors cursor-pointer flex items-center gap-2 text-sm sm:text-base"
+                      className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg font-semibold hover:bg-blue-200 transition-colors cursor-pointer flex items-center gap-2 text-xs"
                     >
-                      {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
-                      Upload Avatar
+                      {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <ImageIcon className="w-3 h-3" />}
+                      Upload
                     </label>
                     {formData.avatar && (
-                      <img src={formData.avatar} alt="Avatar" className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-full" />
+                      <img src={formData.avatar} alt="Avatar" className="w-12 h-12 object-cover rounded-full" />
                     )}
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Status</label>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Status</label>
                   <select
                     name="status"
                     value={formData.status}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                    className="w-full px-3 py-1.5 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                   >
                     <option value="active">Active</option>
                     <option value="draft">Draft</option>
@@ -336,18 +336,18 @@ const AdminWrittenReviews = () => {
                   </select>
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4 border-t">
+                <div className="flex gap-2 pt-3 border-t flex-shrink-0">
                   <button
                     type="submit"
-                    className="w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition-all flex items-center justify-center gap-2 text-sm sm:text-base"
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition-all flex items-center justify-center gap-2 text-sm"
                   >
-                    <Save className="w-4 h-4 sm:w-5 sm:h-5" />
-                    {editingReview ? 'Update Written Review' : 'Create Written Review'}
+                    <Save className="w-4 h-4" />
+                    {editingReview ? 'Update' : 'Create'}
                   </button>
                   <button
                     type="button"
                     onClick={resetForm}
-                    className="w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-3 bg-gray-200 text-gray-700 rounded-lg font-bold hover:bg-gray-300 transition-all text-sm sm:text-base"
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-bold hover:bg-gray-300 transition-all text-sm"
                   >
                     Cancel
                   </button>
