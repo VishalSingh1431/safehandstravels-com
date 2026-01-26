@@ -799,12 +799,20 @@ export const blogsAPI = {
     if (search && search.trim()) params.append('search', search);
     if (limit) params.append('limit', limit);
     if (offset) params.append('offset', offset);
+    // Add cache busting
+    params.append('_', Date.now());
     const queryString = params.toString();
-    const url = queryString ? `/blogs/admin?${queryString}` : '/blogs/admin';
+    const url = `/blogs/admin?${queryString}`;
     console.log('Calling getAllBlogsAdmin with URL:', url);
-    return apiCall(url, {
+    const response = await apiCall(url, {
       method: 'GET',
+      headers: {
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
+      },
     });
+    console.log('getAllBlogsAdmin response:', response);
+    return response;
   },
 
   getBlogById: async (id) => {

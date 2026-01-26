@@ -49,12 +49,18 @@ router.get('/admin', verifyToken, verifyAdmin, async (req, res) => {
 
     console.log('GET /blogs/admin - Found blogs:', blogs.length);
     if (blogs.length > 0) {
-      console.log('First blog:', blogs[0].title, blogs[0].status);
+      console.log('First blog:', blogs[0].title, blogs[0].status, 'ID:', blogs[0].id);
+      console.log('All blog IDs:', blogs.map(b => b.id));
+    } else {
+      console.log('⚠️ No blogs returned from Blog.findAll');
     }
 
+    // Ensure blogs is always an array
+    const blogsArray = Array.isArray(blogs) ? blogs : [];
+    
     res.json({
-      blogs,
-      count: blogs.length,
+      blogs: blogsArray,
+      count: blogsArray.length,
     });
   } catch (error) {
     console.error('Error fetching blogs:', error);

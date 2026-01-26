@@ -151,7 +151,7 @@ const AdminTrips = () => {
       try {
         console.log('Fetching blogs for related blogs dropdown...');
         // Don't pass empty strings - pass undefined or null to get all blogs
-        const blogsResponse = await blogsAPI.getAllBlogsAdmin(undefined, undefined, undefined, undefined, 100, 0);
+        const blogsResponse = await blogsAPI.getAllBlogsAdmin('', '', '', '', 100, 0);
         console.log('Blogs API raw response:', blogsResponse); // Debug log
         console.log('Response type:', typeof blogsResponse, 'Is array:', Array.isArray(blogsResponse)); // Debug log
         console.log('Response keys:', Object.keys(blogsResponse || {})); // Debug log
@@ -525,8 +525,8 @@ const AdminTrips = () => {
     if (availableBlogs.length === 0) {
       try {
         console.log('Fetching blogs when opening form...');
-        // Don't pass empty strings - pass undefined to get all blogs
-        const blogsResponse = await blogsAPI.getAllBlogsAdmin(undefined, undefined, undefined, undefined, 100, 0);
+        // Don't pass empty strings - pass empty strings (they'll be filtered out)
+        const blogsResponse = await blogsAPI.getAllBlogsAdmin('', '', '', '', 100, 0);
         console.log('Blogs response when opening form:', blogsResponse);
         let blogs = [];
         if (Array.isArray(blogsResponse)) {
