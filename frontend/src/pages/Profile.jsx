@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { User, Mail, Phone, Edit2, Save, X, Loader2, LogOut, Search, Shield, ShieldCheck, Users, ArrowUp, ArrowDown } from 'lucide-react';
 import { authAPI } from '../config/api';
 import { useToast } from '../contexts/ToastContext';
+import PhoneInputWithCountry from '../components/PhoneInputWithCountry';
+import { isValidPhone } from '../utils/countryCodes';
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -61,11 +63,8 @@ const Profile = () => {
     
     if (!formData.phone || !formData.phone.trim()) {
       newErrors.phone = 'Phone number is required';
-    } else {
-      const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/;
-      if (!phoneRegex.test(formData.phone.trim())) {
-        newErrors.phone = 'Please enter a valid phone number';
-      }
+    } else if (!isValidPhone(formData.phone)) {
+      newErrors.phone = 'Please enter a valid phone number (with country code)';
     }
 
     if (formData.bio && formData.bio.length > 500) {
@@ -355,16 +354,12 @@ const Profile = () => {
                   <div>
                     <div className="flex items-center gap-2">
                       <Phone className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 flex-shrink-0" />
-                      <input
-                        type="tel"
-                        name="phone"
+                      <PhoneInputWithCountry
                         value={formData.phone}
-                        onChange={handleInputChange}
-                        required
+                        onChange={(v) => handleInputChange({ target: { name: 'phone', value: v } })}
+                        error={!!errors.phone}
                         placeholder="Enter your phone number"
-                        className={`flex-1 px-3 sm:px-4 py-2 sm:py-3 border-2 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-[#017233] focus:border-[#017233] outline-none transition-all duration-300 text-sm sm:text-base ${
-                          errors.phone ? 'border-red-500' : 'border-gray-200'
-                        }`}
+                        className="flex-1 rounded-lg sm:rounded-xl"
                       />
                     </div>
                     {errors.phone && (

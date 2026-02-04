@@ -4,6 +4,8 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { X, Plane } from 'lucide-react'
 import { enquiriesAPI } from '../config/api'
 import { useToast } from '../contexts/ToastContext'
+import PhoneInputWithCountry from './PhoneInputWithCountry'
+import { isValidPhone } from '../utils/countryCodes'
 
 const LeadCaptureForm = () => {
   const toast = useToast()
@@ -90,14 +92,8 @@ const LeadCaptureForm = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
-    
-    // Format phone number (only digits)
     if (name === 'phone') {
-      const digitsOnly = value.replace(/\D/g, '')
-      // Limit to 10 digits
-      if (digitsOnly.length <= 10) {
-        setFormData(prev => ({ ...prev, [name]: digitsOnly }))
-      }
+      setFormData(prev => ({ ...prev, phone: value }))
     } else {
       setFormData(prev => ({ ...prev, [name]: value }))
     }
@@ -106,8 +102,8 @@ const LeadCaptureForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault()
     
-    if (!formData.name.trim() || !formData.phone.trim() || formData.phone.length !== 10) {
-      toast.error('Please enter a valid name and 10-digit phone number')
+    if (!formData.name.trim() || !formData.phone.trim() || !isValidPhone(formData.phone)) {
+      toast.error('Please enter a valid name and phone number (with country code)')
       return
     }
 
@@ -119,7 +115,7 @@ const LeadCaptureForm = () => {
       await enquiriesAPI.createEnquiry({
         name: formData.name.trim(),
         email: `lead+${Date.now()}@safehandstravels.com`, // Placeholder email
-        phone: `+91${formData.phone}`,
+        phone: formData.phone.trim(),
         message: 'Lead captured from lead capture form - interested in trip planning consultation',
       })
 
@@ -258,29 +254,20 @@ const LeadCaptureForm = () => {
                     <label htmlFor="lead-phone" className="block text-sm font-medium text-gray-700 mb-2">
                       Phone Number
                     </label>
-                    <div className="relative">
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">
-                        +91
-                      </div>
-                      <input
-                        type="tel"
-                        id="lead-phone"
-                        name="phone"
-                        value={formData.phone}
-                        onChange={handleInputChange}
-                        required
-                        minLength={10}
-                        maxLength={10}
-                        className="w-full pl-16 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#017233]/20 focus:border-[#017233] transition-all outline-none text-gray-900 placeholder-gray-400"
-                        placeholder="9876543210"
-                      />
-                    </div>
+                    <PhoneInputWithCountry
+                      id="lead-phone"
+                      value={formData.phone}
+                      onChange={(v) => setFormData(prev => ({ ...prev, phone: v }))}
+                      required
+                      placeholder="Enter phone number"
+                      className="rounded-lg"
+                    />
                   </div>
 
                   {/* Submit Button */}
                   <button
                     type="submit"
-                    disabled={isSubmitting || !formData.name.trim() || formData.phone.length !== 10}
+                    disabled={isSubmitting || !formData.name.trim() || !isValidPhone(formData.phone)}
                     className="w-full py-3.5 px-6 rounded-lg bg-gradient-to-r from-[#017233] via-[#01994d] to-[#00C853] text-white font-semibold text-base shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-lg"
                   >
                     {isSubmitting ? (

@@ -13,22 +13,27 @@ class Enquiry {
         INSERT INTO enquiries (
           trip_id, trip_title, trip_location, trip_price,
           selected_month, number_of_travelers,
-          name, email, phone, message
+          name, email, phone, message, destination, enquiry_type
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
+      const nameValue = data.name != null && String(data.name).trim() !== ''
+        ? data.name.trim()
+        : (data.enquiryType === 'form2' ? 'Trip Enquiry' : 'Not provided');
       const values = [
         data.tripId || null,
         data.tripTitle || null,
         data.tripLocation || null,
         data.tripPrice || null,
-        data.selectedMonth || null,
-        data.numberOfTravelers || 1,
-        data.name,
+        data.selectedMonth || data.monthOfTravel || null,
+        data.numberOfTravelers ?? data.numPeople ?? 1,
+        nameValue,
         data.email.toLowerCase(),
         data.phone || null,
         data.message || null,
+        data.destination || null,
+        data.enquiryType === 'form2' ? 'form2' : 'form1',
       ];
 
       const [result] = await pool.query(query, values);
@@ -131,6 +136,8 @@ class Enquiry {
       email: row.email,
       phone: row.phone,
       message: row.message,
+      destination: row.destination,
+      enquiryType: row.enquiry_type || 'form1',
       status: row.status,
       createdAt: row.created_at,
       updatedAt: row.updated_at,

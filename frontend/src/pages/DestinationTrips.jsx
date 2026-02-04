@@ -21,7 +21,7 @@ function DestinationTrips() {
       // Filter active trips where location contains the destination name (case-insensitive)
       const destinationTrips = (response.trips || []).filter(trip => {
         if (trip.status !== 'active') return false
-        const tripLocation = (trip.location || '').toLowerCase().trim()
+        const tripLocation = getLocationString(trip.location).toLowerCase().trim()
         const destination = decodedDestinationName.toLowerCase().trim()
         return tripLocation.includes(destination) || destination.includes(tripLocation)
       })

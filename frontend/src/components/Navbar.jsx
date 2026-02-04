@@ -66,14 +66,12 @@ const Navbar = () => {
   const [dropdownTop, setDropdownTop] = useState(0);
   const searchInputRef = useRef(null);
 
-  // Set initial search query from URL if on home page
+  // Keep search input in sync with URL (clear when search param is removed)
   useEffect(() => {
     if (location.pathname === '/') {
       const urlParams = new URLSearchParams(location.search);
       const urlSearch = urlParams.get('search');
-      if (urlSearch) {
-        setSearchQuery(urlSearch);
-      }
+      setSearchQuery(urlSearch ?? '');
     }
   }, [location]);
 
@@ -203,7 +201,18 @@ const Navbar = () => {
 
   const clearSearch = () => {
     setSearchQuery('');
+    if (location.pathname === '/') {
+      navigate('/', { replace: true });
+    }
     searchInputRef.current?.focus();
+  };
+
+  const handleSearchInputChange = (e) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    if (value.trim() === '' && location.pathname === '/') {
+      navigate('/', { replace: true });
+    }
   };
 
   return (
@@ -261,10 +270,11 @@ const Navbar = () => {
             </svg>
             <input
               ref={searchInputRef}
-              type="search"
+              type="text"
+              autoComplete="off"
               placeholder="Search your trip... (Press /)"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={handleSearchInputChange}
               className="w-full border-none bg-transparent text-xs sm:text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:placeholder:text-gray-300 transition-colors"
             />
             {searchQuery && (

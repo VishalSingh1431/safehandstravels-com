@@ -5,6 +5,7 @@ import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import ScrollToTop from './components/ScrollToTop'
 import LeadCaptureForm from './components/LeadCaptureForm'
+import AdminRoute from './components/AdminRoute'
 import './App.css'
 
 // Lazy load all pages for code splitting - reduces initial bundle size
@@ -97,23 +98,23 @@ function App() {
               <Route path="/contact-us" element={<ContactUs />} />
               <Route path="/blog/:id" element={<BlogDetail />} />
               <Route path="/blog/destination/:id" element={<BlogDetail />} />
-              {/* Admin Routes */}
-              <Route path="/admin/trips" element={<AdminTrips />} />
-              <Route path="/admin/certificates" element={<AdminCertificates />} />
-              <Route path="/admin/destinations" element={<AdminDestinations />} />
-              <Route path="/admin/reviews" element={<AdminReviews />} />
-              <Route path="/admin/written-reviews" element={<AdminWrittenReviews />} />
-              <Route path="/admin/enquiries" element={<AdminEnquiries />} />
-              <Route path="/admin/drivers" element={<AdminDrivers />} />
-              <Route path="/admin/popular-trips" element={<AdminPopularTrips />} />
-              <Route path="/admin/vibe-videos" element={<AdminVibeVideos />} />
-              <Route path="/admin/traveller-reviews" element={<AdminTravellerReviews />} />
-              <Route path="/admin/faqs" element={<AdminFAQs />} />
-              <Route path="/admin/banners" element={<AdminBanners />} />
-              <Route path="/admin/branding-partners" element={<AdminBrandingPartners />} />
-              <Route path="/admin/hotel-partners" element={<AdminHotelPartners />} />
-              <Route path="/admin/blogs" element={<AdminBlogs />} />
-              <Route path="/admin/team" element={<AdminTeam />} />
+              {/* Admin Routes - protected: redirect to login if not authenticated */}
+              <Route path="/admin/trips" element={<AdminRoute><AdminTrips /></AdminRoute>} />
+              <Route path="/admin/certificates" element={<AdminRoute><AdminCertificates /></AdminRoute>} />
+              <Route path="/admin/destinations" element={<AdminRoute><AdminDestinations /></AdminRoute>} />
+              <Route path="/admin/reviews" element={<AdminRoute><AdminReviews /></AdminRoute>} />
+              <Route path="/admin/written-reviews" element={<AdminRoute><AdminWrittenReviews /></AdminRoute>} />
+              <Route path="/admin/enquiries" element={<AdminRoute><AdminEnquiries /></AdminRoute>} />
+              <Route path="/admin/drivers" element={<AdminRoute><AdminDrivers /></AdminRoute>} />
+              <Route path="/admin/popular-trips" element={<AdminRoute><AdminPopularTrips /></AdminRoute>} />
+              <Route path="/admin/vibe-videos" element={<AdminRoute><AdminVibeVideos /></AdminRoute>} />
+              <Route path="/admin/traveller-reviews" element={<AdminRoute><AdminTravellerReviews /></AdminRoute>} />
+              <Route path="/admin/faqs" element={<AdminRoute><AdminFAQs /></AdminRoute>} />
+              <Route path="/admin/banners" element={<AdminRoute><AdminBanners /></AdminRoute>} />
+              <Route path="/admin/branding-partners" element={<AdminRoute><AdminBrandingPartners /></AdminRoute>} />
+              <Route path="/admin/hotel-partners" element={<AdminRoute><AdminHotelPartners /></AdminRoute>} />
+              <Route path="/admin/blogs" element={<AdminRoute><AdminBlogs /></AdminRoute>} />
+              <Route path="/admin/team" element={<AdminRoute><AdminTeam /></AdminRoute>} />
               </Routes>
             </Suspense>
           </main>

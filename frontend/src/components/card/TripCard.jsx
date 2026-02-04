@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { getThumbnailUrl } from '../../utils/imageOptimizer'
+import { getLocationString } from '../../utils/tripUtils'
 
 function TripCard({ trip }) {
   // Optimize image URL for thumbnail (smaller size, faster loading)
@@ -33,7 +34,7 @@ function TripCard({ trip }) {
           <span className="bg-gray-100 px-2 py-0.5 rounded-full text-[10px] sm:text-xs">⏱️ {trip.duration}</span>
         </div>
         <h3 className="text-sm sm:text-base font-bold text-gray-900 line-clamp-2 group-hover:text-[#017233] transition-colors leading-tight">{trip.title}</h3>
-        <p className="text-xs sm:text-sm text-gray-600 font-medium">{trip.location}</p>
+        <p className="text-xs sm:text-sm text-gray-600 font-medium">{getLocationString(trip.location)}</p>
 
         <div className="flex items-center gap-2 flex-wrap pt-1.5 border-t border-gray-200">
           <span className="text-base sm:text-lg font-bold text-gray-900">{trip.price}</span>

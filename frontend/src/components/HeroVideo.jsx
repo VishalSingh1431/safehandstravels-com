@@ -6,18 +6,24 @@ function HeroVideo() {
   const [searchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Set initial search query from URL
+  // Keep search input in sync with URL (clear when search param is removed)
   useEffect(() => {
     const urlSearch = searchParams.get('search');
-    if (urlSearch) {
-      setSearchQuery(urlSearch);
-    }
+    setSearchQuery(urlSearch ?? '');
   }, [searchParams]);
 
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       navigate(`/?search=${encodeURIComponent(searchQuery)}`);
+    }
+  };
+
+  const handleSearchInputChange = (e) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    if (value.trim() === '') {
+      navigate('/', { replace: true });
     }
   };
 
@@ -62,10 +68,11 @@ function HeroVideo() {
                   />
                 </svg>
                 <input
-                  type="search"
+                  type="text"
+                  autoComplete="off"
                   placeholder="Search your trip destination..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={handleSearchInputChange}
                   className="w-full border-none bg-transparent text-sm sm:text-base text-white outline-none placeholder:text-white/60 focus:placeholder:text-white/40 transition-colors"
                 />
               </div>

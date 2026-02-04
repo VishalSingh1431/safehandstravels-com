@@ -36,20 +36,18 @@ const HotelPartnerLogo = ({ partner }) => {
         href={partner.link}
         target="_blank"
         rel="noopener noreferrer"
-        className="w-full h-full flex items-center justify-center cursor-pointer hover:scale-105 transition-transform duration-300 block relative group"
+        style={{ cursor: 'pointer' }}
+        className="w-full h-full flex items-center justify-center hover:scale-105 transition-transform duration-300 block relative group [&_img]:cursor-pointer"
         aria-label={`Visit ${partner.name}`}
-        onClick={(e) => {
-          e.stopPropagation()
-        }}
       >
         {logoContent}
-        <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+        <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
           <ExternalLink className="w-4 h-4 text-blue-600" />
         </div>
       </a>
     )
   }
-  
+
   return (
     <div className="w-full h-full flex items-center justify-center">
       {logoContent}
@@ -292,9 +290,10 @@ function HotelPartners() {
                 style={{
                   width: cardWidth > 0 ? `${cardWidth}px` : '100%',
                   minWidth: cardWidth > 0 ? `${cardWidth}px` : '100%',
+                  cursor: 'pointer',
                 }}
               >
-                <div className="h-32 md:h-40 lg:h-44 bg-white rounded-xl border-2 border-gray-200 hover:border-blue-300 shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden">
+                <div className={`h-32 md:h-40 lg:h-44 bg-white rounded-xl border-2 border-gray-200 shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden hotel-partner-card ${partner.link ? 'hover:border-blue-300' : ''}`}>
                   <HotelPartnerLogo partner={partner} />
                 </div>
               </div>
@@ -324,6 +323,11 @@ function HotelPartners() {
       <style>{`
         .overflow-x-auto::-webkit-scrollbar {
           display: none;
+        }
+        .hotel-partner-card,
+        .hotel-partner-card a,
+        .hotel-partner-card img {
+          cursor: pointer !important;
         }
       `}</style>
     </section>

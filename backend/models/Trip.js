@@ -4,6 +4,18 @@ import pool from '../config/database.js';
  * Trip Model - MySQL operations
  */
 class Trip {
+  /** Safe parse JSON column; return fallback on invalid JSON so mapRowToTrip never throws */
+  static safeParseJson(val, fallback = []) {
+    if (val == null || val === '') return fallback;
+    if (Array.isArray(val)) return val;
+    if (typeof val === 'object') return val;
+    try {
+      return JSON.parse(val);
+    } catch {
+      return fallback;
+    }
+  }
+
   /**
    * Create a new trip
    */
@@ -14,9 +26,9 @@ class Trip {
           title, location, duration, price, old_price, image_url, video_url,
           video_public_id, image_public_id, gallery, gallery_public_ids,
           hero_images, hero_images_public_ids, subtitle, intro, why_visit, itinerary, included, not_included,
-          notes, faq, reviews, category, recommended_trips, related_blogs, seats_left, is_popular, slug, status, created_by
+          notes, faq, reviews, category, recommended_trips, related_blogs, seats_left, is_popular, slug, status, enquiry_form_type, created_by
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
       const values = [
@@ -49,6 +61,7 @@ class Trip {
         data.isPopular || false,
         data.slug || this.generateSlug(data.title),
         data.status || 'active',
+        (data.enquiryFormType === 'form2' ? 'form2' : 'form1'),
         data.createdBy || null,
       ];
 
@@ -133,12 +146,35 @@ class Trip {
   }
 
   /**
+   * Sanitize itinerary to plain serializable objects (avoids JSON.stringify errors from React state/proxy)
+   */
+  static sanitizeItinerary(itinerary) {
+    if (!Array.isArray(itinerary)) return [];
+    return itinerary.map((day) => {
+      const bullets = Array.isArray(day.bullets)
+        ? day.bullets.map((b) => (b != null ? String(b) : ''))
+        : [];
+      return {
+        day: typeof day.day === 'number' ? day.day : parseInt(day.day, 10) || 0,
+        title: day.title != null ? String(day.title) : '',
+        activities: day.activities != null ? String(day.activities) : '',
+        bullets,
+      };
+    });
+  }
+
+  /**
    * Update trip
    */
   static async update(id, data) {
     try {
       const updates = [];
       const values = [];
+
+      // Sanitize itinerary so JSON.stringify never fails (plain objects only)
+      if (data.itinerary !== undefined) {
+        data = { ...data, itinerary: this.sanitizeItinerary(data.itinerary) };
+      }
 
       // Map frontend field names to database column names
       const fieldMapping = {
@@ -171,6 +207,7 @@ class Trip {
         isPopular: 'is_popular',
         slug: 'slug',
         status: 'status',
+        enquiryFormType: 'enquiry_form_type',
       };
 
       // JSON fields that need to be stringified
@@ -183,7 +220,6 @@ class Trip {
         const recTrips = Array.isArray(data.recommendedTrips) ? data.recommendedTrips : [];
         values.push(JSON.stringify(recTrips));
         recommendedTripsAdded = true;
-        console.log('Updating recommended_trips:', recTrips); // Debug log
       }
 
       // Explicitly handle relatedBlogs - always update if present in data (even if empty array)
@@ -193,7 +229,6 @@ class Trip {
         const relBlogs = Array.isArray(data.relatedBlogs) ? data.relatedBlogs : [];
         values.push(JSON.stringify(relBlogs));
         relatedBlogsAdded = true;
-        console.log('Updating related_blogs:', relBlogs); // Debug log
       }
 
       // Explicitly handle seatsLeft - convert empty string to null
@@ -205,7 +240,6 @@ class Trip {
           : parseInt(data.seatsLeft);
         values.push(seatsValue);
         seatsLeftAdded = true;
-        console.log('Updating seats_left:', seatsValue); // Debug log
       }
 
       for (const [key, dbColumn] of Object.entries(fieldMapping)) {
@@ -239,14 +273,13 @@ class Trip {
         WHERE id = ?
       `;
 
-      console.log('UPDATE query:', query); // Debug log
-      console.log('UPDATE values:', values); // Debug log
       await pool.query(query, values);
       // Get the updated trip
       const [rows] = await pool.query('SELECT * FROM trips WHERE id = ?', [id]);
+      if (!rows || rows.length === 0) {
+        throw new Error('Trip not found after update');
+      }
       const updatedTrip = this.mapRowToTrip(rows[0]);
-      console.log('Updated trip recommendedTrips from DB:', rows[0]?.recommended_trips); // Debug log
-      console.log('Parsed recommendedTrips:', updatedTrip?.recommendedTrips); // Debug log
       return updatedTrip;
     } catch (error) {
       console.error('Trip.update error:', error);
@@ -290,7 +323,6 @@ class Trip {
     if (!row) return null;
 
     try {
-      console.log('mapRowToTrip - recommended_trips raw value:', row.recommended_trips, 'type:', typeof row.recommended_trips); // Debug log
       // Parse location - handle both JSON array and string (backward compatibility)
       let location = row.location || '';
       if (location && typeof location === 'string' && location.trim() !== '') {
@@ -321,20 +353,20 @@ class Trip {
         videoUrl: row.video_url,
         videoPublicId: row.video_public_id,
         imagePublicId: row.image_public_id,
-        gallery: Array.isArray(row.gallery) ? row.gallery : (row.gallery ? JSON.parse(row.gallery) : []),
-        galleryPublicIds: Array.isArray(row.gallery_public_ids) ? row.gallery_public_ids : (row.gallery_public_ids ? JSON.parse(row.gallery_public_ids) : []),
-        heroImages: Array.isArray(row.hero_images) ? row.hero_images : (row.hero_images ? JSON.parse(row.hero_images) : []),
-        heroImagesPublicIds: Array.isArray(row.hero_images_public_ids) ? row.hero_images_public_ids : (row.hero_images_public_ids ? JSON.parse(row.hero_images_public_ids) : []),
+        gallery: this.safeParseJson(row.gallery, []),
+        galleryPublicIds: this.safeParseJson(row.gallery_public_ids, []),
+        heroImages: this.safeParseJson(row.hero_images, []),
+        heroImagesPublicIds: this.safeParseJson(row.hero_images_public_ids, []),
         subtitle: row.subtitle,
         intro: row.intro,
-        whyVisit: Array.isArray(row.why_visit) ? row.why_visit : (row.why_visit ? JSON.parse(row.why_visit) : []),
-        itinerary: Array.isArray(row.itinerary) ? row.itinerary : (row.itinerary ? JSON.parse(row.itinerary) : []),
-        included: Array.isArray(row.included) ? row.included : (row.included ? JSON.parse(row.included) : []),
-        notIncluded: Array.isArray(row.not_included) ? row.not_included : (row.not_included ? JSON.parse(row.not_included) : []),
-        notes: Array.isArray(row.notes) ? row.notes : (row.notes ? JSON.parse(row.notes) : []),
-        faq: Array.isArray(row.faq) ? row.faq : (row.faq ? JSON.parse(row.faq) : []),
-        reviews: Array.isArray(row.reviews) ? row.reviews : (row.reviews ? JSON.parse(row.reviews) : []),
-        category: Array.isArray(row.category) ? row.category : (row.category ? JSON.parse(row.category) : []),
+        whyVisit: this.safeParseJson(row.why_visit, []),
+        itinerary: this.safeParseJson(row.itinerary, []),
+        included: this.safeParseJson(row.included, []),
+        notIncluded: this.safeParseJson(row.not_included, []),
+        notes: this.safeParseJson(row.notes, []),
+        faq: this.safeParseJson(row.faq, []),
+        reviews: this.safeParseJson(row.reviews, []),
+        category: this.safeParseJson(row.category, []),
         seatsLeft: row.seats_left !== null && row.seats_left !== undefined ? parseInt(row.seats_left) : null,
         recommendedTrips: (() => {
           try {
@@ -411,6 +443,7 @@ class Trip {
         isPopular: Boolean(row.is_popular),
         slug: row.slug,
         status: row.status,
+        enquiryFormType: row.enquiry_form_type === 'form2' ? 'form2' : 'form1',
         createdBy: row.created_by,
         createdAt: row.created_at,
         updatedAt: row.updated_at,

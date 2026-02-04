@@ -9,12 +9,14 @@ const router = express.Router();
 router.get('/', async (req, res) => {
   try {
     const { category, featured, search, limit, offset } = req.query;
-    
+    // Only filter by featured when explicitly requested (true/false); otherwise show all published
+    const featuredFilter = featured === 'true' ? true : featured === 'false' ? false : undefined;
+
     const blogs = await Blog.findAll({
       status: 'published',
-      category,
-      featured: featured === 'true',
-      search,
+      category: category || undefined,
+      featured: featuredFilter,
+      search: search || undefined,
       limit: limit ? parseInt(limit) : undefined,
       offset: offset ? parseInt(offset) : undefined,
       includeDraft: false,

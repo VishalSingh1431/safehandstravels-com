@@ -1,12 +1,17 @@
 import { useState, useEffect } from 'react'
-import { driversAPI, carBookingSettingsAPI } from '../config/api'
+import { Loader2 } from 'lucide-react'
+import { driversAPI, carBookingSettingsAPI, enquiriesAPI } from '../config/api'
 import { useToast } from '../contexts/ToastContext'
+import PhoneInputWithCountry from '../components/PhoneInputWithCountry'
+import { isValidPhone } from '../utils/countryCodes'
 
 function CarBooking() {
   const toast = useToast()
   const [drivers, setDrivers] = useState([])
   const [features, setFeatures] = useState([])
   const [loading, setLoading] = useState(true)
+  const [bookingSubmitting, setBookingSubmitting] = useState(false)
+  const [connectSubmitting, setConnectSubmitting] = useState(false)
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -58,18 +63,50 @@ function CarBooking() {
     }
   }
 
-  const handleBookingSubmit = (e) => {
+  const handleBookingSubmit = async (e) => {
     e.preventDefault()
-    // Handle form submission
-    console.log('Booking form submitted:', formData)
-    // You can add API call here
+    if (!formData.firstName?.trim() || !formData.lastName?.trim() || !formData.email?.trim() || !isValidPhone(formData.mobileNumber)) {
+      toast.error('Please fill all required fields with a valid phone number (with country code).')
+      return
+    }
+    setBookingSubmitting(true)
+    try {
+      await enquiriesAPI.createEnquiry({
+        name: `${formData.firstName.trim()} ${formData.lastName.trim()}`,
+        email: formData.email.trim(),
+        phone: formData.mobileNumber.trim(),
+        message: `Car Rental Enquiry - From: ${formData.fromDate || '—'}, To: ${formData.toDate || '—'}, Adults: ${formData.numberOfAdults || '—'}, Children: ${formData.numberOfChildren || '—'}, 5-seater driver: ${formData.fivedriver ? 'Yes' : 'No'}`,
+      })
+      toast.success('Thank you! We will get back to you with driver availability.')
+      setFormData({ firstName: '', lastName: '', mobileNumber: '', email: '', fromDate: '', toDate: '', numberOfAdults: '', numberOfChildren: '', fivedriver: false })
+    } catch (err) {
+      toast.error(err.message || 'Failed to submit. Please try again.')
+    } finally {
+      setBookingSubmitting(false)
+    }
   }
 
-  const handleConnectSubmit = (e) => {
+  const handleConnectSubmit = async (e) => {
     e.preventDefault()
-    // Handle form submission
-    console.log('Connect form submitted:', connectFormData)
-    // You can add API call here
+    if (!connectFormData.firstName?.trim() || !connectFormData.lastName?.trim() || !connectFormData.email?.trim() || !isValidPhone(connectFormData.phoneNumber)) {
+      toast.error('Please fill all required fields with a valid phone number (with country code).')
+      return
+    }
+    setConnectSubmitting(true)
+    try {
+      await enquiriesAPI.createEnquiry({
+        name: `${connectFormData.firstName.trim()} ${connectFormData.lastName.trim()}`,
+        email: connectFormData.email.trim(),
+        phone: connectFormData.phoneNumber.trim(),
+        message: 'Car Rentals – Connect with us enquiry',
+      })
+      toast.success('Thank you! We will contact you soon.')
+      setConnectFormData({ firstName: '', lastName: '', email: '', phoneNumber: '' })
+    } catch (err) {
+      toast.error(err.message || 'Failed to send. Please try again.')
+    } finally {
+      setConnectSubmitting(false)
+    }
   }
 
   const handleInputChange = (e, formType) => {
@@ -164,14 +201,13 @@ function CarBooking() {
                 <label htmlFor="mobileNumber" className="block text-sm font-semibold text-gray-700 mb-2">
                   Mobile Number *
                 </label>
-                <input
-                  type="tel"
+                <PhoneInputWithCountry
                   id="mobileNumber"
                   name="mobileNumber"
                   value={formData.mobileNumber}
-                  onChange={(e) => handleInputChange(e, 'booking')}
-                  placeholder="+1 212-695-1962"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#017233] focus:border-transparent outline-none transition-all"
+                  onChange={(v) => setFormData(prev => ({ ...prev, mobileNumber: v }))}
+                  placeholder="Enter mobile number"
+                  className="rounded-lg"
                   required
                 />
               </div>
@@ -268,9 +304,10 @@ function CarBooking() {
               </div>
               <button
                 type="submit"
-                className="w-full bg-[#017233] text-white py-3 px-6 rounded-lg font-semibold text-lg hover:bg-[#015a28] transition-colors duration-300 shadow-lg hover:shadow-xl"
+                disabled={bookingSubmitting}
+                className="w-full bg-[#017233] text-white py-3 px-6 rounded-lg font-semibold text-lg hover:bg-[#015a28] transition-colors duration-300 shadow-lg hover:shadow-xl disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                Send Enquiry
+                {bookingSubmitting ? <><Loader2 className="w-5 h-5 animate-spin" /> Sending...</> : 'Send Enquiry'}
               </button>
             </form>
           </div>
@@ -445,22 +482,24 @@ function CarBooking() {
                   <label htmlFor="connectPhone" className="block text-sm font-semibold text-white mb-2">
                     Phone Number *
                   </label>
-                  <input
-                    type="tel"
+                  <PhoneInputWithCountry
                     id="connectPhone"
                     name="phoneNumber"
                     value={connectFormData.phoneNumber}
-                    onChange={(e) => handleInputChange(e, 'connect')}
-                    className="w-full px-4 py-3 border border-white/30 rounded-lg bg-white/10 backdrop-blur-sm text-white placeholder-white/70 focus:ring-2 focus:ring-white focus:border-transparent outline-none transition-all"
+                    onChange={(v) => setConnectFormData(prev => ({ ...prev, phoneNumber: v }))}
                     placeholder="Enter your phone number"
+                    className="rounded-lg border-white/30 bg-white/10 backdrop-blur-sm focus-within:ring-white focus-within:border-white"
+                    inputClassName="bg-transparent text-white placeholder-white/70"
+                    selectClassName="bg-white/10 text-white border-white/30 [&>option]:bg-gray-800"
                     required
                   />
                 </div>
                 <button
                   type="submit"
-                  className="w-full bg-white text-teal-700 py-3 px-6 rounded-lg font-semibold text-lg hover:bg-white/90 transition-colors duration-300 shadow-lg"
+                  disabled={connectSubmitting}
+                  className="w-full bg-white text-teal-700 py-3 px-6 rounded-lg font-semibold text-lg hover:bg-white/90 transition-colors duration-300 shadow-lg disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  Send Message
+                  {connectSubmitting ? <><Loader2 className="w-5 h-5 animate-spin" /> Sending...</> : 'Send Message'}
                 </button>
               </form>
             </div>

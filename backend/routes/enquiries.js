@@ -8,52 +8,62 @@ const router = express.Router();
 // Create enquiry (Public - no auth required)
 router.post('/', async (req, res) => {
   try {
-    const { tripId, tripTitle, tripLocation, tripPrice, selectedMonth, numberOfTravelers, name, email, phone, message } = req.body;
+    const { tripId, tripTitle, tripLocation, tripPrice, selectedMonth, numberOfTravelers, name, email, phone, message, enquiryType, numPeople, destination, monthOfTravel } = req.body;
 
-    // Validation
-    if (!name || !email) {
-      return res.status(400).json({ error: 'Name and email are required' });
+    const isForm2 = enquiryType === 'form2';
+
+    // Validation: email always required
+    if (!email || !email.includes('@')) {
+      return res.status(400).json({ error: 'Valid email is required' });
+    }
+    if (!isForm2 && !name) {
+      return res.status(400).json({ error: 'Name is required' });
+    }
+    // Phone: required and must have at least 10 digits
+    const phoneDigits = (phone && typeof phone === 'string' ? phone.replace(/\D/g, '') : '') || (phone && String(phone).replace(/\D/g, ''));
+    if (!phone || phoneDigits.length < 10 || phoneDigits.length > 15) {
+      return res.status(400).json({ error: 'Valid phone number with country code is required (10–15 digits)' });
     }
 
-    if (!email.includes('@')) {
-      return res.status(400).json({ error: 'Invalid email format' });
-    }
-
-    // Create enquiry
+    // Create enquiry (model handles form2 name placeholder and destination/enquiry_type)
     const enquiry = await Enquiry.create({
       tripId,
       tripTitle,
       tripLocation,
       tripPrice,
-      selectedMonth,
-      numberOfTravelers: numberOfTravelers || 1,
-      name,
+      selectedMonth: selectedMonth || monthOfTravel,
+      numberOfTravelers: numberOfTravelers ?? numPeople ?? 1,
+      name: isForm2 ? undefined : name,
       email,
       phone,
-      message,
+      message: isForm2 ? null : message,
+      enquiryType: isForm2 ? 'form2' : 'form1',
+      destination: isForm2 ? destination : null,
+      monthOfTravel: isForm2 ? monthOfTravel : null,
     });
 
-    // Send email to admin
+    let emailSent = false;
     try {
       await sendTripEnquiryEmail({
         tripTitle,
         tripLocation,
         tripPrice,
-        selectedMonth,
-        numberOfTravelers: numberOfTravelers || 1,
-        name,
+        selectedMonth: selectedMonth || monthOfTravel,
+        numberOfTravelers: numberOfTravelers ?? numPeople ?? 1,
+        name: name || (isForm2 ? 'Trip Enquiry' : ''),
         email,
         phone,
-        message,
+        message: isForm2 ? `Destination: ${destination || '—'}. Month: ${monthOfTravel || '—'}.` : message,
       });
-      console.log('Enquiry email sent successfully');
+      emailSent = true;
     } catch (emailError) {
       console.error('Failed to send enquiry email:', emailError);
-      // Don't fail the request if email fails, but log it
     }
 
     res.status(201).json({
       message: 'Enquiry submitted successfully',
+      emailSent,
+      ...(emailSent ? {} : { warning: 'Enquiry saved but notification email could not be sent. Please check the enquiry in admin.' }),
       enquiry: {
         id: enquiry.id,
         tripTitle: enquiry.tripTitle,

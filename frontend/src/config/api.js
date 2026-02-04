@@ -28,12 +28,14 @@ export const apiCall = async (endpoint, options = {}) => {
 
     if (!response.ok) {
       // If there's a help message, include it in the error
-      const errorMessage = data.help 
+      let errorMessage = data.help
         ? `${data.error}\n\n${data.help}`
         : data.error || 'Request failed';
+      if (data.details) errorMessage += ` (${data.details})`;
       const error = new Error(errorMessage);
       error.help = data.help;
       error.code = data.code;
+      error.details = data.details;
       throw error;
     }
 
@@ -799,20 +801,16 @@ export const blogsAPI = {
     if (search && search.trim()) params.append('search', search);
     if (limit) params.append('limit', limit);
     if (offset) params.append('offset', offset);
-    // Add cache busting
     params.append('_', Date.now());
     const queryString = params.toString();
     const url = `/blogs/admin?${queryString}`;
-    console.log('Calling getAllBlogsAdmin with URL:', url);
-    const response = await apiCall(url, {
+    return apiCall(url, {
       method: 'GET',
       headers: {
         'Cache-Control': 'no-cache',
         'Pragma': 'no-cache',
       },
     });
-    console.log('getAllBlogsAdmin response:', response);
-    return response;
   },
 
   getBlogById: async (id) => {

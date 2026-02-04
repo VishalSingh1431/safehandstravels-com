@@ -4,6 +4,7 @@ import { Plus, Edit2, Trash2, Loader2, X, Save, Image as ImageIcon, Search, User
 import { teamsAPI, uploadAPI } from '../config/api';
 import { useToast } from '../contexts/ToastContext';
 import { authAPI } from '../config/api';
+import PhoneInputWithCountry from '../components/PhoneInputWithCountry';
 
 const AdminTeam = () => {
   const navigate = useNavigate();
@@ -313,14 +314,12 @@ const AdminTeam = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Phone <span className="text-red-500">*</span></label>
-                    <input
-                      type="tel"
-                      name="phone"
+                    <PhoneInputWithCountry
                       value={formData.phone}
-                      onChange={handleInputChange}
+                      onChange={(v) => handleInputChange({ target: { name: 'phone', value: v } })}
                       required
-                      placeholder="+91 1234567890"
-                      className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                      placeholder="Enter phone number"
+                      className="rounded-lg border-gray-200 focus-within:ring-blue-500 focus-within:border-blue-500"
                     />
                   </div>
                 </div>

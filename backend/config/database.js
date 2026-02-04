@@ -373,6 +373,14 @@ export const initializeDatabase = async () => {
       // Column might already exist, ignore
     }
 
+    // Add enquiry_form_type to trips (form1 | form2 - which enquiry form to show on trip page)
+    try {
+      await pool.query(`ALTER TABLE trips ADD COLUMN enquiry_form_type VARCHAR(20) DEFAULT 'form1'`);
+      console.log('✅ Added enquiry_form_type column to trips table');
+    } catch (e) {
+      // Column might already exist, ignore
+    }
+
     // Create certificates table if it doesn't exist
     await pool.query(`
       CREATE TABLE IF NOT EXISTS certificates (
@@ -558,6 +566,14 @@ export const initializeDatabase = async () => {
         FOREIGN KEY (trip_id) REFERENCES trips(id) ON DELETE SET NULL
       )
     `);
+
+    // Add destination and enquiry_type to enquiries if not exist (for Form 2)
+    try {
+      await pool.query(`ALTER TABLE enquiries ADD COLUMN destination VARCHAR(255) DEFAULT NULL`);
+    } catch (e) { /* ignore */ }
+    try {
+      await pool.query(`ALTER TABLE enquiries ADD COLUMN enquiry_type VARCHAR(20) DEFAULT 'form1'`);
+    } catch (e) { /* ignore */ }
 
     // Create indexes for enquiries
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_enquiries_trip_id ON enquiries(trip_id)`);

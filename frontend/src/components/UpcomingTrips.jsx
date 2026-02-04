@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { tripsAPI, locationFiltersAPI } from '../config/api'
 import TripCard from './card/TripCard'
 import { Loader2 } from 'lucide-react'
+import { getLocationString, tripMatchesSearch } from '../utils/tripUtils'
 
 function UpcomingTrips({ searchQuery = '' }) {
   const [activeFilter, setActiveFilter] = useState('All')
@@ -67,21 +68,15 @@ function UpcomingTrips({ searchQuery = '' }) {
     // Apply location filter (case-insensitive, partial match)
     if (activeFilter !== 'All') {
       filtered = filtered.filter((trip) => {
-        const tripLocation = (trip.location || '').toLowerCase().trim()
+        const tripLocation = getLocationString(trip.location).toLowerCase().trim()
         const filterLocation = activeFilter.toLowerCase().trim()
         return tripLocation === filterLocation || tripLocation.includes(filterLocation)
       })
     }
 
-    // Apply search query filter
+    // Apply search query filter – match if word appears anywhere in the trip
     if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase()
-      filtered = filtered.filter((trip) => 
-        trip.title?.toLowerCase().includes(query) ||
-        trip.location?.toLowerCase().includes(query) ||
-        trip.subtitle?.toLowerCase().includes(query) ||
-        trip.intro?.toLowerCase().includes(query)
-      )
+      filtered = filtered.filter((trip) => tripMatchesSearch(trip, searchQuery))
     }
 
     // Sort trips: Popular trips first (by isPopular), then by price (low to high)

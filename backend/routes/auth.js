@@ -174,7 +174,14 @@ router.post('/send-otp', async (req, res) => {
     }
   } catch (error) {
     console.error('Error sending OTP:', error);
-    res.status(500).json({ error: 'Failed to send OTP' });
+    const isDev = process.env.NODE_ENV !== 'production';
+    const message = isDev && error.message
+      ? `Failed to send OTP: ${error.message}`
+      : 'Failed to send OTP. Please try again or use Google sign-in.';
+    res.status(500).json({
+      error: message,
+      ...(isDev && { details: error.message }),
+    });
   }
 });
 

@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { enquiriesAPI } from '../config/api'
 import { useToast } from '../contexts/ToastContext'
+import PhoneInputWithCountry from './PhoneInputWithCountry'
+import { isValidPhone } from '../utils/countryCodes'
 
 function ContactUs() {
   const toast = useToast()
@@ -37,10 +39,8 @@ function ContactUs() {
       return
     }
 
-    // Phone validation
-    const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/
-    if (!phoneRegex.test(formData.phone.trim())) {
-      toast.error('Please enter a valid phone number')
+    if (!isValidPhone(formData.phone)) {
+      toast.error('Please enter a valid phone number (with country code)')
       return
     }
 
@@ -141,15 +141,13 @@ function ContactUs() {
                     <label htmlFor="phone" className="block text-sm font-semibold text-gray-700 mb-2">
                       Phone Number <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      type="tel"
+                    <PhoneInputWithCountry
                       id="phone"
-                      name="phone"
                       value={formData.phone}
-                      onChange={handleChange}
+                      onChange={(v) => setFormData(prev => ({ ...prev, phone: v }))}
                       required
-                      className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-[#017233] focus:ring-2 focus:ring-[#017233]/20 outline-none transition-all duration-300 bg-white"
                       placeholder="Enter your phone number"
+                      className="rounded-xl"
                     />
                   </div>
 

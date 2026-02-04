@@ -4,6 +4,7 @@ import { Loader2, Search, Star, StarOff, Plus, X, Save, Tag } from 'lucide-react
 import { tripsAPI, locationFiltersAPI } from '../config/api';
 import { useToast } from '../contexts/ToastContext';
 import { authAPI } from '../config/api';
+import { getLocationString, tripMatchesSearch } from '../utils/tripUtils';
 
 const AdminPopularTrips = () => {
   const navigate = useNavigate();
@@ -137,10 +138,7 @@ const AdminPopularTrips = () => {
     }
   };
 
-  const filteredTrips = trips.filter(trip =>
-    trip.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    trip.location?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredTrips = trips.filter(trip => tripMatchesSearch(trip, searchTerm));
 
   const popularTrips = filteredTrips.filter(trip => trip.isPopular);
   const otherTrips = filteredTrips.filter(trip => !trip.isPopular);
@@ -312,7 +310,7 @@ const AdminPopularTrips = () => {
                           />
                           <div className="flex-1">
                             <h3 className="font-semibold text-gray-900">{trip.title}</h3>
-                            <p className="text-sm text-gray-600">{trip.location}</p>
+                            <p className="text-sm text-gray-600">{getLocationString(trip.location)}</p>
                             <p className="text-sm font-medium text-[#017233] mt-1">{trip.price}</p>
                           </div>
                         </div>
@@ -361,7 +359,7 @@ const AdminPopularTrips = () => {
                           />
                           <div className="flex-1">
                             <h3 className="font-semibold text-gray-900">{trip.title}</h3>
-                            <p className="text-sm text-gray-600">{trip.location}</p>
+                            <p className="text-sm text-gray-600">{getLocationString(trip.location)}</p>
                             <p className="text-sm font-medium text-[#017233] mt-1">{trip.price}</p>
                           </div>
                         </div>

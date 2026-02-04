@@ -1,11 +1,14 @@
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useState, useEffect, useCallback } from 'react'
 import { tripsAPI, enquiriesAPI, productPageSettingsAPI, blogsAPI } from '../config/api'
-import { Loader2, Calendar, Users, Mail, Phone, MessageSquare, Send, CheckCircle, X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Loader2, Calendar, Users, Mail, Phone, MessageSquare, Send, CheckCircle, X, ChevronLeft, ChevronRight, FileText } from 'lucide-react'
 import { useToast } from '../contexts/ToastContext'
 import SEO from '../components/SEO'
 import { getTripSchema, getBreadcrumbSchema } from '../utils/structuredData'
 import TripCard from '../components/card/TripCard'
+import PhoneInputWithCountry from '../components/PhoneInputWithCountry'
+import { isValidPhone } from '../utils/countryCodes'
+import { getLocationString } from '../utils/tripUtils'
 
 function ProductPage() {
   const { id } = useParams()
@@ -25,6 +28,13 @@ function ProductPage() {
     phone: '',
     message: '',
     selectedMonth: ''
+  })
+  const [form2Data, setForm2Data] = useState({
+    numPeople: 1,
+    email: '',
+    phone: '',
+    destination: '',
+    monthOfTravel: ''
   })
   const [errors, setErrors] = useState({})
   const [submitted, setSubmitted] = useState(false)
@@ -505,9 +515,10 @@ function ProductPage() {
     }
 
     // Default content for other locations
+    const locationStr = getLocationString(trip.location)
     const defaultContent = {
       subtitle: `${trip.duration} Adventure Trip`,
-      intro: `${trip.location} offers an incredible backpacking experience with stunning natural beauty, rich culture, and unique adventures. This carefully curated trip takes you through the best that this destination has to offer, ensuring an unforgettable journey filled with memories.`,
+      intro: `${locationStr} offers an incredible backpacking experience with stunning natural beauty, rich culture, and unique adventures. This carefully curated trip takes you through the best that this destination has to offer, ensuring an unforgettable journey filled with memories.`,
       video: trip.video || '/video/Slider.mp4',
       gallery: trip.gallery || [
         trip.image,
@@ -626,16 +637,18 @@ function ProductPage() {
       }
     }
 
-    // Fallback to location-based content for backward compatibility
-    return contentMap[tripData.location] || defaultContent
+    // Fallback to location-based content for backward compatibility (location may be string or array)
+    const locationKey = Array.isArray(tripData.location) ? tripData.location[0] : (tripData.location || '')
+    return contentMap[locationKey] || defaultContent
   }
 
   const content = getTripContent(trip)
 
-  // SEO metadata
-  const tripTitle = trip ? `${trip.title} - ${trip.location} | Safe Hands Travels` : 'Trip Details | Safe Hands Travels'
+  // SEO metadata (location may be string or array)
+  const locationDisplay = trip ? getLocationString(trip.location) : ''
+  const tripTitle = trip ? `${trip.title} - ${locationDisplay} | Safe Hands Travels` : 'Trip Details | Safe Hands Travels'
   const tripDescription = trip 
-    ? (trip.intro || content.intro || `Experience ${trip.title} in ${trip.location}. ${trip.duration} adventure trip with Safe Hands Travels.`)
+    ? (trip.intro || content.intro || `Experience ${trip.title} in ${locationDisplay}. ${trip.duration} adventure trip with Safe Hands Travels.`)
     : 'Discover amazing travel experiences with Safe Hands Travels'
   const tripImage = trip ? (trip.imageUrl || trip.image || '/images/Logo.webp') : '/images/Logo.webp'
   const tripUrl = trip ? `/trip/${trip.id}` : ''
@@ -666,15 +679,68 @@ function ProductPage() {
     
     if (!enquiryData.phone.trim()) {
       newErrors.phone = 'Phone number is required';
-    } else {
-      const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/
-      if (!phoneRegex.test(enquiryData.phone.trim())) {
-        newErrors.phone = 'Please enter a valid phone number';
-      }
+    } else if (!isValidPhone(enquiryData.phone)) {
+      newErrors.phone = 'Please enter a valid phone number (with country code)';
     }
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const validateForm2 = () => {
+    const newErrors = {};
+    if (!form2Data.email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form2Data.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+    if (!form2Data.phone.trim()) {
+      newErrors.phone = 'Phone number is required';
+    } else if (!isValidPhone(form2Data.phone)) {
+      newErrors.phone = 'Please enter a valid phone number (with country code)';
+    }
+    if (!form2Data.destination.trim()) {
+      newErrors.destination = 'Destination is required';
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleForm2Submit = async (e) => {
+    e.preventDefault();
+    if (!validateForm2()) return;
+    try {
+      setSubmitting(true);
+      const monthName = form2Data.monthOfTravel
+        ? new Date(form2Data.monthOfTravel + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+        : 'Not specified';
+      await enquiriesAPI.createEnquiry({
+        tripId: trip.id,
+        tripTitle: trip.title,
+        tripLocation: getLocationString(trip.location),
+        tripPrice: trip.price,
+        enquiryType: 'form2',
+        numPeople: form2Data.numPeople,
+        email: form2Data.email.trim(),
+        phone: form2Data.phone.trim(),
+        destination: form2Data.destination.trim(),
+        monthOfTravel: form2Data.monthOfTravel || null,
+        selectedMonth: monthName,
+      });
+      setSubmitted(true);
+      toast.success('Thank you! Your enquiry has been submitted successfully. We\'ll get back to you soon.');
+      setTimeout(() => {
+        setShowEnquiryForm(false);
+        setSubmitted(false);
+        setForm2Data({ numPeople: 1, email: '', phone: '', destination: '', monthOfTravel: '' });
+        navigate('/');
+      }, 2000);
+    } catch (error) {
+      console.error('Error submitting enquiry:', error);
+      toast.error(error.message || 'Failed to submit enquiry. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleEnquirySubmit = async (e) => {
@@ -694,7 +760,7 @@ function ProductPage() {
       await enquiriesAPI.createEnquiry({
         tripId: trip.id,
         tripTitle: trip.title,
-        tripLocation: trip.location,
+        tripLocation: getLocationString(trip.location),
         tripPrice: trip.price,
         selectedMonth: monthName,
         numberOfTravelers: numTravelers,
@@ -742,7 +808,7 @@ function ProductPage() {
           <SEO
             title={tripTitle}
             description={tripDescription}
-            keywords={`${trip.title}, ${trip.location}, travel, trip, adventure, ${trip.duration}, Safe Hands Travels, India travel`}
+            keywords={`${trip.title}, ${getLocationString(trip.location)}, travel, trip, adventure, ${trip.duration}, Safe Hands Travels, India travel`}
             image={tripImage}
             url={tripUrl}
             type="article"
@@ -804,7 +870,7 @@ function ProductPage() {
                             {trip.title}
                           </h1>
                           <p className="text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl font-light drop-shadow-lg opacity-95">
-                            {trip.location} {content.subtitle}
+                            {getLocationString(trip.location)} {content.subtitle}
                           </p>
                         </div>
                       </div>
@@ -857,7 +923,7 @@ function ProductPage() {
                 ⏱️ {trip.duration}
               </span>
               <span className="bg-white backdrop-blur-sm px-3 sm:px-4 py-1.5 sm:py-2 rounded-full shadow-md border border-gray-200 text-gray-800 font-medium">
-                📍 {trip.location}
+                📍 {getLocationString(trip.location)}
               </span>
             </div>
             
@@ -906,12 +972,14 @@ function ProductPage() {
               <div className="space-y-3">
                 {content.itinerary.map((day, index) => {
                   const isExpanded = pageSettings?.displaySettings?.autoExpandItinerary ? true : expandedDay === index
-                  // Split activities into points (by periods, then filter empty strings)
-                  const activitiesPoints = typeof day.activities === 'string' 
+                  // Use bullet points if set from admin; else fall back to splitting activities by sentence
+                  const activitiesPoints = Array.isArray(day.bullets) && day.bullets.length > 0 && day.bullets.some(b => (b || '').trim())
+                    ? day.bullets.filter(b => (b || '').trim()).map(b => b.trim())
+                    : typeof day.activities === 'string'
                     ? day.activities.split(/[.!?]+/).filter(point => point.trim().length > 0).map(p => p.trim())
-                    : Array.isArray(day.activities) 
-                    ? day.activities 
-                    : [day.activities]
+                    : Array.isArray(day.activities)
+                    ? day.activities.filter(Boolean)
+                    : [day.activities].filter(Boolean)
                   
                   return (
                     <div 
@@ -1013,15 +1081,17 @@ function ProductPage() {
                   {pageSettings?.tabs?.find(t => t.id === 'notes')?.enabled && (
                     <section className="bg-gradient-to-br from-[#017233]/5 via-white to-[#01994d]/5 border-l-4 border-[#017233] rounded-2xl shadow-lg p-8 md:p-10">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#017233] to-[#01994d] flex items-center justify-center text-white text-xl font-bold shadow-lg">
-                  ⚠
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#017233] to-[#01994d] flex items-center justify-center text-white shadow-lg">
+                  <FileText className="w-6 h-6" strokeWidth={2} />
                 </div>
                 <h2 className="text-3xl md:text-4xl font-bold text-gray-900">Notes / Important Information</h2>
               </div>
               <ul className="space-y-4">
                 {content.notes.map((note, index) => (
                   <li key={index} className="flex items-start gap-4 bg-white/80 backdrop-blur-sm rounded-lg p-4 group hover:bg-white transition-colors border border-[#017233]/10">
-                    <span className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-[#017233] to-[#01994d] text-white text-sm flex items-center justify-center mt-0.5 group-hover:scale-110 transition-transform font-bold">⚠</span>
+                    <span className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-[#017233] to-[#01994d] text-white flex items-center justify-center mt-0.5 group-hover:scale-110 transition-transform">
+                      <FileText className="w-4 h-4" strokeWidth={2} />
+                    </span>
                     <span className="text-gray-800 leading-relaxed text-base">{note}</span>
                   </li>
                     ))}
@@ -1289,7 +1359,9 @@ function ProductPage() {
                               if (!isNaN(date.getTime())) {
                                 return date.toISOString().split('T')[0]
                               }
-                            } catch (e) {}
+                            } catch (_) {
+                              // Invalid date string in settings; fall back to today
+                            }
                           }
                           // Fallback to today
                           return new Date().toISOString().split('T')[0]
@@ -1343,7 +1415,9 @@ function ProductPage() {
                                 if (!isNaN(d.getTime())) {
                                   dateValue = d.toISOString().split('T')[0]
                                 }
-                              } catch (e) {}
+                              } catch (_) {
+                                // Keep original dateValue if parse fails
+                              }
                             }
                             return (
                               <button
@@ -1605,6 +1679,52 @@ function ProductPage() {
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">Enquiry Submitted!</h3>
                 <p className="text-gray-600">We'll get back to you soon.</p>
               </div>
+            ) : trip?.enquiryFormType === 'form2' ? (
+              <form onSubmit={handleForm2Submit} className="p-6 space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Number of people travelling <span className="text-red-500">*</span></label>
+                  <div className="flex items-center gap-4">
+                    <button type="button" onClick={() => setForm2Data(prev => ({ ...prev, numPeople: Math.max(1, prev.numPeople - 1) }))} className="w-10 h-10 rounded-lg border-2 border-gray-300 flex items-center justify-center hover:border-[#017233] hover:bg-[#017233] hover:text-white transition-colors">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" /></svg>
+                    </button>
+                    <span className="text-2xl font-bold text-gray-900 w-12 text-center">{form2Data.numPeople}</span>
+                    <button type="button" onClick={() => setForm2Data(prev => ({ ...prev, numPeople: Math.min(20, prev.numPeople + 1) }))} className="w-10 h-10 rounded-lg border-2 border-gray-300 flex items-center justify-center hover:border-[#017233] hover:bg-[#017233] hover:text-white transition-colors">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Email <span className="text-red-500">*</span></label>
+                  <input type="email" name="email" value={form2Data.email} onChange={(e) => { setForm2Data(prev => ({ ...prev, email: e.target.value })); if (errors.email) setErrors(prev => ({ ...prev, email: '' })); }} className={`w-full px-4 py-2 border-2 rounded-lg focus:ring-2 focus:ring-[#017233] focus:border-[#017233] outline-none ${errors.email ? 'border-red-500' : 'border-gray-200'}`} placeholder="Enter your email" />
+                  {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Phone Number <span className="text-red-500">*</span></label>
+                  <PhoneInputWithCountry
+                    value={form2Data.phone}
+                    onChange={(v) => { setForm2Data(prev => ({ ...prev, phone: v })); if (errors.phone) setErrors(prev => ({ ...prev, phone: '' })); }}
+                    error={!!errors.phone}
+                    placeholder="Enter phone number"
+                    className="rounded-lg"
+                  />
+                  {errors.phone && <p className="mt-1 text-sm text-red-500">{errors.phone}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Destination <span className="text-red-500">*</span></label>
+                  <input type="text" name="destination" value={form2Data.destination} onChange={(e) => { setForm2Data(prev => ({ ...prev, destination: e.target.value })); if (errors.destination) setErrors(prev => ({ ...prev, destination: '' })); }} className={`w-full px-4 py-2 border-2 rounded-lg focus:ring-2 focus:ring-[#017233] focus:border-[#017233] outline-none ${errors.destination ? 'border-red-500' : 'border-gray-200'}`} placeholder="e.g. Meghalaya, Spiti Valley" />
+                  {errors.destination && <p className="mt-1 text-sm text-red-500">{errors.destination}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Month of travel</label>
+                  <input type="month" name="monthOfTravel" value={form2Data.monthOfTravel} onChange={(e) => setForm2Data(prev => ({ ...prev, monthOfTravel: e.target.value }))} className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#017233] focus:border-[#017233] outline-none" />
+                </div>
+                <div className="flex gap-4 pt-4">
+                  <button type="submit" disabled={submitting} className="flex-1 bg-gradient-to-br from-[#017233] to-[#01994d] text-white px-6 py-3 rounded-xl font-bold hover:shadow-xl transition-all duration-300 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                    {submitting ? <><Loader2 className="w-5 h-5 animate-spin" /> Submitting...</> : <><Send className="w-5 h-5" /> Submit Enquiry</>}
+                  </button>
+                  <button type="button" onClick={() => { setShowEnquiryForm(false); setErrors({}); }} className="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-300 transition-all">Cancel</button>
+                </div>
+              </form>
             ) : (
               <form onSubmit={handleEnquirySubmit} className="p-6 space-y-4">
                 <div>
@@ -1647,16 +1767,12 @@ function ProductPage() {
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Phone Number <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="tel"
-                    name="phone"
+                  <PhoneInputWithCountry
                     value={enquiryData.phone}
-                    onChange={handleEnquiryInputChange}
-                    required
-                    className={`w-full px-4 py-2 border-2 rounded-lg focus:ring-2 focus:ring-[#017233] focus:border-[#017233] outline-none ${
-                      errors.phone ? 'border-red-500' : 'border-gray-200'
-                    }`}
-                    placeholder="Enter your phone number"
+                    onChange={(v) => handleEnquiryInputChange({ target: { name: 'phone', value: v } })}
+                    error={!!errors.phone}
+                    placeholder="Enter phone number"
+                    className="rounded-lg"
                   />
                   {errors.phone && <p className="mt-1 text-sm text-red-500">{errors.phone}</p>}
                 </div>

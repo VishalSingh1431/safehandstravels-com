@@ -14,7 +14,7 @@ const PartnerLogo = ({ partner }) => {
         <img
           src={partner.logoUrl}
           alt={partner.name}
-          className="h-full w-auto max-w-[180px] md:max-w-[220px] object-contain opacity-70 hover:opacity-100 transition-opacity duration-300 filter grayscale hover:grayscale-0"
+          className="h-full w-auto max-w-[180px] md:max-w-[220px] object-contain opacity-90 hover:opacity-100 transition-opacity duration-300"
           onError={() => setImageError(true)}
           loading="lazy"
         />
@@ -32,19 +32,15 @@ const PartnerLogo = ({ partner }) => {
         href={partner.link}
         target="_blank"
         rel="noopener noreferrer"
-        className={`${containerClasses} cursor-pointer hover:scale-105 transition-transform duration-300 block relative z-10 pointer-events-auto`}
+        style={{ cursor: 'pointer' }}
+        className={`${containerClasses} hover:scale-105 transition-transform duration-300 block relative z-10 pointer-events-auto min-w-[140px] md:min-w-[180px] [&_img]:cursor-pointer`}
         aria-label={`Visit ${partner.name}`}
-        onClick={(e) => {
-          e.stopPropagation()
-          e.preventDefault()
-          window.open(partner.link, '_blank', 'noopener,noreferrer')
-        }}
       >
         {logoContent}
       </a>
     )
   }
-  
+
   return (
     <div className={containerClasses}>
       {logoContent}
@@ -102,19 +98,21 @@ function BrandingPartners() {
   return (
     <section className="w-full bg-white py-3 md:py-4 border-b border-gray-100">
       <div className="mx-auto w-full px-4 sm:px-6 lg:px-8">
-        <div className="relative overflow-hidden">
+        <div className="relative overflow-hidden partners-section">
           {/* Infinite Scrolling Logo Container */}
           <div className="flex animate-scroll items-center pointer-events-auto">
             {duplicatedPartners.map((partner, index) => (
               <div
                 key={`${partner.id}-${index}`}
                 className="flex-shrink-0 relative z-10 pointer-events-auto"
+                style={{ cursor: 'pointer' }}
               >
                 <PartnerLogo partner={partner} />
               </div>
             ))}
           </div>
         </div>
+        <style>{`.partners-section a { cursor: pointer !important; } .partners-section a img { cursor: pointer !important; }`}</style>
       </div>
     </section>
   )

@@ -46,11 +46,11 @@ function BannerSlider() {
   }
 
   const goToPrevious = () => {
-    setCurrentIndex((prev) => (prev - 1 + bannerImages.length) % bannerImages.length)
+    setCurrentIndex((prev) => (prev - 1 + banners.length) % banners.length)
   }
 
   const goToNext = () => {
-    setCurrentIndex((prev) => (prev + 1) % bannerImages.length)
+    setCurrentIndex((prev) => (prev + 1) % banners.length)
   }
 
   if (loading) {

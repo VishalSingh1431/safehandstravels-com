@@ -55,7 +55,7 @@ const AdminTrips = () => {
     intro: '',
     category: [],
     whyVisit: [''],
-    itinerary: [{ day: 'Day 1', title: '', activities: '' }],
+    itinerary: [{ day: 'Day 1', title: '', activities: '', bullets: [''] }],
     included: [''],
     notIncluded: [''],
     notes: [''],
@@ -66,6 +66,7 @@ const AdminTrips = () => {
     heroImagesPublicIds: [],
     recommendedTrips: [],
     status: 'active',
+    enquiryFormType: 'form1',
   });
 
   const categoryOptions = ['Spiritual', 'Cultural', 'Heritage', 'Wellness', 'Wildlife', 'Adventure'];
@@ -149,73 +150,25 @@ const AdminTrips = () => {
       
       // Also fetch blogs for related blogs dropdown
       try {
-        console.log('Fetching blogs for related blogs dropdown...');
-        // Don't pass empty strings - pass undefined or null to get all blogs
         const blogsResponse = await blogsAPI.getAllBlogsAdmin('', '', '', '', 100, 0);
-        console.log('Blogs API raw response:', blogsResponse); // Debug log
-        console.log('Response type:', typeof blogsResponse, 'Is array:', Array.isArray(blogsResponse)); // Debug log
-        console.log('Response keys:', Object.keys(blogsResponse || {})); // Debug log
-        console.log('blogsResponse.blogs:', blogsResponse.blogs); // Debug log
-        console.log('blogsResponse.blogs type:', typeof blogsResponse.blogs, 'Is array:', Array.isArray(blogsResponse.blogs)); // Debug log
-        console.log('blogsResponse.blogs length:', blogsResponse.blogs?.length); // Debug log
-        console.log('Full response JSON:', JSON.stringify(blogsResponse, null, 2)); // Debug log
-        
-        // Handle different response structures
         let blogs = [];
         if (Array.isArray(blogsResponse)) {
           blogs = blogsResponse;
-          console.log('Response is direct array');
-        } else if (blogsResponse && blogsResponse.blogs) {
-          // Check if blogs is an array
-          if (Array.isArray(blogsResponse.blogs)) {
-            blogs = blogsResponse.blogs;
-            console.log('Response has .blogs property (array)');
-          } else {
-            // If blogs is not an array, try to convert it
-            console.log('blogsResponse.blogs is not an array, type:', typeof blogsResponse.blogs);
-            blogs = [];
-          }
-        } else if (blogsResponse && blogsResponse.data && Array.isArray(blogsResponse.data)) {
+        } else if (blogsResponse?.blogs && Array.isArray(blogsResponse.blogs)) {
+          blogs = blogsResponse.blogs;
+        } else if (blogsResponse?.data && Array.isArray(blogsResponse.data)) {
           blogs = blogsResponse.data;
-          console.log('Response has .data property');
-        } else {
-          console.warn('Unexpected response structure:', blogsResponse);
-          // Try to extract blogs from any property
-          if (blogsResponse && typeof blogsResponse === 'object') {
-            console.log('Available keys in response:', Object.keys(blogsResponse));
-            // Try common property names
-            for (const key of ['blogs', 'data', 'items', 'results']) {
-              if (Array.isArray(blogsResponse[key])) {
-                blogs = blogsResponse[key];
-                console.log(`Found blogs in .${key} property`);
-                break;
-              }
+        } else if (blogsResponse && typeof blogsResponse === 'object') {
+          for (const key of ['blogs', 'data', 'items', 'results']) {
+            if (Array.isArray(blogsResponse[key])) {
+              blogs = blogsResponse[key];
+              break;
             }
           }
         }
-        
-        console.log('Parsed available blogs:', blogs.length, 'blogs');
-        if (blogs.length > 0) {
-          console.log('First blog sample:', blogs[0]);
-        } else {
-          console.log('⚠️ Blogs array is empty. Full response:', JSON.stringify(blogsResponse, null, 2));
-        }
-        
-        if (blogs.length === 0) {
-          console.warn('⚠️ No blogs found in database. Make sure blogs are created and published.');
-        } else {
-          console.log('✅ Successfully loaded', blogs.length, 'blogs for related blogs dropdown');
-        }
-        
         setAvailableBlogs(blogs);
       } catch (error) {
-        console.error('❌ Error fetching blogs:', error);
-        console.error('Error message:', error.message);
-        console.error('Error stack:', error.stack);
-        if (error.response) {
-          console.error('Error response:', error.response);
-        }
-        // Don't show error toast for blogs - it's not critical
+        console.error('Error fetching blogs for dropdown:', error);
         setAvailableBlogs([]);
       }
     } catch (error) {
@@ -346,6 +299,37 @@ const AdminTrips = () => {
     }));
   };
 
+  const addItineraryBullet = (dayIndex) => {
+    setFormData(prev => {
+      const next = [...prev.itinerary];
+      const day = { ...next[dayIndex] };
+      const bullets = Array.isArray(day.bullets) ? [...day.bullets, ''] : [''];
+      next[dayIndex] = { ...day, bullets };
+      return { ...prev, itinerary: next };
+    });
+  };
+
+  const removeItineraryBullet = (dayIndex, bulletIndex) => {
+    setFormData(prev => {
+      const next = [...prev.itinerary];
+      const day = { ...next[dayIndex] };
+      const bullets = (day.bullets || ['']).filter((_, i) => i !== bulletIndex);
+      next[dayIndex] = { ...day, bullets: bullets.length ? bullets : [''] };
+      return { ...prev, itinerary: next };
+    });
+  };
+
+  const setItineraryBulletValue = (dayIndex, bulletIndex, value) => {
+    setFormData(prev => {
+      const next = [...prev.itinerary];
+      const day = { ...next[dayIndex] };
+      const bullets = [...(Array.isArray(day.bullets) ? day.bullets : [''])];
+      bullets[bulletIndex] = value;
+      next[dayIndex] = { ...day, bullets };
+      return { ...prev, itinerary: next };
+    });
+  };
+
   const handleFileUpload = async (file, type) => {
     try {
       setUploading(prev => ({ ...prev, [type]: true }));
@@ -450,7 +434,7 @@ const AdminTrips = () => {
         included: formData.included.filter(v => v.trim()),
         notIncluded: formData.notIncluded.filter(v => v.trim()),
         notes: formData.notes.filter(v => v.trim()),
-        itinerary: formData.itinerary.filter(i => i.title.trim() || i.activities.trim()),
+        itinerary: formData.itinerary.filter(i => i.title.trim() || i.activities.trim() || (Array.isArray(i.bullets) && i.bullets.some(b => (b || '').trim()))),
         faq: formData.faq.filter(f => f.question.trim() || f.answer.trim()),
         reviews: formData.reviews.filter(r => r.text.trim()),
         recommendedTrips: Array.isArray(formData.recommendedTrips) ? formData.recommendedTrips : [], // Explicitly include recommended trips as array
@@ -503,7 +487,18 @@ const AdminTrips = () => {
       intro: trip.intro || '',
       category: trip.category || [],
       whyVisit: trip.whyVisit && trip.whyVisit.length > 0 ? trip.whyVisit : [''],
-      itinerary: trip.itinerary && trip.itinerary.length > 0 ? trip.itinerary : [{ day: 'Day 1', title: '', activities: '' }],
+      itinerary: trip.itinerary && trip.itinerary.length > 0
+        ? trip.itinerary.map((i) => ({
+            day: i.day || '',
+            title: i.title || '',
+            activities: i.activities || '',
+            bullets: Array.isArray(i.bullets) && i.bullets.length > 0
+              ? i.bullets
+              : (i.activities && typeof i.activities === 'string')
+                ? i.activities.split(/[.!?]+/).filter(p => p.trim()).map(p => p.trim())
+                : [''],
+          }))
+        : [{ day: 'Day 1', title: '', activities: '', bullets: [''] }],
       included: trip.included && trip.included.length > 0 ? trip.included : [''],
       notIncluded: trip.notIncluded && trip.notIncluded.length > 0 ? trip.notIncluded : [''],
       notes: trip.notes && trip.notes.length > 0 ? trip.notes : [''],
@@ -517,6 +512,7 @@ const AdminTrips = () => {
       recommendedTrips: recommendedTripsData,
       relatedBlogs: relatedBlogsData,
       status: trip.status || 'active',
+      enquiryFormType: trip.enquiryFormType === 'form2' ? 'form2' : 'form1',
     });
     setShowLocationDropdown(false);
     setShowForm(true);
@@ -524,28 +520,17 @@ const AdminTrips = () => {
     // Ensure blogs are loaded when form opens
     if (availableBlogs.length === 0) {
       try {
-        console.log('Fetching blogs when opening form...');
-        // Don't pass empty strings - pass empty strings (they'll be filtered out)
         const blogsResponse = await blogsAPI.getAllBlogsAdmin('', '', '', '', 100, 0);
-        console.log('Blogs response when opening form:', blogsResponse);
-        let blogs = [];
-        if (Array.isArray(blogsResponse)) {
-          blogs = blogsResponse;
-        } else if (blogsResponse && Array.isArray(blogsResponse.blogs)) {
-          blogs = blogsResponse.blogs;
-        } else if (blogsResponse && blogsResponse.data && Array.isArray(blogsResponse.data)) {
-          blogs = blogsResponse.data;
-        }
-        console.log('Parsed blogs when opening form:', blogs.length);
-        if (blogs.length > 0) {
-          setAvailableBlogs(blogs);
-          console.log('✅ Blogs loaded when opening form');
-        } else {
-          console.warn('⚠️ No blogs found when opening form');
-        }
+        const blogs = Array.isArray(blogsResponse)
+          ? blogsResponse
+          : (blogsResponse?.blogs && Array.isArray(blogsResponse.blogs))
+            ? blogsResponse.blogs
+            : (blogsResponse?.data && Array.isArray(blogsResponse.data))
+              ? blogsResponse.data
+              : [];
+        if (blogs.length > 0) setAvailableBlogs(blogs);
       } catch (error) {
-        console.error('❌ Error fetching blogs when opening form:', error);
-        console.error('Error details:', error.message);
+        console.error('Error fetching blogs when opening form:', error);
       }
     } else {
       console.log('Blogs already loaded:', availableBlogs.length);
@@ -581,7 +566,7 @@ const AdminTrips = () => {
       intro: '',
       category: [],
       whyVisit: [''],
-      itinerary: [{ day: 'Day 1', title: '', activities: '' }],
+      itinerary: [{ day: 'Day 1', title: '', activities: '', bullets: [''] }],
       included: [''],
       notIncluded: [''],
       notes: [''],
@@ -593,6 +578,7 @@ const AdminTrips = () => {
       recommendedTrips: [],
       relatedBlogs: [],
       status: 'active',
+      enquiryFormType: 'form1',
     });
     setLocationSearch('');
     setShowLocationDropdown(false);
@@ -824,6 +810,19 @@ const AdminTrips = () => {
                       <option value="archived">Archived</option>
                     </select>
                   </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Enquiry form on trip page</label>
+                    <select
+                      name="enquiryFormType"
+                      value={formData.enquiryFormType || 'form1'}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                    >
+                      <option value="form1">Form 1 (Name, Email, Phone, Month, Message)</option>
+                      <option value="form2">Form 2 (No. of people, Email, Phone, Destination, Month)</option>
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">Only one form is shown per trip</p>
+                  </div>
                 </div>
 
                 {/* Image Upload */}
@@ -960,7 +959,7 @@ const AdminTrips = () => {
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Itinerary</label>
                   {formData.itinerary.map((day, index) => (
                     <div key={index} className="mb-4 p-4 border-2 border-gray-200 rounded-lg">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-2">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-3">
                         <input
                           type="text"
                           value={day.day}
@@ -991,6 +990,36 @@ const AdminTrips = () => {
                           <X className="w-4 h-4" />
                         </button>
                       </div>
+                      {/* Bullet points for this day */}
+                      <div className="mb-3">
+                        <span className="block text-xs font-medium text-gray-600 mb-2">Bullet points</span>
+                        {(Array.isArray(day.bullets) ? day.bullets : ['']).map((bullet, bulletIndex) => (
+                          <div key={bulletIndex} className="flex gap-2 mb-2">
+                            <span className="flex-shrink-0 text-gray-400 mt-2.5">•</span>
+                            <input
+                              type="text"
+                              value={bullet}
+                              onChange={(e) => setItineraryBulletValue(index, bulletIndex, e.target.value)}
+                              placeholder="e.g. Arrive at airport, transfer to hotel"
+                              className="flex-1 px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeItineraryBullet(index, bulletIndex)}
+                              className="px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 flex-shrink-0"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() => addItineraryBullet(index)}
+                          className="mt-1 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm"
+                        >
+                          + Add bullet point
+                        </button>
+                      </div>
                       <textarea
                         value={day.activities}
                         onChange={(e) => {
@@ -998,23 +1027,16 @@ const AdminTrips = () => {
                           newItinerary[index].activities = e.target.value;
                           setFormData(prev => ({ ...prev, itinerary: newItinerary }));
                         }}
-                        placeholder="Activities description"
-                        rows={3}
-                        className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none"
-                        style={{ 
-                          lineHeight: '1.5', 
-                          paddingTop: '0.5rem', 
-                          paddingBottom: '0.5rem',
-                          margin: '0',
-                          whiteSpace: 'pre-wrap',
-                          wordWrap: 'break-word'
-                        }}
+                        placeholder="Optional: additional paragraph description"
+                        rows={2}
+                        className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none text-sm"
+                        style={{ lineHeight: '1.5', whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}
                       />
                     </div>
                   ))}
                   <button
                     type="button"
-                    onClick={() => addArrayItem('itinerary', { day: `Day ${formData.itinerary.length + 1}`, title: '', activities: '' })}
+                    onClick={() => addArrayItem('itinerary', { day: `Day ${formData.itinerary.length + 1}`, title: '', activities: '', bullets: [''] })}
                     className="mt-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
                   >
                     + Add Day

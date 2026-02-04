@@ -35,6 +35,17 @@ const __dirname = dirname(__filename);
 //dotenv.config({ path: join(__dirname, '.env') });
 dotenv.config();
 
+// Catch unhandled rejections so server doesn't exit silently (e.g. ECONNRESET causes)
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise);
+  console.error('Reason:', reason);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+  process.exit(1);
+});
+
 // Debug: Log environment variables status (without showing sensitive values)
 console.log('🔍 Environment Variables Debug:');
 console.log('   NODE_ENV:', process.env.NODE_ENV || 'not set');
@@ -101,7 +112,7 @@ const corsOptions = {
   credentials: true,
   optionsSuccessStatus: 200,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Cache-Control', 'Pragma', 'Expires'],
 };
 
 app.use(cors(corsOptions));
@@ -117,22 +128,11 @@ if (NODE_ENV === 'production') {
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Caching middleware for public GET requests (improves performance)
+// No caching for API - data is editable from admin and must always be fresh
 app.use('/api', (req, res, next) => {
-  // Only cache GET requests
-  if (req.method === 'GET' && !req.path.includes('/admin')) {
-    if (NODE_ENV === 'production') {
-      // Cache public API responses for 5 minutes in production
-      // This helps reduce server load and improves response times
-      res.set('Cache-Control', 'public, max-age=300, s-maxage=300'); // 5 minutes
-      res.set('ETag', false); // Disable ETag to prevent validation requests
-    } else {
-      // No caching in development - always get fresh data
-      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-      res.set('Pragma', 'no-cache');
-      res.set('Expires', '0');
-    }
-  }
+  res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
   next();
 });
 
@@ -305,26 +305,14 @@ if (!buildPath) {
 if (buildPath) {
   console.log('✅ Serving React frontend from:', buildPath);
   
-  // Serve static files (CSS, JS, images, etc.) with proper MIME types
-  // In development: no cache to see changes immediately
-  // In production: cache hashed assets for 1 year, but never cache index.html
+  // Serve static files (CSS, JS, images, etc.) - no browser caching
   app.use(express.static(buildPath, {
-    maxAge: NODE_ENV === 'production' ? '1y' : '0', // No cache in dev, 1 year in prod
-    etag: NODE_ENV === 'production',
-    immutable: NODE_ENV === 'production', // Files with hash in name are immutable
-    setHeaders: (res, path) => {
-      // Never cache index.html - always serve fresh version
-      if (path.endsWith('index.html')) {
-        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-        res.setHeader('Pragma', 'no-cache');
-        res.setHeader('Expires', '0');
-      }
-      // In development, disable caching for all files
-      else if (NODE_ENV === 'development') {
-        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-        res.setHeader('Pragma', 'no-cache');
-        res.setHeader('Expires', '0');
-      }
+    maxAge: 0,
+    etag: false,
+    setHeaders: (res) => {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
     },
   }));
   

@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Reviews from '../components/Reviews'
-import { enquiriesAPI } from '../config/api'
+import { enquiriesAPI, blogsAPI } from '../config/api'
 import SEO from '../components/SEO'
 import { useToast } from '../contexts/ToastContext'
-import { Calendar, MapPin, Phone, User, Plane, DollarSign, PhoneCall } from 'lucide-react'
+import { Calendar, MapPin, Phone, User, Plane, DollarSign, PhoneCall, Loader2 } from 'lucide-react'
+import PhoneInputWithCountry from '../components/PhoneInputWithCountry'
+import { isValidPhone } from '../utils/countryCodes'
 
 function CustomisedTrip() {
   const navigate = useNavigate()
@@ -16,38 +18,40 @@ function CustomisedTrip() {
     travelDates: ''
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
-  
-  // Sample blog data - replace with actual API call if needed
-  const relatedBlogs = [
-    { id: 1, title: 'Exploring the Mystical Beauty of Ladakh', image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=800&q=80' },
-    { id: 2, title: 'Spiritual Journey Through Kashi', image: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=800&q=80' },
-    { id: 3, title: 'Adventure in Spiti Valley', image: 'https://images.unsplash.com/photo-1501594907352-04cda38ebc29?auto=format&fit=crop&w=800&q=80' }
-  ]
+  const [relatedBlogs, setRelatedBlogs] = useState([])
+  const [blogsLoading, setBlogsLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchBlogs = async () => {
+      try {
+        setBlogsLoading(true)
+        const res = await blogsAPI.getAllBlogs('', '', '', 6, 0)
+        const list = (res.blogs || res || []).filter(b => b.status === 'published' || !b.status)
+        setRelatedBlogs(Array.isArray(list) ? list : [])
+      } catch (_) {
+        setRelatedBlogs([])
+      } finally {
+        setBlogsLoading(false)
+      }
+    }
+    fetchBlogs()
+  }, [])
 
   const handleBlogClick = (blog) => {
-    navigate(`/blog/${blog.id}`)
+    if (blog.slug) navigate(`/blog/${blog.slug}`)
+    else navigate(`/blog/${blog.id}`)
   }
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
-    
-    // Format phone number (only digits)
-    if (name === 'phone') {
-      const digitsOnly = value.replace(/\D/g, '')
-      // Limit to 10 digits
-      if (digitsOnly.length <= 10) {
-        setFormData(prev => ({ ...prev, [name]: digitsOnly }))
-      }
-    } else {
-      setFormData(prev => ({ ...prev, [name]: value }))
-    }
+    setFormData(prev => ({ ...prev, [name]: value }))
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     
-    if (!formData.name.trim() || !formData.phone.trim() || formData.phone.length !== 10) {
-      toast.error('Please enter a valid name and 10-digit phone number')
+    if (!formData.name.trim() || !formData.phone.trim() || !isValidPhone(formData.phone)) {
+      toast.error('Please enter a valid name and phone number (with country code)')
       return
     }
 
@@ -57,7 +61,7 @@ function CustomisedTrip() {
       await enquiriesAPI.createEnquiry({
         name: formData.name.trim(),
         email: `customize+${Date.now()}@safehandstravels.com`, // Placeholder email
-        phone: `+91${formData.phone}`,
+        phone: formData.phone.trim(),
         message: `Customize Trip Request - Destination: ${formData.destination || 'Not specified'}, Travel Dates: ${formData.travelDates || 'Not specified'}`,
       })
 
@@ -168,24 +172,14 @@ function CustomisedTrip() {
                       <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
                         Phone Number
                       </label>
-                      <div className="relative">
-                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                        <div className="absolute left-10 top-1/2 -translate-y-1/2 text-gray-500 font-medium text-sm">
-                          +91
-                        </div>
-                        <input
-                          type="tel"
-                          id="phone"
-                          name="phone"
-                          value={formData.phone}
-                          onChange={handleInputChange}
-                          required
-                          minLength={10}
-                          maxLength={10}
-                          className="w-full pl-20 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#017233]/20 focus:border-[#017233] transition-all outline-none text-gray-900 placeholder-gray-400"
-                          placeholder="9876543210"
-                        />
-                      </div>
+                      <PhoneInputWithCountry
+                        id="phone"
+                        value={formData.phone}
+                        onChange={(v) => setFormData(prev => ({ ...prev, phone: v }))}
+                        required
+                        placeholder="Enter phone number"
+                        className="rounded-lg"
+                      />
                     </div>
 
                     {/* Destination Input */}
@@ -271,28 +265,36 @@ function CustomisedTrip() {
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-8 md:mb-12 text-center">
               Related Blogs
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-              {relatedBlogs.map((blog) => (
-                <div
-                  key={blog.id}
-                  onClick={() => handleBlogClick(blog)}
-                  className="group relative rounded-xl md:rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 bg-white"
-                >
-                  <div className="aspect-[4/3] overflow-hidden">
-                    <img
-                      src={blog.image}
-                      alt={blog.title}
-                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                    />
+            {blogsLoading ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="w-10 h-10 animate-spin text-[#017233]" />
+              </div>
+            ) : relatedBlogs.length === 0 ? (
+              <p className="text-center text-gray-500 py-8">No related blogs at the moment.</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+                {relatedBlogs.map((blog) => (
+                  <div
+                    key={blog.id}
+                    onClick={() => handleBlogClick(blog)}
+                    className="group relative rounded-xl md:rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 bg-white"
+                  >
+                    <div className="aspect-[4/3] overflow-hidden">
+                      <img
+                        src={blog.heroImage || blog.imageUrl || blog.image || 'https://images.unsplash.com/photo-1501594907352-04cda38ebc29?auto=format&fit=crop&w=800&q=80'}
+                        alt={blog.title}
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                      />
+                    </div>
+                    <div className="p-4 md:p-6">
+                      <h3 className="text-xl md:text-2xl font-bold text-gray-900 group-hover:text-[#017233] transition-colors duration-300 line-clamp-2">
+                        {blog.title}
+                      </h3>
+                    </div>
                   </div>
-                  <div className="p-4 md:p-6">
-                    <h3 className="text-xl md:text-2xl font-bold text-gray-900 group-hover:text-[#017233] transition-colors duration-300 line-clamp-2">
-                      {blog.title}
-                    </h3>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </section>
       </div>

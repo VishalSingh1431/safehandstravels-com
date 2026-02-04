@@ -57,12 +57,12 @@ router.get('/:id', async (req, res) => {
     const trip = await Trip.findById(id);
 
     if (!trip) {
-      return res.status(404).json({ error: 'Trip not found' });
+      return res.status(404).json({ error: 'Trip not found', code: 'NOT_FOUND' });
     }
 
-    // Only return active trips to public
+    // Only return active trips to public (draft/inactive return same 404 for security)
     if (trip.status !== 'active') {
-      return res.status(404).json({ error: 'Trip not found' });
+      return res.status(404).json({ error: 'Trip not found', code: 'NOT_ACTIVE' });
     }
 
     console.log('GET /:id - trip.recommendedTrips:', trip.recommendedTrips); // Debug log
@@ -131,10 +131,7 @@ router.put('/:id', verifyToken, verifyAdmin, async (req, res) => {
 
     // Handle file deletions if new files are uploaded
     const updateData = { ...req.body };
-    
-    // Debug log to see what's being received
-    console.log('Update trip - received recommendedTrips:', updateData.recommendedTrips); // Debug log
-    
+
     // If new image uploaded, delete old one
     if (updateData.imageUrl && existingTrip.imagePublicId && updateData.imageUrl !== existingTrip.imageUrl) {
       try {
@@ -176,15 +173,28 @@ router.put('/:id', verifyToken, verifyAdmin, async (req, res) => {
     });
   } catch (error) {
     console.error('Error updating trip:', error);
-    
-    if (error.code === '23505') { // Unique constraint violation
-      return res.status(400).json({ error: 'Trip with this slug already exists' });
+    if (error.sqlMessage) console.error('SQL:', error.sqlMessage);
+    if (error.code) console.error('Code:', error.code);
+
+    try {
+      if (error.code === '23505' || error.code === 1062) { // Unique constraint (Postgres / MySQL)
+        return res.status(400).json({ error: 'Trip with this slug already exists' });
+      }
+
+      const details = process.env.NODE_ENV === 'development'
+        ? String(error.sqlMessage || error.message || 'Unknown error')
+        : undefined;
+
+      res.status(500).json({
+        error: 'Failed to update trip',
+        details,
+      });
+    } catch (sendErr) {
+      console.error('Error sending 500 response:', sendErr);
+      if (!res.headersSent) {
+        res.status(500).set('Content-Type', 'application/json').send('{"error":"Failed to update trip"}');
+      }
     }
-    
-    res.status(500).json({ 
-      error: 'Failed to update trip',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
   }
 });
 
