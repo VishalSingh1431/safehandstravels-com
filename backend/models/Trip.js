@@ -146,16 +146,31 @@ class Trip {
   }
 
   /**
-   * Sanitize itinerary to plain serializable objects (avoids JSON.stringify errors from React state/proxy)
+   * Sanitize itinerary to plain serializable objects (avoids JSON.stringify errors from React state/proxy).
+   * Day is always stored as 1-based number (Day 1, Day 2, ...). Parses "Day 1" style from admin.
    */
   static sanitizeItinerary(itinerary) {
     if (!Array.isArray(itinerary)) return [];
-    return itinerary.map((day) => {
+    return itinerary.map((day, index) => {
       const bullets = Array.isArray(day.bullets)
         ? day.bullets.map((b) => (b != null ? String(b) : ''))
         : [];
+      let dayNum = 0;
+      if (typeof day.day === 'number' && day.day >= 1) {
+        dayNum = day.day;
+      } else if (day.day != null && day.day !== '') {
+        const s = String(day.day);
+        const parsed = parseInt(s, 10);
+        if (!Number.isNaN(parsed) && parsed >= 1) dayNum = parsed;
+        else {
+          const match = s.match(/\d+/);
+          if (match) dayNum = Math.max(1, parseInt(match[0], 10));
+          else dayNum = index + 1;
+        }
+      }
+      if (dayNum < 1) dayNum = index + 1;
       return {
-        day: typeof day.day === 'number' ? day.day : parseInt(day.day, 10) || 0,
+        day: dayNum,
         title: day.title != null ? String(day.title) : '',
         activities: day.activities != null ? String(day.activities) : '',
         bullets,

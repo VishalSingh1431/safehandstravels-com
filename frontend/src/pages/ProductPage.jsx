@@ -999,7 +999,7 @@ function ProductPage() {
                         <div className="flex-1 flex items-center justify-between gap-2 sm:gap-4 min-w-0">
                           <div className="min-w-0 flex-1">
                             <h3 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 truncate">
-                              <span className="text-[#017233]">{day.day}:</span> {day.title}
+                              <span className="text-[#017233]">Day {(day.day && Number(day.day) >= 1) ? Number(day.day) : index + 1}:</span> {day.title}
                             </h3>
                           </div>
                           <div className="flex-shrink-0">
