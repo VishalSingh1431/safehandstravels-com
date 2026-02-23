@@ -55,7 +55,7 @@ const AdminTrips = () => {
     intro: '',
     category: [],
     whyVisit: [''],
-    itinerary: [{ day: 'Day 1', title: '', activities: '', bullets: [''] }],
+    itinerary: [{ day: 'Day 1', title: '', activities: '' }],
     included: [''],
     notIncluded: [''],
     notes: [''],
@@ -99,8 +99,8 @@ const AdminTrips = () => {
 
   const filteredCities = locationSearch
     ? INDIAN_CITIES.filter(city =>
-        city.toLowerCase().includes(locationSearch.toLowerCase())
-      )
+      city.toLowerCase().includes(locationSearch.toLowerCase())
+    )
     : INDIAN_CITIES;
 
   const handleLocationSelect = (city) => {
@@ -147,7 +147,7 @@ const AdminTrips = () => {
       const response = await tripsAPI.getAllTripsAdmin();
       setTrips(response.trips || []);
       setAvailableTrips(response.trips || []); // Store all trips for recommended trips dropdown
-      
+
       // Also fetch blogs for related blogs dropdown
       try {
         const blogsResponse = await blogsAPI.getAllBlogsAdmin('', '', '', '', 100, 0);
@@ -193,7 +193,7 @@ const AdminTrips = () => {
   const handleRecommendedTripSelect = (tripId) => {
     const selectedTrip = availableTrips.find(t => t.id === tripId);
     if (!selectedTrip) return;
-    
+
     setFormData(prev => {
       const currentRecommended = prev.recommendedTrips || [];
       if (currentRecommended.includes(tripId)) {
@@ -234,7 +234,7 @@ const AdminTrips = () => {
   const handleRelatedBlogSelect = (blogId) => {
     const selectedBlog = availableBlogs.find(b => b.id === blogId);
     if (!selectedBlog) return;
-    
+
     setFormData(prev => {
       const currentRelated = prev.relatedBlogs || [];
       if (currentRelated.includes(blogId)) {
@@ -255,14 +255,14 @@ const AdminTrips = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    
+
     // Handle location search separately (not in formData)
     if (name === 'locationSearch') {
       setLocationSearch(value);
       setShowLocationDropdown(true);
       return;
     }
-    
+
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
@@ -299,41 +299,12 @@ const AdminTrips = () => {
     }));
   };
 
-  const addItineraryBullet = (dayIndex) => {
-    setFormData(prev => {
-      const next = [...prev.itinerary];
-      const day = { ...next[dayIndex] };
-      const bullets = Array.isArray(day.bullets) ? [...day.bullets, ''] : [''];
-      next[dayIndex] = { ...day, bullets };
-      return { ...prev, itinerary: next };
-    });
-  };
 
-  const removeItineraryBullet = (dayIndex, bulletIndex) => {
-    setFormData(prev => {
-      const next = [...prev.itinerary];
-      const day = { ...next[dayIndex] };
-      const bullets = (day.bullets || ['']).filter((_, i) => i !== bulletIndex);
-      next[dayIndex] = { ...day, bullets: bullets.length ? bullets : [''] };
-      return { ...prev, itinerary: next };
-    });
-  };
-
-  const setItineraryBulletValue = (dayIndex, bulletIndex, value) => {
-    setFormData(prev => {
-      const next = [...prev.itinerary];
-      const day = { ...next[dayIndex] };
-      const bullets = [...(Array.isArray(day.bullets) ? day.bullets : [''])];
-      bullets[bulletIndex] = value;
-      next[dayIndex] = { ...day, bullets };
-      return { ...prev, itinerary: next };
-    });
-  };
 
   const handleFileUpload = async (file, type) => {
     try {
       setUploading(prev => ({ ...prev, [type]: true }));
-      
+
       let result;
       if (type === 'image' || type === 'gallery' || type === 'heroImages') {
         result = await uploadAPI.uploadImage(file);
@@ -371,22 +342,22 @@ const AdminTrips = () => {
 
   const handleMultipleGalleryUpload = async (files) => {
     if (!files || files.length === 0) return;
-    
+
     try {
       setUploading(prev => ({ ...prev, gallery: true }));
-      
+
       const uploadPromises = Array.from(files).map(file => uploadAPI.uploadImage(file));
       const results = await Promise.all(uploadPromises);
-      
+
       const newUrls = results.map(r => r.url);
       const newPublicIds = results.map(r => r.public_id);
-      
+
       setFormData(prev => ({
         ...prev,
         gallery: [...prev.gallery, ...newUrls],
         galleryPublicIds: [...(prev.galleryPublicIds || []), ...newPublicIds]
       }));
-      
+
       toast.success(`${results.length} gallery image(s) uploaded successfully!`);
     } catch (error) {
       console.error('Error uploading gallery images:', error);
@@ -399,12 +370,12 @@ const AdminTrips = () => {
   // Extract YouTube video ID from URL
   const extractYouTubeId = (url) => {
     if (!url) return '';
-    
+
     // If it's already just an ID, return it
     if (!url.includes('youtube.com') && !url.includes('youtu.be') && url.length === 11) {
       return url;
     }
-    
+
     // Extract ID from YouTube URL
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
     const match = url.match(regExp);
@@ -413,19 +384,19 @@ const AdminTrips = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Validate category
     if (!formData.category || formData.category.length === 0) {
       toast.error('Please select at least one category tag');
       return;
     }
-    
+
     // Validate location
     if (!formData.location || formData.location.length === 0) {
       toast.error('Please select at least one location');
       return;
     }
-    
+
     try {
       const tripData = {
         ...formData,
@@ -434,14 +405,14 @@ const AdminTrips = () => {
         included: formData.included.filter(v => v.trim()),
         notIncluded: formData.notIncluded.filter(v => v.trim()),
         notes: formData.notes.filter(v => v.trim()),
-        itinerary: formData.itinerary.filter(i => i.title.trim() || i.activities.trim() || (Array.isArray(i.bullets) && i.bullets.some(b => (b || '').trim()))),
+        itinerary: formData.itinerary.filter(i => i.title.trim() || i.activities.trim()),
         faq: formData.faq.filter(f => f.question.trim() || f.answer.trim()),
         reviews: formData.reviews.filter(r => r.text.trim()),
         recommendedTrips: Array.isArray(formData.recommendedTrips) ? formData.recommendedTrips : [], // Explicitly include recommended trips as array
         relatedBlogs: Array.isArray(formData.relatedBlogs) ? formData.relatedBlogs : [], // Explicitly include related blogs as array
         seatsLeft: formData.seatsLeft ? formData.seatsLeft : null, // Convert empty string to null
       };
-      
+
       console.log('Saving trip with seatsLeft:', tripData.seatsLeft); // Debug log
 
       console.log('Saving trip with recommendedTrips:', tripData.recommendedTrips); // Debug log
@@ -466,11 +437,11 @@ const AdminTrips = () => {
   const handleEdit = async (trip) => {
     console.log('Editing trip - recommendedTrips:', trip.recommendedTrips); // Debug log
     setEditingTrip(trip);
-    const recommendedTripsData = Array.isArray(trip.recommendedTrips) 
-      ? trip.recommendedTrips 
+    const recommendedTripsData = Array.isArray(trip.recommendedTrips)
+      ? trip.recommendedTrips
       : (trip.recommendedTrips ? [trip.recommendedTrips] : []);
-    const relatedBlogsData = Array.isArray(trip.relatedBlogs) 
-      ? trip.relatedBlogs 
+    const relatedBlogsData = Array.isArray(trip.relatedBlogs)
+      ? trip.relatedBlogs
       : (trip.relatedBlogs ? [trip.relatedBlogs] : []);
     console.log('Setting recommendedTrips in form:', recommendedTripsData); // Debug log
     console.log('Setting relatedBlogs in form:', relatedBlogsData); // Debug log
@@ -489,16 +460,11 @@ const AdminTrips = () => {
       whyVisit: trip.whyVisit && trip.whyVisit.length > 0 ? trip.whyVisit : [''],
       itinerary: trip.itinerary && trip.itinerary.length > 0
         ? trip.itinerary.map((i) => ({
-            day: i.day || '',
-            title: i.title || '',
-            activities: i.activities || '',
-            bullets: Array.isArray(i.bullets) && i.bullets.length > 0
-              ? i.bullets
-              : (i.activities && typeof i.activities === 'string')
-                ? i.activities.split(/[.!?]+/).filter(p => p.trim()).map(p => p.trim())
-                : [''],
-          }))
-        : [{ day: 'Day 1', title: '', activities: '', bullets: [''] }],
+          day: i.day || '',
+          title: i.title || '',
+          activities: i.activities || '',
+        }))
+        : [{ day: 'Day 1', title: '', activities: '' }],
       included: trip.included && trip.included.length > 0 ? trip.included : [''],
       notIncluded: trip.notIncluded && trip.notIncluded.length > 0 ? trip.notIncluded : [''],
       notes: trip.notes && trip.notes.length > 0 ? trip.notes : [''],
@@ -516,7 +482,7 @@ const AdminTrips = () => {
     });
     setShowLocationDropdown(false);
     setShowForm(true);
-    
+
     // Ensure blogs are loaded when form opens
     if (availableBlogs.length === 0) {
       try {
@@ -566,7 +532,7 @@ const AdminTrips = () => {
       intro: '',
       category: [],
       whyVisit: [''],
-      itinerary: [{ day: 'Day 1', title: '', activities: '', bullets: [''] }],
+      itinerary: [{ day: 'Day 1', title: '', activities: '' }],
       included: [''],
       notIncluded: [''],
       notes: [''],
@@ -677,7 +643,7 @@ const AdminTrips = () => {
                   </div>
                   <div className="relative" ref={locationDropdownRef}>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Locations *</label>
-                    
+
                     {/* Selected Locations */}
                     {formData.location && formData.location.length > 0 && (
                       <div className="flex flex-wrap gap-2 mb-3">
@@ -700,7 +666,7 @@ const AdminTrips = () => {
                         ))}
                       </div>
                     )}
-                    
+
                     <div className="relative">
                       <input
                         type="text"
@@ -712,7 +678,7 @@ const AdminTrips = () => {
                         className="w-full px-4 py-2 pr-10 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                       />
                       <MapPin className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-                      
+
                       {showLocationDropdown && (
                         <div className="absolute z-50 w-full mt-1 bg-white border-2 border-gray-300 rounded-lg shadow-xl max-h-60 overflow-y-auto">
                           {filteredCities.length > 0 ? (
@@ -744,7 +710,7 @@ const AdminTrips = () => {
                       )}
                     </div>
                     <p className="text-xs text-gray-500 mt-1">
-                      {formData.location?.length > 0 
+                      {formData.location?.length > 0
                         ? `${formData.location.length} location(s) selected. Type to add more.`
                         : 'Start typing or select from the list to add locations'
                       }
@@ -888,11 +854,10 @@ const AdminTrips = () => {
                         key={category}
                         type="button"
                         onClick={() => handleCategoryToggle(category)}
-                        className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-200 ${
-                          formData.category?.includes(category)
-                            ? 'bg-[#017233] text-white shadow-md hover:bg-[#015a28]'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300'
-                        }`}
+                        className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-200 ${formData.category?.includes(category)
+                          ? 'bg-[#017233] text-white shadow-md hover:bg-[#015a28]'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300'
+                          }`}
                       >
                         {category}
                       </button>
@@ -990,36 +955,7 @@ const AdminTrips = () => {
                           <X className="w-4 h-4" />
                         </button>
                       </div>
-                      {/* Bullet points for this day */}
-                      <div className="mb-3">
-                        <span className="block text-xs font-medium text-gray-600 mb-2">Bullet points</span>
-                        {(Array.isArray(day.bullets) ? day.bullets : ['']).map((bullet, bulletIndex) => (
-                          <div key={bulletIndex} className="flex gap-2 mb-2">
-                            <span className="flex-shrink-0 text-gray-400 mt-2.5">•</span>
-                            <input
-                              type="text"
-                              value={bullet}
-                              onChange={(e) => setItineraryBulletValue(index, bulletIndex, e.target.value)}
-                              placeholder="e.g. Arrive at airport, transfer to hotel"
-                              className="flex-1 px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => removeItineraryBullet(index, bulletIndex)}
-                              className="px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 flex-shrink-0"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                          </div>
-                        ))}
-                        <button
-                          type="button"
-                          onClick={() => addItineraryBullet(index)}
-                          className="mt-1 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm"
-                        >
-                          + Add bullet point
-                        </button>
-                      </div>
+
                       <textarea
                         value={day.activities}
                         onChange={(e) => {
@@ -1027,16 +963,16 @@ const AdminTrips = () => {
                           newItinerary[index].activities = e.target.value;
                           setFormData(prev => ({ ...prev, itinerary: newItinerary }));
                         }}
-                        placeholder="Optional: additional paragraph description"
-                        rows={2}
-                        className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none text-sm"
+                        placeholder="Optional: additional paragraph description (use Enter for new lines)"
+                        rows={4}
+                        className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-y text-sm"
                         style={{ lineHeight: '1.5', whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}
                       />
                     </div>
                   ))}
                   <button
                     type="button"
-                    onClick={() => addArrayItem('itinerary', { day: `Day ${formData.itinerary.length + 1}`, title: '', activities: '', bullets: [''] })}
+                    onClick={() => addArrayItem('itinerary', { day: `Day ${formData.itinerary.length + 1}`, title: '', activities: '' })}
                     className="mt-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
                   >
                     + Add Day
@@ -1267,7 +1203,7 @@ const AdminTrips = () => {
                 {/* Related Trips */}
                 <div className="relative" ref={recommendedTripsDropdownRef}>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Related Trips</label>
-                  
+
                   {/* Selected Recommended Trips */}
                   {formData.recommendedTrips && formData.recommendedTrips.length > 0 && (
                     <div className="flex flex-wrap gap-2 mb-3">
@@ -1293,7 +1229,7 @@ const AdminTrips = () => {
                       })}
                     </div>
                   )}
-                  
+
                   <div className="relative">
                     <input
                       type="text"
@@ -1308,7 +1244,7 @@ const AdminTrips = () => {
                       className="w-full px-4 py-2 pr-10 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
                     />
                     <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-                    
+
                     {showRecommendedTripsDropdown && (
                       <div className="absolute z-50 w-full mt-1 bg-white border-2 border-gray-300 rounded-lg shadow-xl max-h-60 overflow-y-auto">
                         {filteredRecommendedTrips.length > 0 ? (
@@ -1337,7 +1273,7 @@ const AdminTrips = () => {
                     )}
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
-                    {formData.recommendedTrips?.length > 0 
+                    {formData.recommendedTrips?.length > 0
                       ? `${formData.recommendedTrips.length} trip(s) selected. These will appear at the bottom of the trip detail page.`
                       : 'Search and select trips to recommend to users viewing this trip'
                     }
@@ -1347,7 +1283,7 @@ const AdminTrips = () => {
                 {/* Related Blogs */}
                 <div className="relative" ref={relatedBlogsDropdownRef}>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Related Blogs</label>
-                  
+
                   {/* Selected Related Blogs */}
                   {formData.relatedBlogs && formData.relatedBlogs.length > 0 && (
                     <div className="flex flex-wrap gap-2 mb-3">
@@ -1373,7 +1309,7 @@ const AdminTrips = () => {
                       })}
                     </div>
                   )}
-                  
+
                   <div className="relative">
                     <input
                       type="text"
@@ -1388,17 +1324,17 @@ const AdminTrips = () => {
                       className="w-full px-4 py-2 pr-10 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                     />
                     <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-                    
+
                     {showRelatedBlogsDropdown && (
                       <div className="absolute z-50 w-full mt-1 bg-white border-2 border-gray-300 rounded-lg shadow-xl max-h-60 overflow-y-auto">
                         {(() => {
                           console.log('Dropdown opened - availableBlogs:', availableBlogs.length, 'filteredRelatedBlogs:', filteredRelatedBlogs.length);
                           const availableToSelect = filteredRelatedBlogs.filter(blog => !formData.relatedBlogs?.includes(blog.id));
                           console.log('Available blogs to select:', availableToSelect.length);
-                          
+
                           // Show all available blogs if no search
                           const blogsToShow = relatedBlogsSearch ? availableToSelect : filteredRelatedBlogs.filter(blog => !formData.relatedBlogs?.includes(blog.id));
-                          
+
                           if (availableBlogs.length === 0) {
                             return (
                               <div className="px-4 py-3 text-sm text-gray-500 text-center">
@@ -1406,7 +1342,7 @@ const AdminTrips = () => {
                               </div>
                             );
                           }
-                          
+
                           if (blogsToShow.length > 0) {
                             return blogsToShow.slice(0, 20).map((blog) => (
                               <button
@@ -1424,7 +1360,7 @@ const AdminTrips = () => {
                               </button>
                             ));
                           }
-                          
+
                           return (
                             <div className="px-4 py-3 text-sm text-gray-500 text-center">
                               {relatedBlogsSearch ? 'No blogs found matching your search' : 'All blogs are already selected'}
@@ -1435,7 +1371,7 @@ const AdminTrips = () => {
                     )}
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
-                    {formData.relatedBlogs?.length > 0 
+                    {formData.relatedBlogs?.length > 0
                       ? `${formData.relatedBlogs.length} blog(s) selected. These will appear in the related blogs section on the trip detail page.`
                       : 'Search and select blogs to relate to this trip'
                     }
@@ -1499,11 +1435,10 @@ const AdminTrips = () => {
                           <div className="flex items-center gap-2 mb-2 flex-wrap">
                             <span className="text-xs text-gray-500">{trip.duration}</span>
                             <span className="text-sm font-semibold text-gray-900">{trip.price}</span>
-                            <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                              trip.status === 'active' ? 'bg-green-100 text-green-800' :
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${trip.status === 'active' ? 'bg-green-100 text-green-800' :
                               trip.status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
-                              'bg-gray-100 text-gray-800'
-                            }`}>
+                                'bg-gray-100 text-gray-800'
+                              }`}>
                               {trip.status}
                             </span>
                           </div>
@@ -1607,11 +1542,10 @@ const AdminTrips = () => {
                           )}
                         </td>
                         <td className="px-4 lg:px-6 py-3 lg:py-4">
-                          <span className={`px-2 sm:px-3 py-1 rounded-full text-xs font-semibold ${
-                            trip.status === 'active' ? 'bg-green-100 text-green-800' :
+                          <span className={`px-2 sm:px-3 py-1 rounded-full text-xs font-semibold ${trip.status === 'active' ? 'bg-green-100 text-green-800' :
                             trip.status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
+                              'bg-gray-100 text-gray-800'
+                            }`}>
                             {trip.status}
                           </span>
                         </td>

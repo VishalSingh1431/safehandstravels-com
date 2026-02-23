@@ -609,8 +609,10 @@ function ProductPage() {
       ]
     }
 
-    // If trip has all content fields, use them directly
-    if (tripData.intro && tripData.whyVisit && tripData.itinerary) {
+    // If trip has ANY content fields, use them and fallback individually
+    if ((tripData.intro && tripData.intro.length > 0) ||
+      (tripData.whyVisit && tripData.whyVisit.length > 0) ||
+      (tripData.itinerary && tripData.itinerary.length > 0)) {
       return {
         subtitle: tripData.subtitle || `${tripData.duration} Adventure Trip`,
         intro: tripData.intro,
@@ -972,16 +974,13 @@ function ProductPage() {
                             <div className="space-y-3">
                               {content.itinerary.map((day, index) => {
                                 const isExpanded = pageSettings?.displaySettings?.autoExpandItinerary ? true : expandedDay === index
-                                // Check if bullet points were explicitly set from admin
-                                const hasBullets = Array.isArray(day.bullets) && day.bullets.length > 0 && day.bullets.some(b => (b || '').trim())
-                                const bulletPoints = hasBullets
-                                  ? day.bullets.filter(b => (b || '').trim()).map(b => b.trim())
-                                  : []
-                                // Activities text (without bullet points) - render as paragraphs
-                                // Split by double newlines (paragraph breaks), collapse single newlines to spaces so text reflows to full width
+                                // Activities text - render as paragraphs
+                                // Handle both string (split by double newline) and array formats for robustness
                                 const activitiesParagraphs = typeof day.activities === 'string'
-                                  ? day.activities.trim().split(/\n\s*\n/).map(p => p.replace(/\n/g, ' ').trim()).filter(Boolean)
-                                  : []
+                                  ? day.activities.trim().split(/\n\s*\n/).filter(Boolean)
+                                  : Array.isArray(day.activities)
+                                    ? day.activities.filter(Boolean)
+                                    : [day.activities].filter(Boolean)
 
                                 return (
                                   <div
@@ -1000,7 +999,7 @@ function ProductPage() {
                                       </div>
                                       <div className="flex-1 flex items-center justify-between gap-2 sm:gap-4 min-w-0">
                                         <div className="min-w-0 flex-1">
-                                          <h3 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 truncate">
+                                          <h3 className="text-base sm:text-lg md:text-xl font-bold text-gray-900">
                                             <span className="text-[#017233]">Day {(day.day && Number(day.day) >= 1) ? Number(day.day) : index + 1}:</span> {day.title}
                                           </h3>
                                         </div>
@@ -1023,20 +1022,11 @@ function ProductPage() {
                                         }`}
                                     >
                                       <div className="px-4 sm:px-6 pb-5 w-full">
-                                        {hasBullets && (
-                                          <ul className="space-y-2.5 w-full">
-                                            {bulletPoints.map((point, pointIndex) => (
-                                              <li key={pointIndex} className="flex items-start gap-3 w-full">
-                                                <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[#017233] mt-2.5"></div>
-                                                <span className="text-gray-700 leading-relaxed text-sm md:text-base flex-1">{point}</span>
-                                              </li>
-                                            ))}
-                                          </ul>
-                                        )}
+
                                         {activitiesParagraphs.length > 0 && (
                                           <div className="space-y-1 w-full">
                                             {activitiesParagraphs.map((para, paraIndex) => (
-                                              <p key={paraIndex} className="text-gray-700 leading-relaxed text-sm md:text-base w-full">{para}</p>
+                                              <p key={paraIndex} className="text-gray-700 leading-relaxed text-sm md:text-base w-full whitespace-pre-wrap">{para}</p>
                                             ))}
                                           </div>
                                         )}
