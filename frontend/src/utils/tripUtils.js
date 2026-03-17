@@ -32,21 +32,6 @@ function toSearchText(value) {
 export function tripMatchesSearch(trip, searchQuery) {
   if (!trip || !searchQuery || !searchQuery.trim()) return true
   const q = searchQuery.toLowerCase().trim()
-  const text = [
-    trip.title,
-    trip.subtitle,
-    trip.intro,
-    getLocationString(trip.location),
-    trip.duration,
-    trip.price,
-    toSearchText(trip.whyVisit),
-    toSearchText(trip.itinerary),
-    toSearchText(trip.included),
-    toSearchText(trip.notIncluded),
-    toSearchText(trip.notes),
-    toSearchText(trip.faq),
-    toSearchText(trip.reviews),
-    toSearchText(trip.category),
-  ].join(' ').toLowerCase()
-  return text.includes(q)
+  const location = getLocationString(trip.location).toLowerCase()
+  return location.includes(q)
 }

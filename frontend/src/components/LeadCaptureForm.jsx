@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { X, Plane } from 'lucide-react'
-import { enquiriesAPI } from '../config/api'
+import { X, Plane, XCircle } from 'lucide-react'
+import { enquiriesAPI, authAPI } from '../config/api'
 import { useToast } from '../contexts/ToastContext'
 import PhoneInputWithCountry from './PhoneInputWithCountry'
 import { isValidPhone } from '../utils/countryCodes'
@@ -13,6 +13,7 @@ const LeadCaptureForm = () => {
   const location = useLocation()
   const prevLocationRef = useRef(location.pathname)
   const [isVisible, setIsVisible] = useState(false)
+  const [isTriggerVisible, setIsTriggerVisible] = useState(true)
   const [formData, setFormData] = useState({ name: '', phone: '' })
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -30,7 +31,7 @@ const LeadCaptureForm = () => {
 
     // Reset scroll tracking for this trip page visit
     sessionStorage.removeItem('tripPageScrolled35')
-    
+
     // Reset leadFormShown only if user hasn't submitted
     // This allows form to show again for new trip page visits
     const alreadySubmitted = sessionStorage.getItem('leadFormSubmitted') === 'true'
@@ -40,7 +41,7 @@ const LeadCaptureForm = () => {
 
     const handleScroll = () => {
       const scrollPercent = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100
-      
+
       if (scrollPercent >= 35) {
         // Mark that user scrolled 35% on trip page
         sessionStorage.setItem('tripPageScrolled35', 'true')
@@ -101,7 +102,7 @@ const LeadCaptureForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
+
     if (!formData.name.trim() || !formData.phone.trim() || !isValidPhone(formData.phone)) {
       toast.error('Please enter a valid name and phone number (with country code)')
       return
@@ -124,9 +125,9 @@ const LeadCaptureForm = () => {
       setIsVisible(false)
       // Clear the flag
       sessionStorage.removeItem('tripPageScrolled35')
-      
+
       toast.success('Thank you! Our travel expert will connect with you soon.')
-      
+
       // Redirect to home page after 2 seconds
       setTimeout(() => {
         navigate('/')
@@ -143,156 +144,195 @@ const LeadCaptureForm = () => {
     }
   }
 
+  // Fetch current user details to auto-fill form
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const token = localStorage.getItem('token')
+      if (!token) return
+
+      try {
+        const response = await authAPI.getCurrentUser()
+        if (response?.user) {
+          setFormData({
+            name: response.user.name || '',
+            phone: response.user.phone || ''
+          })
+        }
+      } catch (error) {
+        console.error('Error fetching user for auto-fill:', error)
+      }
+    }
+    fetchUserData()
+  }, [])
+
   return (
     <>
       {/* Fixed "Plan a Trip" Trigger Button */}
-      <motion.button
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 0.5, duration: 0.4 }}
-        onClick={openForm}
-        className="fixed right-4 bottom-24 sm:right-6 sm:bottom-28 md:bottom-32 z-50 group"
-        aria-label="Plan a trip"
-      >
-        <div className="relative">
-          {/* Subtle glow effect on hover */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[#017233] to-[#00C853] rounded-full opacity-0 group-hover:opacity-20 blur-md transition-opacity duration-300"></div>
-          
-          {/* Main button */}
-          <div className="relative bg-gradient-to-br from-[#017233] via-[#01994d] to-[#00C853] text-white rounded-full px-5 py-3 sm:px-6 sm:py-3.5 shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 transition-all duration-300 flex items-center gap-2 sm:gap-3">
-            <Plane className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={2} />
-            <span className="font-semibold text-sm sm:text-base whitespace-nowrap">
-              Plan a Trip
-            </span>
-          </div>
-        </div>
-      </motion.button>
+      {isTriggerVisible && (
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.5, duration: 0.4 }}
+          className="fixed right-4 bottom-24 sm:right-6 sm:bottom-28 md:bottom-32 z-50 group flex flex-col items-end gap-2"
+        >
+          {/* Close button for the trigger */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsTriggerVisible(false);
+            }}
+            className="bg-white text-gray-400 hover:text-red-500 rounded-full p-1 shadow-md opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0"
+            aria-label="Hide trigger"
+          >
+            <XCircle className="w-5 h-5" />
+          </button>
+
+          <button
+            onClick={openForm}
+            className="group"
+            aria-label="Plan a trip"
+          >
+            <div className="relative">
+              {/* Subtle glow effect on hover */}
+              <div className="absolute inset-0 bg-gradient-to-r from-[#017233] to-[#00C853] rounded-full opacity-0 group-hover:opacity-20 blur-md transition-opacity duration-300"></div>
+
+              {/* Main button */}
+              <div className="relative bg-gradient-to-br from-[#017233] via-[#01994d] to-[#00C853] text-white rounded-full px-5 py-3 sm:px-6 sm:py-3.5 shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 transition-all duration-300 flex items-center gap-2 sm:gap-3">
+                <Plane className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={2} />
+                <span className="font-semibold text-sm sm:text-base whitespace-nowrap">
+                  Plan a Trip
+                </span>
+              </div>
+            </div>
+          </button>
+        </motion.div>
+      )}
 
       {/* Popup Form */}
       <AnimatePresence>
         {isVisible && (
-        <>
-          {/* Backdrop with subtle blur */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="fixed inset-0 bg-black/20 backdrop-blur-[2px] z-[9998]"
-            onClick={handleClose}
-          />
+          <>
+            {/* Backdrop with subtle blur */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="fixed inset-0 bg-black/20 backdrop-blur-[2px] z-[9998]"
+              onClick={handleClose}
+            />
 
-          {/* Form Card */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            transition={{ 
-              type: 'spring', 
-              stiffness: 300, 
-              damping: 30,
-              duration: 0.4 
-            }}
-            className="fixed inset-0 z-[9999] flex items-center justify-center p-4 pointer-events-none"
-          >
-            <div 
-              className="bg-white rounded-2xl shadow-2xl w-full max-w-md pointer-events-auto relative overflow-hidden"
-              onClick={(e) => e.stopPropagation()}
+            {/* Form Card */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{
+                type: 'spring',
+                stiffness: 300,
+                damping: 30,
+                duration: 0.4
+              }}
+              className="fixed inset-0 z-[9999] flex items-center justify-center p-4 pointer-events-none"
             >
-              {/* Decorative gradient accent at top */}
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#017233] via-[#01994d] to-[#00C853]"></div>
-
-              {/* Close button */}
-              <button
-                onClick={handleClose}
-                className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors rounded-full hover:bg-gray-100 z-10"
-                aria-label="Close"
+              <div
+                className="bg-white rounded-2xl shadow-2xl w-full max-w-md pointer-events-auto relative overflow-hidden"
+                onClick={(e) => e.stopPropagation()}
               >
-                <X className="w-5 h-5" />
-              </button>
+                {/* Decorative gradient accent at top */}
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#017233] via-[#01994d] to-[#00C853]"></div>
 
-              {/* Content */}
-              <div className="p-8 sm:p-10">
-                {/* Travel icon badge */}
-                <div className="flex justify-center mb-6">
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#017233]/10 to-[#00C853]/10 flex items-center justify-center">
-                    <Plane className="w-8 h-8 text-[#017233]" strokeWidth={1.5} />
-                  </div>
-                </div>
+                {/* Close button */}
+                <button
+                  onClick={handleClose}
+                  className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors rounded-full hover:bg-gray-100 z-10"
+                  aria-label="Close"
+                >
+                  <X className="w-5 h-5" />
+                </button>
 
-                {/* Title */}
-                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 text-center mb-2">
-                  Plan Your Trip with SafeHands
-                </h2>
-
-                {/* Subtitle */}
-                <p className="text-gray-600 text-center text-sm sm:text-base mb-6 leading-relaxed">
-                  Share a few details and our expert will connect with you
-                </p>
-
-                {/* Form */}
-                <form onSubmit={handleSubmit} className="space-y-5">
-                  {/* Name Input */}
-                  <div>
-                    <label htmlFor="lead-name" className="block text-sm font-medium text-gray-700 mb-2">
-                      Name
-                    </label>
-                    <input
-                      type="text"
-                      id="lead-name"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#017233]/20 focus:border-[#017233] transition-all outline-none text-gray-900 placeholder-gray-400"
-                      placeholder="Enter your name"
-                    />
+                {/* Content */}
+                <div className="p-8 sm:p-10">
+                  {/* Travel icon badge */}
+                  <div className="flex justify-center mb-6">
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#017233]/10 to-[#00C853]/10 flex items-center justify-center">
+                      <Plane className="w-8 h-8 text-[#017233]" strokeWidth={1.5} />
+                    </div>
                   </div>
 
-                  {/* Phone Input */}
-                  <div>
-                    <label htmlFor="lead-phone" className="block text-sm font-medium text-gray-700 mb-2">
-                      Phone Number
-                    </label>
-                    <PhoneInputWithCountry
-                      id="lead-phone"
-                      value={formData.phone}
-                      onChange={(v) => setFormData(prev => ({ ...prev, phone: v }))}
-                      required
-                      placeholder="Enter phone number"
-                      className="rounded-lg"
-                    />
-                  </div>
+                  {/* Title */}
+                  <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 text-center mb-2">
+                    Plan Your Trip with SafeHands
+                  </h2>
 
-                  {/* Submit Button */}
-                  <button
-                    type="submit"
-                    disabled={isSubmitting || !formData.name.trim() || !isValidPhone(formData.phone)}
-                    className="w-full py-3.5 px-6 rounded-lg bg-gradient-to-r from-[#017233] via-[#01994d] to-[#00C853] text-white font-semibold text-base shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-lg"
-                  >
-                    {isSubmitting ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                        </svg>
-                        Submitting...
-                      </span>
-                    ) : (
-                      'Talk to a Travel Expert'
-                    )}
-                  </button>
-
-                  {/* Trust hint */}
-                  <p className="text-xs text-gray-500 text-center mt-4">
-                    No spam. Only genuine travel assistance.
+                  {/* Subtitle */}
+                  <p className="text-gray-600 text-center text-sm sm:text-base mb-6 leading-relaxed">
+                    Share a few details and our expert will connect with you
                   </p>
-                </form>
+
+                  {/* Form */}
+                  <form onSubmit={handleSubmit} className="space-y-5">
+                    {/* Name Input */}
+                    <div>
+                      <label htmlFor="lead-name" className="block text-sm font-medium text-gray-700 mb-2">
+                        Name
+                      </label>
+                      <input
+                        type="text"
+                        id="lead-name"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#017233]/20 focus:border-[#017233] transition-all outline-none text-gray-900 placeholder-gray-400"
+                        placeholder="Enter your name"
+                      />
+                    </div>
+
+                    {/* Phone Input */}
+                    <div>
+                      <label htmlFor="lead-phone" className="block text-sm font-medium text-gray-700 mb-2">
+                        Phone Number
+                      </label>
+                      <PhoneInputWithCountry
+                        id="lead-phone"
+                        value={formData.phone}
+                        onChange={(v) => setFormData(prev => ({ ...prev, phone: v }))}
+                        required
+                        placeholder="Enter phone number"
+                        className="rounded-lg"
+                      />
+                    </div>
+
+                    {/* Submit Button */}
+                    <button
+                      type="submit"
+                      disabled={isSubmitting || !formData.name.trim() || !isValidPhone(formData.phone)}
+                      className="w-full py-3.5 px-6 rounded-lg bg-gradient-to-r from-[#017233] via-[#01994d] to-[#00C853] text-white font-semibold text-base shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-lg"
+                    >
+                      {isSubmitting ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                          </svg>
+                          Submitting...
+                        </span>
+                      ) : (
+                        'Talk to a Travel Expert'
+                      )}
+                    </button>
+
+                    {/* Trust hint */}
+                    <p className="text-xs text-gray-500 text-center mt-4">
+                      No spam. Only genuine travel assistance.
+                    </p>
+                  </form>
+                </div>
               </div>
-            </div>
-          </motion.div>
-        </>
-      )}
+            </motion.div>
+          </>
+        )}
       </AnimatePresence>
     </>
   )

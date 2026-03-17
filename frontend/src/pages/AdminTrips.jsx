@@ -4,6 +4,8 @@ import { Plus, Edit2, Trash2, Eye, Loader2, X, Save, Upload, Image as ImageIcon,
 import { tripsAPI, uploadAPI, blogsAPI } from '../config/api';
 import { useToast } from '../contexts/ToastContext';
 import { authAPI } from '../config/api';
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
 
 // List of major Indian cities
 const INDIAN_CITIES = [
@@ -24,6 +26,22 @@ const INDIAN_CITIES = [
   'Aizawl', 'Agartala', 'Gangtok', 'Itanagar', 'Kohima', 'Imphal', 'Shillong', 'Dispur'
 ].sort();
 
+const QUILL_MODULES = {
+  toolbar: [
+    [{ 'header': [1, 2, 3, false] }],
+    ['bold', 'italic', 'underline', 'strike'],
+    [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+    ['link', 'clean']
+  ],
+};
+
+const QUILL_FORMATS = [
+  'header',
+  'bold', 'italic', 'underline', 'strike',
+  'list', 'bullet',
+  'link'
+];
+
 const AdminTrips = () => {
   const navigate = useNavigate();
   const toast = useToast();
@@ -38,10 +56,10 @@ const AdminTrips = () => {
   const [showLocationDropdown, setShowLocationDropdown] = useState(false);
   const [recommendedTripsSearch, setRecommendedTripsSearch] = useState('');
   const [showRecommendedTripsDropdown, setShowRecommendedTripsDropdown] = useState(false);
-  const [availableTrips, setAvailableTrips] = useState([]); // All trips for recommended trips dropdown
+  const [availableTrips, setAvailableTrips] = useState([]);
   const [relatedBlogsSearch, setRelatedBlogsSearch] = useState('');
   const [showRelatedBlogsDropdown, setShowRelatedBlogsDropdown] = useState(false);
-  const [availableBlogs, setAvailableBlogs] = useState([]); // All blogs for related blogs dropdown
+  const [availableBlogs, setAvailableBlogs] = useState([]);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -558,7 +576,6 @@ const AdminTrips = () => {
   const filteredTrips = trips.filter(trip => {
     const tripLocation = Array.isArray(trip.location) ? trip.location.join(', ') : (trip.location || '');
     return (
-      trip.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       tripLocation.toLowerCase().includes(searchTerm.toLowerCase())
     );
   });
@@ -956,18 +973,21 @@ const AdminTrips = () => {
                         </button>
                       </div>
 
-                      <textarea
-                        value={day.activities}
-                        onChange={(e) => {
-                          const newItinerary = [...formData.itinerary];
-                          newItinerary[index].activities = e.target.value;
-                          setFormData(prev => ({ ...prev, itinerary: newItinerary }));
-                        }}
-                        placeholder="Optional: additional paragraph description (use Enter for new lines)"
-                        rows={4}
-                        className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-y text-sm"
-                        style={{ lineHeight: '1.5', whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}
-                      />
+                      <div className="bg-white">
+                        <ReactQuill
+                          theme="snow"
+                          value={day.activities || ''}
+                          onChange={(content) => {
+                            const newItinerary = [...formData.itinerary];
+                            newItinerary[index].activities = content;
+                            setFormData(prev => ({ ...prev, itinerary: newItinerary }));
+                          }}
+                          modules={QUILL_MODULES}
+                          formats={QUILL_FORMATS}
+                          placeholder="Activities description (supports rich text: bold, lists, etc.)"
+                          className="h-48 mb-12"
+                        />
+                      </div>
                     </div>
                   ))}
                   <button

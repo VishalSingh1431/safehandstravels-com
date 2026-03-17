@@ -21,9 +21,9 @@ function ProductPage() {
   const [activeTab, setActiveTab] = useState('Itinerary')
   const [numTravelers, setNumTravelers] = useState(1)
   const [selectedDate, setSelectedDate] = useState('Dec 13, 2025')
-  const [showEnquiryForm, setShowEnquiryForm] = useState(false)
   const [enquiryData, setEnquiryData] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
     phone: '',
     message: '',
@@ -126,8 +126,46 @@ function ProductPage() {
 
     if (trip) {
       fetchRecommendedTrips()
+      // Pre-fill destination for Form 2
+      setForm2Data(prev => ({ ...prev, destination: trip.title }))
     }
   }, [trip])
+
+  // Fetch current user details to auto-fill form
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const token = localStorage.getItem('token')
+      if (!token) return
+
+      try {
+        const response = await authAPI.getCurrentUser()
+        if (response?.user) {
+          const { name, email, phone } = response.user
+
+          // Split name into first and last name
+          const nameParts = (name || '').trim().split(' ')
+          const firstName = nameParts[0] || ''
+          const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : ''
+
+          setEnquiryData(prev => ({
+            ...prev,
+            firstName: firstName,
+            lastName: lastName,
+            email: email || prev.email,
+            phone: phone || prev.phone
+          }))
+          setForm2Data(prev => ({
+            ...prev,
+            email: email || prev.email,
+            phone: phone || prev.phone
+          }))
+        }
+      } catch (error) {
+        console.error('Error fetching user for auto-fill:', error)
+      }
+    }
+    fetchUserData()
+  }, [])
 
   // Fetch related blogs - only show blogs that were explicitly added in admin panel
   useEffect(() => {
@@ -316,17 +354,21 @@ function ProductPage() {
   const validateEnquiryForm = () => {
     const newErrors = {};
 
-    if (!enquiryData.name.trim()) {
-      newErrors.name = 'Name is required';
+    if (!enquiryData.firstName?.trim()) {
+      newErrors.firstName = 'First name is required';
     }
 
-    if (!enquiryData.email.trim()) {
+    if (!enquiryData.lastName?.trim()) {
+      newErrors.lastName = 'Last name is required';
+    }
+
+    if (!enquiryData.email?.trim()) {
       newErrors.email = 'Email is required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(enquiryData.email)) {
       newErrors.email = 'Please enter a valid email address';
     }
 
-    if (!enquiryData.phone.trim()) {
+    if (!enquiryData.phone?.trim()) {
       newErrors.phone = 'Phone number is required';
     } else if (!isValidPhone(enquiryData.phone)) {
       newErrors.phone = 'Please enter a valid phone number (with country code)';
@@ -379,11 +421,9 @@ function ProductPage() {
       setSubmitted(true);
       toast.success('Thank you! Your enquiry has been submitted successfully. We\'ll get back to you soon.');
       setTimeout(() => {
-        setShowEnquiryForm(false);
         setSubmitted(false);
         setForm2Data({ numPeople: 1, email: '', phone: '', destination: '', monthOfTravel: '' });
-        navigate('/');
-      }, 2000);
+      }, 5000);
     } catch (error) {
       console.error('Error submitting enquiry:', error);
       toast.error(error.message || 'Failed to submit enquiry. Please try again.');
@@ -413,27 +453,26 @@ function ProductPage() {
         tripPrice: trip.price,
         selectedMonth: monthName,
         numberOfTravelers: numTravelers,
-        name: enquiryData.name.trim(),
+        name: `${enquiryData.firstName.trim()} ${enquiryData.lastName.trim()}`,
         email: enquiryData.email.trim(),
         phone: enquiryData.phone.trim(),
-        message: enquiryData.message.trim() || null,
+        message: enquiryData.message.trim() || `Enquiry for ${trip.title}`,
+        destination: trip.title, // Auto-fetched tour name
       });
 
       setSubmitted(true);
       toast.success('Thank you! Your enquiry has been submitted successfully. We\'ll get back to you soon.');
       setTimeout(() => {
-        setShowEnquiryForm(false);
         setSubmitted(false);
         setEnquiryData({
-          name: '',
+          firstName: '',
+          lastName: '',
           email: '',
           phone: '',
           message: '',
           selectedMonth: ''
         });
-        // Redirect to home page
-        navigate('/');
-      }, 2000);
+      }, 5000);
     } catch (error) {
       console.error('Error submitting enquiry:', error);
       toast.error(error.message || 'Failed to submit enquiry. Please try again.');
@@ -590,7 +629,7 @@ function ProductPage() {
             <div className="mx-auto w-full px-4 sm:px-6 lg:px-8 -mt-12 sm:-mt-16 md:-mt-20 relative z-10">
               <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-8">
                 {/* Main Content Area */}
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 order-2 lg:order-1">
                   <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-gray-200 overflow-hidden">
                     <div className="p-4 sm:p-6 md:p-8 lg:p-12">
                       {/* Trip Title */}
@@ -670,12 +709,11 @@ function ProductPage() {
                                     >
                                       <div className="px-4 sm:px-6 pb-5 w-full">
 
-                                        {activitiesParagraphs.length > 0 && (
-                                          <div className="space-y-1 w-full">
-                                            {activitiesParagraphs.map((para, paraIndex) => (
-                                              <p key={paraIndex} className="text-gray-700 leading-relaxed text-sm md:text-base w-full whitespace-pre-wrap">{para}</p>
-                                            ))}
-                                          </div>
+                                        {day.activities && (
+                                          <div
+                                            className="text-gray-700 leading-relaxed text-sm md:text-base w-full itinerary-content"
+                                            dangerouslySetInnerHTML={{ __html: day.activities }}
+                                          />
                                         )}
                                       </div>
                                     </div>
@@ -948,7 +986,7 @@ function ProductPage() {
 
                 {/* Fixed Booking Sidebar */}
                 {pageSettings?.bookingCard?.enabled && (
-                  <div className="w-full lg:w-96 lg:flex-shrink-0">
+                  <div className="w-full lg:w-96 lg:flex-shrink-0 order-1 lg:order-2">
                     <div className="lg:sticky lg:top-24">
                       <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-gray-200 overflow-hidden">
                         <div className="p-4 sm:p-6">
@@ -971,202 +1009,94 @@ function ProductPage() {
                             </div>
                           )}
 
-                          {/* Trip Dates */}
-                          {pageSettings?.bookingCard?.showDates && (
-                            <div className="mb-4 sm:mb-6 pb-4 sm:pb-6 border-b border-gray-200">
-                              <h3 className="text-xs sm:text-sm font-semibold text-gray-600 mb-2 sm:mb-3 flex items-center gap-2">
-                                <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
-                                Select Travel Date
-                              </h3>
-                              <div className="mb-3">
-                                <input
-                                  type="date"
-                                  value={(() => {
-                                    // Convert selectedDate (e.g., "Dec 13, 2025") to YYYY-MM-DD format
-                                    if (selectedDate && selectedDate.includes(',')) {
-                                      try {
-                                        const date = new Date(selectedDate)
-                                        if (!isNaN(date.getTime())) {
-                                          return date.toISOString().split('T')[0]
-                                        }
-                                      } catch (e) {
-                                        // If conversion fails, use today's date
-                                      }
-                                    }
-                                    // If it's already in YYYY-MM-DD format, use it
-                                    if (selectedDate && selectedDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                                      return selectedDate
-                                    }
-                                    // Default to today or first available date
-                                    const defaultDates = pageSettings?.bookingCard?.defaultDates || []
-                                    if (defaultDates.length > 0) {
-                                      try {
-                                        const date = new Date(defaultDates[0])
-                                        if (!isNaN(date.getTime())) {
-                                          return date.toISOString().split('T')[0]
-                                        }
-                                      } catch (_) {
-                                        // Invalid date string in settings; fall back to today
-                                      }
-                                    }
-                                    // Fallback to today
-                                    return new Date().toISOString().split('T')[0]
-                                  })()}
-                                  onChange={(e) => {
-                                    const dateValue = e.target.value
-                                    if (dateValue) {
-                                      // Convert YYYY-MM-DD to readable format
-                                      const date = new Date(dateValue)
-                                      const formattedDate = date.toLocaleDateString('en-US', {
-                                        month: 'short',
-                                        day: 'numeric',
-                                        year: 'numeric'
-                                      })
-                                      setSelectedDate(formattedDate)
-                                    }
-                                  }}
-                                  min={new Date().toISOString().split('T')[0]}
-                                  className="w-full px-3 sm:px-4 py-2 sm:py-3 border-2 border-gray-300 rounded-lg focus:border-[#017233] focus:ring-2 focus:ring-[#017233]/20 outline-none text-sm sm:text-base text-gray-900 font-medium cursor-pointer hover:border-[#017233]/50 transition-colors"
-                                  style={{
-                                    colorScheme: 'light'
-                                  }}
-                                />
-                              </div>
-                              <div className="flex items-center justify-between bg-gradient-to-r from-[#017233]/5 to-[#01994d]/5 rounded-lg p-3 sm:p-4 border border-[#017233]/20">
-                                <div className="min-w-0 flex-1">
-                                  <p className="font-semibold text-gray-900 text-sm sm:text-base truncate">{selectedDate}</p>
-                                  {trip.price && (
-                                    <p className="text-xs sm:text-sm text-gray-600 mt-1">Starting from {trip.price} /Person</p>
-                                  )}
-                                </div>
-                                <div className="flex-shrink-0 ml-2">
-                                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-[#017233] to-[#01994d] flex items-center justify-center text-white shadow-md">
-                                    <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20">
-                                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                    </svg>
+                          {(() => {
+                            if (trip?.enquiryFormType === 'form2') {
+                              return (
+                                <form onSubmit={handleForm2Submit} className="space-y-4 mb-6">
+                                  <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">Number of people travelling <span className="text-red-500">*</span></label>
+                                    <div className="flex items-center gap-4">
+                                      <button type="button" onClick={() => setForm2Data(prev => ({ ...prev, numPeople: Math.max(1, prev.numPeople - 1) }))} className="w-10 h-10 rounded-lg border-2 border-gray-300 flex items-center justify-center hover:border-[#017233] hover:bg-[#017233] hover:text-white transition-colors">
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" /></svg>
+                                      </button>
+                                      <span className="text-2xl font-bold text-gray-900 w-12 text-center">{form2Data.numPeople}</span>
+                                      <button type="button" onClick={() => setForm2Data(prev => ({ ...prev, numPeople: Math.min(20, prev.numPeople + 1) }))} className="w-10 h-10 rounded-lg border-2 border-gray-300 flex items-center justify-center hover:border-[#017233] hover:bg-[#017233] hover:text-white transition-colors">
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                                      </button>
+                                    </div>
                                   </div>
-                                </div>
-                              </div>
-                              {/* Available Dates List (Optional) */}
-                              {pageSettings?.bookingCard?.defaultDates && pageSettings.bookingCard.defaultDates.length > 0 && (
-                                <div className="mt-3">
-                                  <p className="text-xs text-gray-500 mb-2">Other available dates:</p>
-                                  <div className="flex flex-wrap gap-2">
-                                    {pageSettings.bookingCard.defaultDates.slice(0, 3).map((date, index) => {
-                                      // Convert date string to YYYY-MM-DD if needed
-                                      let dateValue = date
-                                      if (date.includes(',')) {
-                                        try {
-                                          const d = new Date(date)
-                                          if (!isNaN(d.getTime())) {
-                                            dateValue = d.toISOString().split('T')[0]
-                                          }
-                                        } catch (_) {
-                                          // Keep original dateValue if parse fails
-                                        }
-                                      }
-                                      return (
-                                        <button
-                                          key={index}
-                                          onClick={() => {
-                                            const d = new Date(dateValue)
-                                            const formattedDate = d.toLocaleDateString('en-US', {
-                                              month: 'short',
-                                              day: 'numeric',
-                                              year: 'numeric'
-                                            })
-                                            setSelectedDate(formattedDate)
-                                          }}
-                                          className="text-xs px-3 py-1.5 bg-gray-100 hover:bg-[#017233] hover:text-white rounded-full transition-colors text-gray-700 font-medium"
-                                        >
-                                          {date}
-                                        </button>
-                                      )
-                                    })}
+                                  <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">Email <span className="text-red-500">*</span></label>
+                                    <input type="email" name="email" value={form2Data.email} onChange={(e) => { setForm2Data(prev => ({ ...prev, email: e.target.value })); if (errors.email) setErrors(prev => ({ ...prev, email: '' })); }} className={`w-full px-4 py-2 border-2 rounded-lg focus:ring-2 focus:ring-[#017233] focus:border-[#017233] outline-none text-sm ${errors.email ? 'border-red-500' : 'border-gray-200'}`} placeholder="Enter your email" />
+                                    {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email}</p>}
                                   </div>
-                                </div>
-                              )}
-                            </div>
-                          )}
-
-                          {/* No. of Travellers */}
-                          {pageSettings?.bookingCard?.showTravelers && (
-                            <div className="mb-6 pb-6 border-b border-gray-200">
-                              <h3 className="text-sm font-semibold text-gray-600 mb-3 flex items-center gap-2">
-                                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                                </svg>
-                                No. of Travellers
-                              </h3>
-                              <div className="flex items-center gap-4">
-                                <button
-                                  onClick={() => setNumTravelers(Math.max(pageSettings?.bookingCard?.minTravelers || 1, numTravelers - 1))}
-                                  className="w-10 h-10 rounded-lg border-2 border-gray-300 flex items-center justify-center hover:border-[#017233] hover:bg-[#017233] hover:text-white transition-colors"
-                                >
-                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-                                  </svg>
-                                </button>
-                                <span className="text-2xl font-bold text-gray-900 w-12 text-center">{numTravelers}</span>
-                                <button
-                                  onClick={() => setNumTravelers(Math.min(pageSettings?.bookingCard?.maxTravelers || 20, numTravelers + 1))}
-                                  className="w-10 h-10 rounded-lg border-2 border-gray-300 flex items-center justify-center hover:border-[#017233] hover:bg-[#017233] hover:text-white transition-colors"
-                                >
-                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                  </svg>
-                                </button>
-                              </div>
-                              {(() => {
-                                // Check if seatsLeft is set (not null, undefined, or empty string)
-                                const seatsLeftValue = trip.seatsLeft;
-                                const hasSeatsLeft = seatsLeftValue !== null && seatsLeftValue !== undefined && seatsLeftValue !== '';
-
-                                if (!hasSeatsLeft) return null;
-
-                                const seats = typeof seatsLeftValue === 'number' ? seatsLeftValue : parseInt(seatsLeftValue);
-
-                                // Only show if seats is a valid number (including 0)
-                                if (isNaN(seats)) return null;
-
-                                return (
-                                  <div className="mt-3 p-3 bg-gradient-to-r from-orange-50 to-red-50 rounded-lg border border-orange-200">
-                                    <p className="text-sm font-semibold text-orange-700 flex items-center gap-2">
-                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                      </svg>
-                                      {seats > 0 ? (
-                                        <>Only <span className="font-bold text-orange-900">{seats}</span> {seats === 1 ? 'seat' : 'seats'} left!</>
-                                      ) : (
-                                        <>No seats available</>
-                                      )}
-                                    </p>
+                                  <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">Phone Number <span className="text-red-500">*</span></label>
+                                    <PhoneInputWithCountry
+                                      value={form2Data.phone}
+                                      onChange={(v) => { setForm2Data(prev => ({ ...prev, phone: v })); if (errors.phone) setErrors(prev => ({ ...prev, phone: '' })); }}
+                                      error={!!errors.phone}
+                                      placeholder="Enter phone"
+                                      className="rounded-lg text-sm"
+                                    />
+                                    {errors.phone && <p className="mt-1 text-xs text-red-500">{errors.phone}</p>}
                                   </div>
-                                );
-                              })()}
-                            </div>
-                          )}
-
-                          {/* Send Enquiry Button */}
-                          {pageSettings?.bookingCard?.showEnquiryButton && (
-                            <button
-                              onClick={() => {
-                                setEnquiryData({
-                                  name: '',
-                                  email: '',
-                                  phone: '',
-                                  message: '',
-                                  selectedMonth: selectedDate
-                                })
-                                setErrors({})
-                                setSubmitted(false)
-                                setShowEnquiryForm(true)
-                              }}
-                              className="w-full bg-gradient-to-br from-[#017233] to-[#01994d] text-white px-6 py-4 rounded-xl font-bold text-base hover:shadow-xl hover:scale-105 transition-all duration-300 shadow-lg mb-4"
-                            >
-                              Send Enquiry
-                            </button>
-                          )}
+                                  <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">Destination <span className="text-red-500">*</span></label>
+                                    <input type="text" name="destination" value={form2Data.destination} onChange={(e) => { setForm2Data(prev => ({ ...prev, destination: e.target.value })); if (errors.destination) setErrors(prev => ({ ...prev, destination: '' })); }} className={`w-full px-4 py-2 border-2 rounded-lg focus:ring-2 focus:ring-[#017233] focus:border-[#017233] outline-none text-sm ${errors.destination ? 'border-red-500' : 'border-gray-200'}`} placeholder="e.g. Spiti Valley" />
+                                    {errors.destination && <p className="mt-1 text-xs text-red-500">{errors.destination}</p>}
+                                  </div>
+                                  <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">Month of travel</label>
+                                    <input type="month" name="monthOfTravel" value={form2Data.monthOfTravel} onChange={(e) => setForm2Data(prev => ({ ...prev, monthOfTravel: e.target.value }))} className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#017233] focus:border-[#017233] outline-none text-sm" />
+                                  </div>
+                                  <button type="submit" disabled={submitting} className="w-full bg-gradient-to-br from-[#017233] to-[#01994d] text-white px-6 py-4 rounded-xl font-bold text-base hover:shadow-xl transition-all duration-300 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                                    {submitting ? <><Loader2 className="w-5 h-5 animate-spin" /> Submitting...</> : <><Send className="w-5 h-5" /> Submit Enquiry</>}
+                                  </button>
+                                </form>
+                              )
+                            } else {
+                              return (
+                                <form onSubmit={handleEnquirySubmit} className="space-y-4 mb-6">
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                      <label className="block text-sm font-semibold text-gray-700 mb-2">First Name <span className="text-red-500">*</span></label>
+                                      <input type="text" name="firstName" value={enquiryData.firstName} onChange={handleEnquiryInputChange} className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#017233] outline-none text-sm ${errors.firstName ? 'border-red-500' : 'border-gray-200'}`} placeholder="First Name" />
+                                      {errors.firstName && <p className="mt-1 text-xs text-red-500">{errors.firstName}</p>}
+                                    </div>
+                                    <div>
+                                      <label className="block text-sm font-semibold text-gray-700 mb-2">Last Name <span className="text-red-500">*</span></label>
+                                      <input type="text" name="lastName" value={enquiryData.lastName} onChange={handleEnquiryInputChange} className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#017233] outline-none text-sm ${errors.lastName ? 'border-red-500' : 'border-gray-200'}`} placeholder="Last Name" />
+                                      {errors.lastName && <p className="mt-1 text-xs text-red-500">{errors.lastName}</p>}
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">Email <span className="text-red-500">*</span></label>
+                                    <input type="email" name="email" value={enquiryData.email} onChange={handleEnquiryInputChange} className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#017233] outline-none text-sm ${errors.email ? 'border-red-500' : 'border-gray-200'}`} placeholder="Enter Email" />
+                                    {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email}</p>}
+                                  </div>
+                                  <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">Phone Number <span className="text-red-500">*</span></label>
+                                    <PhoneInputWithCountry
+                                      value={enquiryData.phone}
+                                      onChange={(v) => handleEnquiryInputChange({ target: { name: 'phone', value: v } })}
+                                      error={!!errors.phone}
+                                      placeholder="Enter Mobile"
+                                      className="rounded-lg text-sm"
+                                    />
+                                    {errors.phone && <p className="mt-1 text-xs text-red-500">{errors.phone}</p>}
+                                  </div>
+                                  <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">Tour Name</label>
+                                    <input type="text" value={trip.title} readOnly className="w-full px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 text-sm outline-none" />
+                                  </div>
+                                  <button type="submit" disabled={submitting} className="w-full bg-gradient-to-br from-[#017233] to-[#01994d] text-white px-6 py-4 rounded-xl font-bold text-base hover:shadow-xl transition-all duration-300 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                                    {submitting ? <><Loader2 className="w-5 h-5 animate-spin" /> Submitting...</> : <><Send className="w-5 h-5" /> Submit Enquiry</>}
+                                  </button>
+                                </form>
+                              )
+                            }
+                          })()}
 
                           {/* WhatsApp Contact */}
                           {pageSettings?.bookingCard?.showWhatsApp && (
@@ -1300,316 +1230,108 @@ function ProductPage() {
             </section>
           )}
 
-          {/* Enquiry Form Modal */}
-          {showEnquiryForm && (
-            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-center justify-center p-4 overflow-y-auto">
-              <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto my-4">
-                <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between z-10 shadow-sm">
-                  <h2 className="text-2xl font-bold text-gray-900">Send Enquiry</h2>
-                  <button
-                    onClick={() => {
-                      setShowEnquiryForm(false);
-                      setSubmitted(false);
-                      setErrors({});
-                    }}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                    aria-label="Close"
-                  >
-                    <X className="w-6 h-6" />
-                  </button>
+          {/* Full-Screen Image Lightbox Gallery */}
+          {
+            lightboxOpen && (
+              <div
+                className="fixed inset-0 bg-black/95 backdrop-blur-sm z-[300] flex items-center justify-center p-4"
+                onClick={(e) => {
+                  if (e.target === e.currentTarget) {
+                    setLightboxOpen(false)
+                  }
+                }}
+              >
+                {/* Close Button */}
+                <button
+                  onClick={() => setLightboxOpen(false)}
+                  className="absolute top-4 right-4 md:top-8 md:right-8 z-50 w-12 h-12 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white transition-all duration-300 hover:scale-110"
+                  aria-label="Close gallery"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+
+                {/* Previous Button */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handlePreviousImage()
+                  }}
+                  className="absolute left-4 md:left-8 z-50 w-12 h-12 md:w-14 md:h-14 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white transition-all duration-300 hover:scale-110"
+                  aria-label="Previous image"
+                >
+                  <ChevronLeft className="w-6 h-6 md:w-8 md:h-8" />
+                </button>
+
+                {/* Next Button */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleNextImage()
+                  }}
+                  className="absolute right-4 md:right-8 z-50 w-12 h-12 md:w-14 md:h-14 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white transition-all duration-300 hover:scale-110"
+                  aria-label="Next image"
+                >
+                  <ChevronRight className="w-6 h-6 md:w-8 md:h-8" />
+                </button>
+
+                {/* Image Container with Swipe Support */}
+                <div
+                  className="relative w-full h-full max-w-7xl max-h-[90vh] flex items-center justify-center"
+                  onTouchStart={onTouchStart}
+                  onTouchMove={onTouchMove}
+                  onTouchEnd={onTouchEnd}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {(() => {
+                    // Combine hero images and gallery images for lightbox
+                    const getImagesForLightbox = () => {
+                      const heroImages = trip.heroImages && trip.heroImages.length > 0 ? trip.heroImages : []
+                      const galleryImages = content && content.gallery && content.gallery.length > 0
+                        ? content.gallery
+                        : getAllGalleryImages()
+
+                      // Combine hero images first, then gallery images (avoid duplicates)
+                      const allImages = [...heroImages]
+                      galleryImages.forEach(img => {
+                        if (!allImages.includes(img)) {
+                          allImages.push(img)
+                        }
+                      })
+
+                      return allImages
+                    }
+                    const allImages = getImagesForLightbox()
+                    const currentImage = allImages[lightboxIndex]
+
+                    return (
+                      <div className="relative w-full h-full flex flex-col items-center justify-center">
+                        {/* Main Image */}
+                        <img
+                          src={currentImage}
+                          alt={`${trip.title} gallery image ${lightboxIndex + 1}`}
+                          className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
+                        />
+
+                        {/* Image Counter */}
+                        <div className="mt-4 bg-white/10 backdrop-blur-sm px-6 py-2 rounded-full">
+                          <p className="text-white text-sm md:text-base font-medium">
+                            {lightboxIndex + 1} / {allImages.length}
+                          </p>
+                        </div>
+                      </div>
+                    )
+                  })()}
                 </div>
 
-                {submitted ? (
-                  <div className="p-8 text-center">
-                    <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                    <h3 className="text-2xl font-bold text-gray-900 mb-2">Enquiry Submitted!</h3>
-                    <p className="text-gray-600">We'll get back to you soon.</p>
-                  </div>
-                ) : trip?.enquiryFormType === 'form2' ? (
-                  <form onSubmit={handleForm2Submit} className="p-6 space-y-4">
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Number of people travelling <span className="text-red-500">*</span></label>
-                      <div className="flex items-center gap-4">
-                        <button type="button" onClick={() => setForm2Data(prev => ({ ...prev, numPeople: Math.max(1, prev.numPeople - 1) }))} className="w-10 h-10 rounded-lg border-2 border-gray-300 flex items-center justify-center hover:border-[#017233] hover:bg-[#017233] hover:text-white transition-colors">
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" /></svg>
-                        </button>
-                        <span className="text-2xl font-bold text-gray-900 w-12 text-center">{form2Data.numPeople}</span>
-                        <button type="button" onClick={() => setForm2Data(prev => ({ ...prev, numPeople: Math.min(20, prev.numPeople + 1) }))} className="w-10 h-10 rounded-lg border-2 border-gray-300 flex items-center justify-center hover:border-[#017233] hover:bg-[#017233] hover:text-white transition-colors">
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                        </button>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Email <span className="text-red-500">*</span></label>
-                      <input type="email" name="email" value={form2Data.email} onChange={(e) => { setForm2Data(prev => ({ ...prev, email: e.target.value })); if (errors.email) setErrors(prev => ({ ...prev, email: '' })); }} className={`w-full px-4 py-2 border-2 rounded-lg focus:ring-2 focus:ring-[#017233] focus:border-[#017233] outline-none ${errors.email ? 'border-red-500' : 'border-gray-200'}`} placeholder="Enter your email" />
-                      {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email}</p>}
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Phone Number <span className="text-red-500">*</span></label>
-                      <PhoneInputWithCountry
-                        value={form2Data.phone}
-                        onChange={(v) => { setForm2Data(prev => ({ ...prev, phone: v })); if (errors.phone) setErrors(prev => ({ ...prev, phone: '' })); }}
-                        error={!!errors.phone}
-                        placeholder="Enter phone number"
-                        className="rounded-lg"
-                      />
-                      {errors.phone && <p className="mt-1 text-sm text-red-500">{errors.phone}</p>}
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Destination <span className="text-red-500">*</span></label>
-                      <input type="text" name="destination" value={form2Data.destination} onChange={(e) => { setForm2Data(prev => ({ ...prev, destination: e.target.value })); if (errors.destination) setErrors(prev => ({ ...prev, destination: '' })); }} className={`w-full px-4 py-2 border-2 rounded-lg focus:ring-2 focus:ring-[#017233] focus:border-[#017233] outline-none ${errors.destination ? 'border-red-500' : 'border-gray-200'}`} placeholder="e.g. Meghalaya, Spiti Valley" />
-                      {errors.destination && <p className="mt-1 text-sm text-red-500">{errors.destination}</p>}
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Month of travel</label>
-                      <input type="month" name="monthOfTravel" value={form2Data.monthOfTravel} onChange={(e) => setForm2Data(prev => ({ ...prev, monthOfTravel: e.target.value }))} className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#017233] focus:border-[#017233] outline-none" />
-                    </div>
-                    <div className="flex gap-4 pt-4">
-                      <button type="submit" disabled={submitting} className="flex-1 bg-gradient-to-br from-[#017233] to-[#01994d] text-white px-6 py-3 rounded-xl font-bold hover:shadow-xl transition-all duration-300 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-                        {submitting ? <><Loader2 className="w-5 h-5 animate-spin" /> Submitting...</> : <><Send className="w-5 h-5" /> Submit Enquiry</>}
-                      </button>
-                      <button type="button" onClick={() => { setShowEnquiryForm(false); setErrors({}); }} className="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-300 transition-all">Cancel</button>
-                    </div>
-                  </form>
-                ) : (
-                  <form onSubmit={handleEnquirySubmit} className="p-6 space-y-4">
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Name <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        name="name"
-                        value={enquiryData.name}
-                        onChange={handleEnquiryInputChange}
-                        required
-                        className={`w-full px-4 py-2 border-2 rounded-lg focus:ring-2 focus:ring-[#017233] focus:border-[#017233] outline-none ${errors.name ? 'border-red-500' : 'border-gray-200'
-                          }`}
-                        placeholder="Enter your name"
-                      />
-                      {errors.name && <p className="mt-1 text-sm text-red-500">{errors.name}</p>}
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Email <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="email"
-                        name="email"
-                        value={enquiryData.email}
-                        onChange={handleEnquiryInputChange}
-                        required
-                        className={`w-full px-4 py-2 border-2 rounded-lg focus:ring-2 focus:ring-[#017233] focus:border-[#017233] outline-none ${errors.email ? 'border-red-500' : 'border-gray-200'
-                          }`}
-                        placeholder="Enter your email"
-                      />
-                      {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email}</p>}
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Phone Number <span className="text-red-500">*</span>
-                      </label>
-                      <PhoneInputWithCountry
-                        value={enquiryData.phone}
-                        onChange={(v) => handleEnquiryInputChange({ target: { name: 'phone', value: v } })}
-                        error={!!errors.phone}
-                        placeholder="Enter phone number"
-                        className="rounded-lg"
-                      />
-                      {errors.phone && <p className="mt-1 text-sm text-red-500">{errors.phone}</p>}
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Preferred Travel Month
-                      </label>
-                      <input
-                        type="month"
-                        name="selectedMonth"
-                        value={enquiryData.selectedMonth}
-                        onChange={handleEnquiryInputChange}
-                        className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#017233] focus:border-[#017233] outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Number of Travelers
-                      </label>
-                      <div className="flex items-center gap-4">
-                        <button
-                          type="button"
-                          onClick={() => setNumTravelers(Math.max(pageSettings?.bookingCard?.minTravelers || 1, numTravelers - 1))}
-                          className="w-10 h-10 rounded-lg border-2 border-gray-300 flex items-center justify-center hover:border-[#017233] hover:bg-[#017233] hover:text-white transition-colors"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-                          </svg>
-                        </button>
-                        <span className="text-2xl font-bold text-gray-900 w-12 text-center">{numTravelers}</span>
-                        <button
-                          type="button"
-                          onClick={() => setNumTravelers(Math.min(pageSettings?.bookingCard?.maxTravelers || 20, numTravelers + 1))}
-                          className="w-10 h-10 rounded-lg border-2 border-gray-300 flex items-center justify-center hover:border-[#017233] hover:bg-[#017233] hover:text-white transition-colors"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Message
-                      </label>
-                      <textarea
-                        name="message"
-                        value={enquiryData.message}
-                        onChange={handleEnquiryInputChange}
-                        rows={4}
-                        className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#017233] focus:border-[#017233] outline-none"
-                        placeholder="Any specific requirements or questions? (optional)"
-                      />
-                    </div>
-
-                    <div className="flex gap-4 pt-4">
-                      <button
-                        type="submit"
-                        disabled={submitting}
-                        className="flex-1 bg-gradient-to-br from-[#017233] to-[#01994d] text-white px-6 py-3 rounded-xl font-bold hover:shadow-xl transition-all duration-300 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                      >
-                        {submitting ? (
-                          <>
-                            <Loader2 className="w-5 h-5 animate-spin" />
-                            Submitting...
-                          </>
-                        ) : (
-                          <>
-                            <Send className="w-5 h-5" />
-                            Submit Enquiry
-                          </>
-                        )}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowEnquiryForm(false);
-                          setErrors({});
-                        }}
-                        className="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-300 transition-all"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </form>
-                )}
+                {/* Keyboard Navigation Hint */}
+                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full">
+                  <p className="text-white text-xs md:text-sm opacity-75">
+                    Use arrow keys or swipe to navigate • ESC to close
+                  </p>
+                </div>
               </div>
-            </div>
-          )}
-
-          {/* Full-Screen Image Lightbox Gallery */}
-          {lightboxOpen && (
-            <div
-              className="fixed inset-0 bg-black/95 backdrop-blur-sm z-[300] flex items-center justify-center p-4"
-              onClick={(e) => {
-                if (e.target === e.currentTarget) {
-                  setLightboxOpen(false)
-                }
-              }}
-            >
-              {/* Close Button */}
-              <button
-                onClick={() => setLightboxOpen(false)}
-                className="absolute top-4 right-4 md:top-8 md:right-8 z-50 w-12 h-12 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white transition-all duration-300 hover:scale-110"
-                aria-label="Close gallery"
-              >
-                <X className="w-6 h-6" />
-              </button>
-
-              {/* Previous Button */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handlePreviousImage()
-                }}
-                className="absolute left-4 md:left-8 z-50 w-12 h-12 md:w-14 md:h-14 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white transition-all duration-300 hover:scale-110"
-                aria-label="Previous image"
-              >
-                <ChevronLeft className="w-6 h-6 md:w-8 md:h-8" />
-              </button>
-
-              {/* Next Button */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleNextImage()
-                }}
-                className="absolute right-4 md:right-8 z-50 w-12 h-12 md:w-14 md:h-14 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white transition-all duration-300 hover:scale-110"
-                aria-label="Next image"
-              >
-                <ChevronRight className="w-6 h-6 md:w-8 md:h-8" />
-              </button>
-
-              {/* Image Container with Swipe Support */}
-              <div
-                className="relative w-full h-full max-w-7xl max-h-[90vh] flex items-center justify-center"
-                onTouchStart={onTouchStart}
-                onTouchMove={onTouchMove}
-                onTouchEnd={onTouchEnd}
-                onClick={(e) => e.stopPropagation()}
-              >
-                {(() => {
-                  // Combine hero images and gallery images for lightbox
-                  const getImagesForLightbox = () => {
-                    const heroImages = trip.heroImages && trip.heroImages.length > 0 ? trip.heroImages : []
-                    const galleryImages = content && content.gallery && content.gallery.length > 0
-                      ? content.gallery
-                      : getAllGalleryImages()
-
-                    // Combine hero images first, then gallery images (avoid duplicates)
-                    const allImages = [...heroImages]
-                    galleryImages.forEach(img => {
-                      if (!allImages.includes(img)) {
-                        allImages.push(img)
-                      }
-                    })
-
-                    return allImages
-                  }
-                  const allImages = getImagesForLightbox()
-                  const currentImage = allImages[lightboxIndex]
-
-                  return (
-                    <div className="relative w-full h-full flex flex-col items-center justify-center">
-                      {/* Main Image */}
-                      <img
-                        src={currentImage}
-                        alt={`${trip.title} gallery image ${lightboxIndex + 1}`}
-                        className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
-                      />
-
-                      {/* Image Counter */}
-                      <div className="mt-4 bg-white/10 backdrop-blur-sm px-6 py-2 rounded-full">
-                        <p className="text-white text-sm md:text-base font-medium">
-                          {lightboxIndex + 1} / {allImages.length}
-                        </p>
-                      </div>
-                    </div>
-                  )
-                })()}
-              </div>
-
-              {/* Keyboard Navigation Hint */}
-              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full">
-                <p className="text-white text-xs md:text-sm opacity-75">
-                  Use arrow keys or swipe to navigate • ESC to close
-                </p>
-              </div>
-            </div>
-          )}
+            )
+          }
         </>
       )}
     </>

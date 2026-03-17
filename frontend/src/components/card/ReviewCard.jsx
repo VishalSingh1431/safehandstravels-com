@@ -4,9 +4,8 @@ function StarRating({ rating }) {
       {[...Array(5)].map((_, i) => (
         <svg
           key={i}
-          className={`w-5 h-5 ${
-            i < rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
-          }`}
+          className={`w-5 h-5 ${i < rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
+            }`}
           viewBox="0 0 20 20"
         >
           <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
@@ -19,16 +18,16 @@ function StarRating({ rating }) {
 function ReviewCard({ review }) {
   // Ensure video URL is properly formatted
   const videoUrl = review.videoUrl || review.video_url;
-  
+
   // Extract YouTube ID from URL
   const extractYouTubeId = (url) => {
     if (!url) return null;
-    
+
     // If it's already just an ID, return it
     if (!url.includes('youtube.com') && !url.includes('youtu.be')) {
       return url.length === 11 ? url : null;
     }
-    
+
     // Extract ID from YouTube URL (including Shorts)
     const regExp = /(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([^#&?\/\s]{11})/;
     const match = url.match(regExp);
@@ -37,7 +36,7 @@ function ReviewCard({ review }) {
 
   const youtubeId = videoUrl ? extractYouTubeId(videoUrl) : null;
   const isYouTubeLink = youtubeId !== null;
-  
+
   return (
     <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border border-gray-200 overflow-hidden hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 group flex flex-col h-full w-full min-h-[480px] sm:min-h-[520px]">
       {/* Video Section */}
@@ -81,7 +80,7 @@ function ReviewCard({ review }) {
           <p className="text-xs sm:text-sm text-gray-500">No video available</p>
         </div>
       )}
-      
+
       {/* Card Content */}
       <div className="p-4 sm:p-6 flex-1 flex flex-col">
         <div className="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
@@ -100,13 +99,13 @@ function ReviewCard({ review }) {
             <p className="text-xs sm:text-sm text-gray-500 truncate">{review.location || 'Traveler'}</p>
           </div>
         </div>
-        
+
         <div className="mb-3 sm:mb-4">
           <StarRating rating={review.rating} />
         </div>
-        
+
         {review.review && (
-          <p className="text-gray-700 leading-relaxed text-xs sm:text-sm line-clamp-3">{review.review}</p>
+          <p className="text-gray-700 leading-relaxed text-xs sm:text-sm line-clamp-4">{review.review}</p>
         )}
       </div>
     </div>

@@ -2,8 +2,8 @@
  * Structured Data (JSON-LD) generators for SEO
  */
 
-const baseUrl = typeof window !== 'undefined' 
-  ? window.location.origin 
+const baseUrl = typeof window !== 'undefined'
+  ? window.location.origin
   : 'https://safehandstravels.com';
 
 /**
@@ -19,9 +19,9 @@ export const getOrganizationSchema = () => ({
   description: 'Your trusted partner for unforgettable travel experiences. We make your dreams come true, one destination at a time.',
   address: {
     '@type': 'PostalAddress',
-    streetAddress: '123 Travel Street',
-    addressLocality: 'Adventure City',
-    postalCode: 'AC 12345',
+    streetAddress: 'Flat No- KCB0040205, Wish Town Klassic, Sector 134',
+    addressLocality: 'Noida',
+    postalCode: '201304',
     addressCountry: 'IN'
   },
   contactPoint: {
