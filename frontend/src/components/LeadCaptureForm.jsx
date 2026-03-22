@@ -25,6 +25,15 @@ const LeadCaptureForm = () => {
     setIsVisible(true)
   }
 
+  // Listen for global open form event
+  useEffect(() => {
+    const handleOpenForm = () => {
+      openForm()
+    }
+    window.addEventListener('open-lead-form', handleOpenForm)
+    return () => window.removeEventListener('open-lead-form', handleOpenForm)
+  }, [])
+
   // Track scroll on trip pages only
   useEffect(() => {
     if (!isTripPage) return
@@ -173,7 +182,7 @@ const LeadCaptureForm = () => {
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.5, duration: 0.4 }}
-          className="fixed right-4 bottom-24 sm:right-6 sm:bottom-28 md:bottom-32 z-50 group flex flex-col items-end gap-2"
+          className="hidden md:flex fixed right-4 bottom-24 sm:right-6 sm:bottom-28 md:bottom-32 z-50 group flex-col items-end gap-2"
         >
           {/* Close button for the trigger */}
           <button

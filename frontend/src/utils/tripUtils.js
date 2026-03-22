@@ -35,3 +35,11 @@ export function tripMatchesSearch(trip, searchQuery) {
   const location = getLocationString(trip.location).toLowerCase()
   return location.includes(q)
 }
+
+/**
+ * Trigger the lead capture form globally via custom event
+ */
+export function triggerEnquiryForm() {
+  const event = new CustomEvent('open-lead-form')
+  window.dispatchEvent(event)
+}

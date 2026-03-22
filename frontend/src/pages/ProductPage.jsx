@@ -711,8 +711,8 @@ function ProductPage() {
 
                                         {day.activities && (
                                           <div
-                                            className="text-gray-700 leading-relaxed text-sm md:text-base w-full itinerary-content"
-                                            dangerouslySetInnerHTML={{ __html: day.activities }}
+                                            className="text-gray-700 leading-relaxed text-sm md:text-base w-full itinerary-content break-words [&_*]:!whitespace-normal [&_*]:!max-w-full [&_*]:!min-w-0"
+                                            dangerouslySetInnerHTML={{ __html: day.activities.replace(/&nbsp;|\u00A0/g, ' ') }}
                                           />
                                         )}
                                       </div>
@@ -831,7 +831,7 @@ function ProductPage() {
                                 Gallery & Traveller Experiences
                               </h2>
                             </div>
-                            <div className={`grid grid-cols-2 gap-2 sm:gap-3 md:gap-4 mb-6 sm:mb-8 ${pageSettings?.displaySettings?.galleryColumns === 3 ? 'md:grid-cols-3' :
+                            <div className={`grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 md:gap-4 mb-6 sm:mb-8 ${pageSettings?.displaySettings?.galleryColumns === 3 ? 'md:grid-cols-3' :
                               pageSettings?.displaySettings?.galleryColumns === 2 ? 'md:grid-cols-2' :
                                 'md:grid-cols-4'
                               }`}>
@@ -1058,7 +1058,7 @@ function ProductPage() {
                             } else {
                               return (
                                 <form onSubmit={handleEnquirySubmit} className="space-y-4 mb-6">
-                                  <div className="grid grid-cols-2 gap-4">
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
                                       <label className="block text-sm font-semibold text-gray-700 mb-2">First Name <span className="text-red-500">*</span></label>
                                       <input type="text" name="firstName" value={enquiryData.firstName} onChange={handleEnquiryInputChange} className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#017233] outline-none text-sm ${errors.firstName ? 'border-red-500' : 'border-gray-200'}`} placeholder="First Name" />

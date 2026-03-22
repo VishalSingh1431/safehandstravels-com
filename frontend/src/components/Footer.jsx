@@ -251,9 +251,9 @@ function Footer() {
           <div className="absolute inset-0 bg-[#25D366] rounded-full animate-pulse opacity-50"></div>
 
           {/* Main button with zoom effect */}
-          <div className="relative w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-gradient-to-br from-[#25D366] to-[#128C7E] rounded-full flex items-center justify-center shadow-2xl transition-transform duration-300 group-hover:scale-110 group-active:scale-95">
+          <div className="relative w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-gradient-to-br from-[#25D366] to-[#128C7E] rounded-full flex items-center justify-center shadow-2xl transition-transform duration-300 group-hover:scale-110 group-active:scale-95">
             <svg
-              className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-white"
+              className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white"
               fill="currentColor"
               viewBox="0 0 24 24"
               xmlns="http://www.w3.org/2000/svg"
