@@ -50,7 +50,7 @@ export const getOrganizationSchema = () => ({
 export const getTripSchema = (trip) => {
   if (!trip) return null;
 
-  const tripUrl = `${baseUrl}/trip/${trip.id}`;
+  const tripUrl = `${baseUrl}/trip/${trip.slug}`;
   const imageUrl = trip.imageUrl || trip.image || `${baseUrl}/images/Logo.webp`;
 
   return {

@@ -165,7 +165,13 @@ router.put('/:id', verifyToken, verifyAdmin, async (req, res) => {
       }
     }
 
+    console.log('--- API UPDATE TRIP ---');
+    console.log('ID:', id);
+    console.log('Update Data keys:', Object.keys(updateData));
+    console.log('City value:', updateData.city);
+    
     const trip = await Trip.update(id, updateData);
+    console.log('Resulting City after update:', trip.city);
 
     res.json({
       message: 'Trip updated successfully',

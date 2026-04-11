@@ -11,7 +11,7 @@ import { isValidPhone } from '../utils/countryCodes'
 import { getLocationString } from '../utils/tripUtils'
 
 function ProductPage() {
-  const { id } = useParams()
+  const { slug } = useParams()
   const navigate = useNavigate()
   const toast = useToast()
   const [trip, setTrip] = useState(null)
@@ -52,7 +52,7 @@ function ProductPage() {
       try {
         setLoading(true)
         const [tripResponse, settingsResponse] = await Promise.all([
-          tripsAPI.getTripById(id),
+          tripsAPI.getTripBySlug(slug),
           productPageSettingsAPI.getSettings()
         ])
 
@@ -80,10 +80,10 @@ function ProductPage() {
       }
     }
 
-    if (id) {
+    if (slug) {
       fetchData()
     }
-  }, [id, toast])
+  }, [slug, toast])
 
   // Fetch recommended trips
   useEffect(() => {
@@ -332,13 +332,13 @@ function ProductPage() {
   const content = getTripContent(trip)
 
   // SEO metadata (location may be string or array)
-  const locationDisplay = trip ? getLocationString(trip.location) : ''
+  const locationDisplay = trip ? getLocationString(trip.location, trip.city) : ''
   const tripTitle = trip ? `${trip.title} - ${locationDisplay} | Safe Hands Travels` : 'Trip Details | Safe Hands Travels'
   const tripDescription = trip
     ? (trip.intro || content.intro || `Experience ${trip.title} in ${locationDisplay}. ${trip.duration} adventure trip with Safe Hands Travels.`)
     : 'Discover amazing travel experiences with Safe Hands Travels'
   const tripImage = trip ? (trip.imageUrl || trip.image || '/images/Logo.webp') : '/images/Logo.webp'
-  const tripUrl = trip ? `/trip/${trip.id}` : ''
+  const tripUrl = trip ? `/trip/${trip.slug}` : ''
 
   // Structured data
   const structuredData = trip ? [
@@ -408,7 +408,7 @@ function ProductPage() {
       await enquiriesAPI.createEnquiry({
         tripId: trip.id,
         tripTitle: trip.title,
-        tripLocation: getLocationString(trip.location),
+        tripLocation: getLocationString(trip.location, trip.city),
         tripPrice: trip.price,
         enquiryType: 'form2',
         numPeople: form2Data.numPeople,
@@ -449,7 +449,7 @@ function ProductPage() {
       await enquiriesAPI.createEnquiry({
         tripId: trip.id,
         tripTitle: trip.title,
-        tripLocation: getLocationString(trip.location),
+        tripLocation: getLocationString(trip.location, trip.city),
         tripPrice: trip.price,
         selectedMonth: monthName,
         numberOfTravelers: numTravelers,
@@ -496,7 +496,7 @@ function ProductPage() {
           <SEO
             title={tripTitle}
             description={tripDescription}
-            keywords={`${trip.title}, ${getLocationString(trip.location)}, travel, trip, adventure, ${trip.duration}, Safe Hands Travels, India travel`}
+            keywords={`${trip.title}, ${getLocationString(trip.location, trip.city)}, travel, trip, adventure, ${trip.duration}, Safe Hands Travels, India travel`}
             image={tripImage}
             url={tripUrl}
             type="article"
@@ -558,7 +558,7 @@ function ProductPage() {
                                   {trip.title}
                                 </h1>
                                 <p className="text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl font-light drop-shadow-lg opacity-95">
-                                  {getLocationString(trip.location)} {content.subtitle}
+                                  {getLocationString(trip.location, trip.city)} {content.subtitle}
                                 </p>
                               </div>
                             </div>
@@ -611,7 +611,7 @@ function ProductPage() {
                       ⏱️ {trip.duration}
                     </span>
                     <span className="bg-white backdrop-blur-sm px-3 sm:px-4 py-1.5 sm:py-2 rounded-full shadow-md border border-gray-200 text-gray-800 font-medium">
-                      📍 {getLocationString(trip.location)}
+                      📍 {getLocationString(trip.location, trip.city)}
                     </span>
                   </div>
 

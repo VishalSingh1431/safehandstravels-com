@@ -10,7 +10,7 @@ function TripCard({ trip }) {
   const optimizedImageUrl = getThumbnailUrl(imageUrl)
 
   const handleCardClick = () => {
-    navigate(`/trip/${trip.id}`)
+    navigate(`/trip/${trip.slug}`)
   }
 
   const handleEnquireClick = (e) => {
@@ -20,7 +20,7 @@ function TripCard({ trip }) {
 
   const handleViewClick = (e) => {
     e.stopPropagation()
-    navigate(`/trip/${trip.id}`)
+    navigate(`/trip/${trip.slug}`)
   }
 
   return (
@@ -50,7 +50,7 @@ function TripCard({ trip }) {
           <span className="bg-gray-100 px-2 py-0.5 rounded-full text-[10px] sm:text-xs">⏱️ {trip.duration}</span>
         </div>
         <h3 className="text-sm sm:text-base font-bold text-gray-900 line-clamp-2 group-hover:text-[#017233] transition-colors leading-tight">{trip.title}</h3>
-        <p className="text-xs sm:text-sm text-gray-600 font-medium">{getLocationString(trip.location)}</p>
+        <p className="text-xs sm:text-sm text-gray-600 font-medium">{getLocationString(trip.location, trip.city)}</p>
 
         <div className="flex items-center gap-2 pt-2.5 border-t border-gray-100 mt-auto">
           <button

@@ -71,6 +71,7 @@ const AdminTrips = () => {
     videoUrl: '',
     subtitle: '',
     intro: '',
+    city: '',
     category: [],
     whyVisit: [''],
     itinerary: [{ day: 'Day 1', title: '', activities: '' }],
@@ -436,11 +437,18 @@ const AdminTrips = () => {
       console.log('Saving trip with recommendedTrips:', tripData.recommendedTrips); // Debug log
       console.log('Saving trip with relatedBlogs:', tripData.relatedBlogs); // Debug log
 
+      console.log('--- SUBMITTING TRIP DATA ---');
+      console.log('Payload:', tripData);
+
       if (editingTrip) {
-        await tripsAPI.updateTrip(editingTrip.id, tripData);
+        setLoading(true);
+        const response = await tripsAPI.updateTrip(editingTrip.id, tripData);
+        console.log('Update Response:', response);
         toast.success('Trip updated successfully!');
       } else {
-        await tripsAPI.createTrip(tripData);
+        setLoading(true);
+        const response = await tripsAPI.createTrip(tripData);
+        console.log('Create Response:', response);
         toast.success('Trip created successfully!');
       }
 
@@ -449,6 +457,8 @@ const AdminTrips = () => {
     } catch (error) {
       console.error('Error saving trip:', error);
       toast.error(error.message || 'Failed to save trip');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -474,6 +484,7 @@ const AdminTrips = () => {
       videoUrl: trip.videoUrl || trip.video || '',
       subtitle: trip.subtitle || '',
       intro: trip.intro || '',
+      city: trip.city || '',
       category: trip.category || [],
       whyVisit: trip.whyVisit && trip.whyVisit.length > 0 ? trip.whyVisit : [''],
       itinerary: trip.itinerary && trip.itinerary.length > 0
@@ -548,6 +559,7 @@ const AdminTrips = () => {
       videoUrl: '',
       subtitle: '',
       intro: '',
+      city: '',
       category: [],
       whyVisit: [''],
       itinerary: [{ day: 'Day 1', title: '', activities: '' }],
@@ -575,8 +587,11 @@ const AdminTrips = () => {
 
   const filteredTrips = trips.filter(trip => {
     const tripLocation = Array.isArray(trip.location) ? trip.location.join(', ') : (trip.location || '');
+    const searchLower = searchTerm.toLowerCase();
     return (
-      tripLocation.toLowerCase().includes(searchTerm.toLowerCase())
+      trip.title?.toLowerCase().includes(searchLower) ||
+      tripLocation.toLowerCase().includes(searchLower) ||
+      trip.city?.toLowerCase().includes(searchLower)
     );
   });
 
@@ -659,7 +674,7 @@ const AdminTrips = () => {
                     />
                   </div>
                   <div className="relative" ref={locationDropdownRef}>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Locations *</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">State *</label>
 
                     {/* Selected Locations */}
                     {formData.location && formData.location.length > 0 && (
@@ -691,7 +706,7 @@ const AdminTrips = () => {
                         value={locationSearch}
                         onChange={handleInputChange}
                         onFocus={() => setShowLocationDropdown(true)}
-                        placeholder="Type to search and add cities..."
+                        placeholder="Type to search and add states..."
                         className="w-full px-4 py-2 pr-10 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                       />
                       <MapPin className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
@@ -728,10 +743,21 @@ const AdminTrips = () => {
                     </div>
                     <p className="text-xs text-gray-500 mt-1">
                       {formData.location?.length > 0
-                        ? `${formData.location.length} location(s) selected. Type to add more.`
-                        : 'Start typing or select from the list to add locations'
+                        ? `${formData.location.length} state(s) selected. Type to add more.`
+                        : 'Start typing or select from the list to add states'
                       }
                     </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">City Name</label>
+                    <input
+                      type="text"
+                      name="city"
+                      value={formData.city}
+                      onChange={handleInputChange}
+                      placeholder="e.g., Manali, Leh, Varanasi"
+                      className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                    />
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Duration *</label>
@@ -1450,7 +1476,7 @@ const AdminTrips = () => {
                         <div className="flex-1 min-w-0">
                           <h3 className="font-semibold text-gray-900 truncate mb-1">{trip.title}</h3>
                           <p className="text-sm text-gray-600 mb-2">
-                            {Array.isArray(trip.location) ? trip.location.join(', ') : trip.location}
+                            {Array.isArray(trip.location) ? trip.location.join(', ') : trip.location} {trip.city ? `• ${trip.city}` : ''}
                           </p>
                           <div className="flex items-center gap-2 mb-2 flex-wrap">
                             <span className="text-xs text-gray-500">{trip.duration}</span>
@@ -1462,7 +1488,7 @@ const AdminTrips = () => {
                               {trip.status}
                             </span>
                           </div>
-                          {trip.category && trip.category.length > 0 && (
+                          {Array.isArray(trip.category) && trip.category.length > 0 && (
                             <div className="flex flex-wrap gap-1 mb-2">
                               {trip.category.map((cat, idx) => (
                                 <span key={idx} className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-semibold">
@@ -1473,7 +1499,7 @@ const AdminTrips = () => {
                           )}
                           <div className="flex items-center gap-2">
                             <button
-                              onClick={() => navigate(`/trip/${trip.id}`)}
+                              onClick={() => navigate(`/trip/${trip.slug}`)}
                               className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                               title="View"
                             >
@@ -1509,7 +1535,7 @@ const AdminTrips = () => {
                   <tr>
                     <th className="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700">Image</th>
                     <th className="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700">Title</th>
-                    <th className="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700">Location</th>
+                    <th className="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700">State / City</th>
                     <th className="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700">Duration</th>
                     <th className="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700">Price</th>
                     <th className="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700">Categories</th>
@@ -1544,12 +1570,12 @@ const AdminTrips = () => {
                           <span className="font-semibold text-gray-900 text-sm sm:text-base">{trip.title}</span>
                         </td>
                         <td className="px-4 lg:px-6 py-3 lg:py-4 text-gray-700 text-sm sm:text-base">
-                          {Array.isArray(trip.location) ? trip.location.join(', ') : trip.location}
+                          {Array.isArray(trip.location) ? trip.location.join(', ') : trip.location} {trip.city ? `• ${trip.city}` : ''}
                         </td>
                         <td className="px-4 lg:px-6 py-3 lg:py-4 text-gray-700 text-sm sm:text-base">{trip.duration}</td>
                         <td className="px-4 lg:px-6 py-3 lg:py-4 text-gray-700 font-semibold text-sm sm:text-base">{trip.price}</td>
                         <td className="px-4 lg:px-6 py-3 lg:py-4">
-                          {trip.category && trip.category.length > 0 ? (
+                          {Array.isArray(trip.category) && trip.category.length > 0 ? (
                             <div className="flex flex-wrap gap-1">
                               {trip.category.map((cat, idx) => (
                                 <span key={idx} className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-semibold">
@@ -1572,7 +1598,7 @@ const AdminTrips = () => {
                         <td className="px-4 lg:px-6 py-3 lg:py-4">
                           <div className="flex items-center gap-1 sm:gap-2">
                             <button
-                              onClick={() => navigate(`/trip/${trip.id}`)}
+                              onClick={() => navigate(`/trip/${trip.slug}`)}
                               className="p-1.5 sm:p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                               title="View"
                             >

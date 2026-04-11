@@ -1,11 +1,18 @@
 /**
  * Normalize trip location to string (API may return string or array)
  */
-export function getLocationString(location) {
-  if (location == null) return ''
-  if (typeof location === 'string') return location
-  if (Array.isArray(location)) return location.join(' ')
-  return String(location)
+export function getLocationString(location, city = null) {
+  let locStr = '';
+  if (location != null) {
+    if (typeof location === 'string') locStr = location;
+    else if (Array.isArray(location)) locStr = location.join(' ');
+    else locStr = String(location);
+  }
+  
+  if (city && city.trim()) {
+    return locStr ? `${locStr} • ${city}` : city;
+  }
+  return locStr;
 }
 
 /**
@@ -33,7 +40,10 @@ export function tripMatchesSearch(trip, searchQuery) {
   if (!trip || !searchQuery || !searchQuery.trim()) return true
   const q = searchQuery.toLowerCase().trim()
   const location = getLocationString(trip.location).toLowerCase()
-  return location.includes(q)
+  const city = (trip.city || '').toLowerCase()
+  const title = (trip.title || '').toLowerCase()
+  
+  return location.includes(q) || city.includes(q) || title.includes(q)
 }
 
 /**

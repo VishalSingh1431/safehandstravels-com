@@ -10,7 +10,8 @@ class Trip {
     if (Array.isArray(val)) return val;
     if (typeof val === 'object') return val;
     try {
-      return JSON.parse(val);
+      const parsed = JSON.parse(val);
+      return Array.isArray(parsed) ? parsed : (typeof parsed === 'object' && parsed !== null ? parsed : fallback);
     } catch {
       return fallback;
     }
@@ -23,17 +24,18 @@ class Trip {
     try {
       const query = `
         INSERT INTO trips (
-          title, location, duration, price, old_price, image_url, video_url,
+          title, location, city, duration, price, old_price, image_url, video_url,
           video_public_id, image_public_id, gallery, gallery_public_ids,
           hero_images, hero_images_public_ids, subtitle, intro, why_visit, itinerary, included, not_included,
           notes, faq, reviews, category, recommended_trips, related_blogs, seats_left, is_popular, slug, status, enquiry_form_type, created_by
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
       const values = [
         data.title,
         Array.isArray(data.location) ? JSON.stringify(data.location) : (data.location || ''),
+        data.city || null,
         data.duration,
         data.price,
         data.oldPrice || null,
@@ -59,7 +61,7 @@ class Trip {
         JSON.stringify(data.relatedBlogs || []),
         data.seatsLeft ? parseInt(data.seatsLeft) : null,
         data.isPopular || false,
-        data.slug || this.generateSlug(data.title),
+        this.generateSlug(data.title),
         data.status || 'active',
         (data.enquiryFormType === 'form2' ? 'form2' : 'form1'),
         data.createdBy || null,
@@ -121,8 +123,8 @@ class Trip {
       }
 
       if (filters.location) {
-        query += ` AND LOWER(location) LIKE LOWER(?)`;
-        values.push(`%${filters.location}%`);
+        query += ` AND (LOWER(location) LIKE LOWER(?) OR LOWER(city) LIKE LOWER(?))`;
+        values.push(`%${filters.location}%`, `%${filters.location}%`);
       }
 
       query += ' ORDER BY created_at DESC';
@@ -185,6 +187,8 @@ class Trip {
     try {
       const updates = [];
       const values = [];
+      console.log(`[MODEL] Trip.update starting for ID: ${id}`);
+      console.log('[MODEL] data.city:', data.city);
 
       // Sanitize itinerary so JSON.stringify never fails (plain objects only)
       if (data.itinerary !== undefined) {
@@ -223,6 +227,7 @@ class Trip {
         slug: 'slug',
         status: 'status',
         enquiryFormType: 'enquiry_form_type',
+        city: 'city',
       };
 
       // JSON fields that need to be stringified
@@ -266,6 +271,7 @@ class Trip {
         }
         
         if (data[key] !== undefined) {
+          console.log(`[MODEL] Field found: ${key} -> mapping to ${dbColumn}. Value type: ${typeof data[key]}`);
           updates.push(`${dbColumn} = ?`);
           if (jsonFields.includes(key)) {
             // Ensure arrays are properly formatted
@@ -274,8 +280,16 @@ class Trip {
           } else {
             values.push(data[key]);
           }
+
+          // If title is updated, also update the slug to match
+          if (key === 'title') {
+            updates.push('slug = ?');
+            values.push(this.generateSlug(data[key]));
+          }
         }
       }
+      console.log('[MODEL] Updates array:', updates);
+      console.log('[MODEL] Values array length:', values.length);
 
       if (updates.length === 0) {
         return await this.findById(id);
@@ -287,6 +301,7 @@ class Trip {
         SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `;
+      console.log('[MODEL] Final Query:', query);
 
       await pool.query(query, values);
       // Get the updated trip
@@ -323,12 +338,14 @@ class Trip {
    * Generate slug from title
    */
   static generateSlug(title) {
+    if (!title) return '';
     return title
       .toLowerCase()
       .trim()
-      .replace(/[^\w\s-]/g, '')
-      .replace(/[\s_-]+/g, '-')
-      .replace(/^-+|-+$/g, '');
+      .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+      .replace(/\s+/g, '-')        // Spaces to hyphens
+      .replace(/-+/g, '-')         // Collapse multiple hyphens
+      .replace(/^-+|-+$/g, '');    // Trim hyphens from ends
   }
 
   /**
@@ -359,6 +376,7 @@ class Trip {
         id: row.id,
         title: row.title,
         location: location,
+        city: row.city,
         duration: row.duration,
         price: row.price,
         oldPrice: row.old_price,

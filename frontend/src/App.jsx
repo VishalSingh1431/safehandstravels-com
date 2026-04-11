@@ -74,7 +74,7 @@ function App() {
             <Suspense fallback={<PageLoader />}>
               <Routes>
               <Route path="/" element={<Home />} />
-              <Route path="/trip/:id" element={<ProductPage />} />
+              <Route path="/trip/:slug" element={<ProductPage />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/profile" element={<Profile />} />
