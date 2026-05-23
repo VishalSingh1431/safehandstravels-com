@@ -303,7 +303,7 @@ const Navbar = () => {
                     fill="currentColor"
                   />
                 </svg>
-                <span>(+91) 8448801998</span>
+                <span>+91-8448801998</span>
               </a>
               {isLoggedIn ? (
                 <>
@@ -657,7 +657,7 @@ const Navbar = () => {
                       fill="currentColor"
                     />
                   </svg>
-                  <span>(+91) 8448801998</span>
+                  <span>+91-8448801998</span>
                 </a>
                 {isLoggedIn ? (
                   <>

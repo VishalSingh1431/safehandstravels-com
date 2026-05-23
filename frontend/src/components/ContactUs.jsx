@@ -214,7 +214,12 @@ function ContactUs() {
                         <h4 className="font-bold text-gray-900 mb-1">Phone</h4>
                         <p className="text-gray-600">
                           <a href="tel:+918448801998" className="hover:text-[#017233] transition-colors">
-                            (+91) 8448801998
+                            +91-8448801998
+                          </a>
+                        </p>
+                        <p className="text-gray-600">
+                          <a href="tel:+919910173385" className="hover:text-[#017233] transition-colors">
+                            +91-9910173385
                           </a>
                         </p>
                       </div>
@@ -232,8 +237,8 @@ function ContactUs() {
                           </a>
                         </p>
                         <p className="text-gray-600">
-                          <a href="mailto:support@safehandstravels.com" className="hover:text-[#017233] transition-colors">
-                            support@safehandstravels.com
+                          <a href="mailto:rohit@safehandstravels.com" className="hover:text-[#017233] transition-colors">
+                            rohit@safehandstravels.com
                           </a>
                         </p>
                       </div>

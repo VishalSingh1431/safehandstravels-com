@@ -182,17 +182,27 @@ function Footer() {
                     Uttar Pradesh, 201304
                   </span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-white text-lg">📞</span>
-                  <a href="tel:+918448801998" className="text-sm hover:text-white transition-colors">
-                    (+91) 8448801998
-                  </a>
+                <div className="flex items-start gap-3">
+                  <span className="text-white text-lg flex-shrink-0">📞</span>
+                  <div className="flex flex-col">
+                    <a href="tel:+918448801998" className="text-sm hover:text-white transition-colors">
+                      +91-8448801998
+                    </a>
+                    <a href="tel:+919910173385" className="text-sm hover:text-white transition-colors">
+                      +91-9910173385
+                    </a>
+                  </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-white text-lg">✉️</span>
-                  <a href="mailto:info@safehandstravels.com" className="text-sm hover:text-white transition-colors">
-                    info@safehandstravels.com
-                  </a>
+                <div className="flex items-start gap-3">
+                  <span className="text-white text-lg flex-shrink-0">✉️</span>
+                  <div className="flex flex-col">
+                    <a href="mailto:info@safehandstravels.com" className="text-sm hover:text-white transition-colors whitespace-nowrap">
+                      info@safehandstravels.com
+                    </a>
+                    <a href="mailto:rohit@safehandstravels.com" className="text-sm hover:text-white transition-colors whitespace-nowrap">
+                      rohit@safehandstravels.com
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>
