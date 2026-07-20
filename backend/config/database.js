@@ -314,7 +314,7 @@ export const initializeDatabase = async () => {
         created_by INT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        CONSTRAINT chk_status CHECK (status IN ('active', 'draft', 'archived')),
+        CONSTRAINT chk_trips_status CHECK (status IN ('active', 'draft', 'archived')),
         FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
       )
     `);
@@ -393,7 +393,7 @@ export const initializeDatabase = async () => {
         created_by INT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        CONSTRAINT chk_status CHECK (status IN ('active', 'draft', 'archived')),
+        CONSTRAINT chk_certificates_status CHECK (status IN ('active', 'draft', 'archived')),
         FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
       )
     `);
@@ -409,7 +409,7 @@ export const initializeDatabase = async () => {
         created_by INT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        CONSTRAINT chk_status CHECK (status IN ('active', 'draft', 'archived')),
+        CONSTRAINT chk_destinations_status CHECK (status IN ('active', 'draft', 'archived')),
         FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
       )
     `);
@@ -433,7 +433,7 @@ export const initializeDatabase = async () => {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         CONSTRAINT chk_rating CHECK (rating >= 1 AND rating <= 5),
         CONSTRAINT chk_type CHECK (type IN ('text', 'video')),
-        CONSTRAINT chk_status CHECK (status IN ('active', 'draft', 'archived')),
+        CONSTRAINT chk_reviews_status CHECK (status IN ('active', 'draft', 'archived')),
         FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
       )
     `);
@@ -474,7 +474,7 @@ export const initializeDatabase = async () => {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         CONSTRAINT chk_rating CHECK (rating >= 1 AND rating <= 5),
-        CONSTRAINT chk_status CHECK (status IN ('active', 'draft', 'archived')),
+        CONSTRAINT chk_written_reviews_status CHECK (status IN ('active', 'draft', 'archived')),
         FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
       )
     `);
@@ -493,7 +493,7 @@ export const initializeDatabase = async () => {
         five_driver BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        CONSTRAINT chk_status CHECK (status IN ('active', 'inactive'))
+        CONSTRAINT chk_drivers_status CHECK (status IN ('active', 'inactive'))
       )
     `);
 
@@ -562,7 +562,7 @@ export const initializeDatabase = async () => {
         status VARCHAR(50) DEFAULT 'pending',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        CONSTRAINT chk_status CHECK (status IN ('pending', 'contacted', 'booked', 'cancelled')),
+        CONSTRAINT chk_enquiries_status CHECK (status IN ('pending', 'contacted', 'booked', 'cancelled')),
         FOREIGN KEY (trip_id) REFERENCES trips(id) ON DELETE SET NULL
       )
     `);
@@ -602,7 +602,7 @@ export const initializeDatabase = async () => {
         created_by INT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        CONSTRAINT chk_status CHECK (status IN ('active', 'draft', 'archived')),
+        CONSTRAINT chk_faqs_status CHECK (status IN ('active', 'draft', 'archived')),
         FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
       )
     `);
@@ -620,7 +620,7 @@ export const initializeDatabase = async () => {
         created_by INT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        CONSTRAINT chk_status CHECK (status IN ('active', 'draft', 'archived')),
+        CONSTRAINT chk_banners_status CHECK (status IN ('active', 'draft', 'archived')),
         FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
       )
     `);
@@ -638,7 +638,7 @@ export const initializeDatabase = async () => {
         created_by INT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        CONSTRAINT chk_status CHECK (status IN ('active', 'draft', 'archived')),
+        CONSTRAINT chk_branding_partners_status CHECK (status IN ('active', 'draft', 'archived')),
         FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
       )
     `);
@@ -656,7 +656,7 @@ export const initializeDatabase = async () => {
         created_by INT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        CONSTRAINT chk_status CHECK (status IN ('active', 'draft', 'archived')),
+        CONSTRAINT chk_hotel_partners_status CHECK (status IN ('active', 'draft', 'archived')),
         FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
       )
     `);
@@ -706,7 +706,7 @@ export const initializeDatabase = async () => {
         created_by INT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        CONSTRAINT chk_status CHECK (status IN ('draft', 'published', 'archived')),
+        CONSTRAINT chk_blogs_status CHECK (status IN ('draft', 'published', 'archived')),
         FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
       )
     `);
