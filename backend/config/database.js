@@ -526,24 +526,33 @@ export const initializeDatabase = async () => {
       )
     `);
 
+    // Helper to safely create index in MySQL 8
+    const createIndex = async (indexName, table, column) => {
+      try {
+        await pool.query(`CREATE INDEX ${indexName} ON ${table}(${column})`);
+      } catch (e) {
+        // Ignore if index already exists
+      }
+    };
+
     // Create indexes for better query performance
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`);
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id)`);
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_otps_email ON otps(email)`);
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_otps_expires_at ON otps(expires_at)`);
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_businesses_slug ON businesses(slug)`);
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_businesses_email ON businesses(email)`);
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_businesses_status ON businesses(status)`);
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_trips_slug ON trips(slug)`);
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_trips_status ON trips(status)`);
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_trips_location ON trips(location)`);
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_trips_created_at ON trips(created_at)`);
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_certificates_status ON certificates(status)`);
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_destinations_status ON destinations(status)`);
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_reviews_status ON reviews(status)`);
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_written_reviews_status ON written_reviews(status)`);
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_drivers_status ON drivers(status)`);
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_drivers_display_order ON drivers(display_order)`);
+    await createIndex('idx_users_email', 'users', 'email');
+    await createIndex('idx_users_google_id', 'users', 'google_id');
+    await createIndex('idx_otps_email', 'otps', 'email');
+    await createIndex('idx_otps_expires_at', 'otps', 'expires_at');
+    await createIndex('idx_businesses_slug', 'businesses', 'slug');
+    await createIndex('idx_businesses_email', 'businesses', 'email');
+    await createIndex('idx_businesses_status', 'businesses', 'status');
+    await createIndex('idx_trips_slug', 'trips', 'slug');
+    await createIndex('idx_trips_status', 'trips', 'status');
+    await createIndex('idx_trips_location', 'trips', 'location');
+    await createIndex('idx_trips_created_at', 'trips', 'created_at');
+    await createIndex('idx_certificates_status', 'certificates', 'status');
+    await createIndex('idx_destinations_status', 'destinations', 'status');
+    await createIndex('idx_reviews_status', 'reviews', 'status');
+    await createIndex('idx_written_reviews_status', 'written_reviews', 'status');
+    await createIndex('idx_drivers_status', 'drivers', 'status');
+    await createIndex('idx_drivers_display_order', 'drivers', 'display_order');
 
     // Create enquiries table if it doesn't exist
     await pool.query(`
@@ -576,10 +585,10 @@ export const initializeDatabase = async () => {
     } catch (e) { /* ignore */ }
 
     // Create indexes for enquiries
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_enquiries_trip_id ON enquiries(trip_id)`);
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_enquiries_status ON enquiries(status)`);
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_enquiries_created_at ON enquiries(created_at)`);
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_enquiries_email ON enquiries(email)`);
+    await createIndex('idx_enquiries_trip_id', 'enquiries', 'trip_id');
+    await createIndex('idx_enquiries_status', 'enquiries', 'status');
+    await createIndex('idx_enquiries_created_at', 'enquiries', 'created_at');
+    await createIndex('idx_enquiries_email', 'enquiries', 'email');
 
     // Create app_settings table if it doesn't exist
     await pool.query(`
@@ -712,12 +721,12 @@ export const initializeDatabase = async () => {
     `);
 
     // Create indexes for blogs
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_blogs_slug ON blogs(slug)`);
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_blogs_status ON blogs(status)`);
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_blogs_category ON blogs(category)`);
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_blogs_featured ON blogs(featured)`);
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_blogs_published_at ON blogs(published_at)`);
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_blogs_display_order ON blogs(display_order)`);
+    await createIndex('idx_blogs_slug', 'blogs', 'slug');
+    await createIndex('idx_blogs_status', 'blogs', 'status');
+    await createIndex('idx_blogs_category', 'blogs', 'category');
+    await createIndex('idx_blogs_featured', 'blogs', 'featured');
+    await createIndex('idx_blogs_published_at', 'blogs', 'published_at');
+    await createIndex('idx_blogs_display_order', 'blogs', 'display_order');
 
     // Create teams table if it doesn't exist
     await pool.query(`
@@ -742,8 +751,8 @@ export const initializeDatabase = async () => {
     `);
 
     // Create indexes for teams
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_teams_status ON teams(status)`);
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_teams_display_order ON teams(display_order)`);
+    await createIndex('idx_teams_status', 'teams', 'status');
+    await createIndex('idx_teams_display_order', 'teams', 'display_order');
 
     console.log('✅ Database tables initialized');
   } catch (error) {
