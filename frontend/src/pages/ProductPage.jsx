@@ -712,7 +712,7 @@ function ProductPage() {
                                         {day.activities && (
                                           <div
                                             className="text-gray-700 leading-relaxed text-sm md:text-base w-full itinerary-content break-words [&_*]:!whitespace-normal [&_*]:!max-w-full [&_*]:!min-w-0"
-                                            dangerouslySetInnerHTML={{ __html: day.activities.replace(/&nbsp;|\u00A0/g, ' ') }}
+                                            dangerouslySetInnerHTML={{ __html: (Array.isArray(day.activities) ? day.activities.join('<br/><br/>') : String(day.activities || '')).replace(/&nbsp;|\u00A0/g, ' ') }}
                                           />
                                         )}
                                       </div>

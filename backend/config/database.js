@@ -69,9 +69,9 @@ if (process.env.DATABASE_URL || process.env.MYSQL_URL) {
   dbConfig = {
     host: process.env.DB_HOST || process.env.MYSQL_HOST || 'srv1672.hstgr.io',
     port: parseInt(process.env.DB_PORT || process.env.MYSQL_PORT || '3306'),
-    database: process.env.DB_NAME || process.env.MYSQL_DB || 'u427254332_SHT',
-    user: process.env.DB_USER || process.env.MYSQL_USER || 'u427254332_SHT',
-    password: process.env.DB_PASSWORD || process.env.MYSQL_PASSWORD || 'Safe1431@@',
+    database: process.env.DB_NAME || process.env.MYSQL_DB || 'u427254332_Ug4gp',
+    user: process.env.DB_USER || process.env.MYSQL_USER || 'u427254332_oC6Nb',
+    password: process.env.DB_PASSWORD || process.env.MYSQL_PASSWORD || 'SafeHands1431@',
   };
   console.log('✅ Database Config from individual variables:');
   console.log('   Host:', dbConfig.host);
@@ -473,7 +473,7 @@ export const initializeDatabase = async () => {
         created_by INT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        CONSTRAINT chk_rating CHECK (rating >= 1 AND rating <= 5),
+        CONSTRAINT chk_written_rating CHECK (rating >= 1 AND rating <= 5),
         CONSTRAINT chk_written_reviews_status CHECK (status IN ('active', 'draft', 'archived')),
         FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
       )
