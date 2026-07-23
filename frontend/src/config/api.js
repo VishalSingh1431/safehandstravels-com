@@ -120,7 +120,7 @@ export const authAPI = {
 
 // Trips API functions
 export const tripsAPI = {
-  getAllTrips: async (location = '', limit = 50, offset = 0) => {
+  getAllTrips: async (location = '', limit = 500, offset = 0) => {
     const params = new URLSearchParams();
     if (location) params.append('location', location);
     params.append('limit', limit);
@@ -143,7 +143,7 @@ export const tripsAPI = {
   },
 
   // Admin endpoints
-  getAllTripsAdmin: async (status = '', location = '', limit = 50, offset = 0) => {
+  getAllTripsAdmin: async (status = '', location = '', limit = 500, offset = 0) => {
     const params = new URLSearchParams();
     if (status) params.append('status', status);
     if (location) params.append('location', location);

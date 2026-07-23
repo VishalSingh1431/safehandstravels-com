@@ -6,6 +6,7 @@ import { Loader2 } from 'lucide-react'
 function AllIndiaTrips() {
   const [trips, setTrips] = useState([])
   const [loading, setLoading] = useState(true)
+  const [visibleTrips, setVisibleTrips] = useState(50)
 
   useEffect(() => {
     fetchTrips()
@@ -51,11 +52,23 @@ function AllIndiaTrips() {
             <Loader2 className="w-12 h-12 animate-spin text-[#017233]" />
           </div>
         ) : trips.length > 0 ? (
-          <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 items-stretch">
-            {trips.map((trip) => (
-              <TripCard key={trip.id} trip={trip} />
-            ))}
-          </div>
+          <>
+            <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 items-stretch">
+              {trips.slice(0, visibleTrips).map((trip) => (
+                <TripCard key={trip.id} trip={trip} />
+              ))}
+            </div>
+            {trips.length > visibleTrips && (
+              <div className="flex justify-center mt-12">
+                <button
+                  onClick={() => setVisibleTrips(prev => prev + 50)}
+                  className="px-8 py-3 rounded-full bg-gradient-to-r from-[#017233] to-emerald-600 hover:from-[#015a28] hover:to-[#017233] text-white font-semibold transition-all duration-300 shadow-md hover:shadow-lg hover:scale-105 active:scale-95"
+                >
+                  Load More Trips
+                </button>
+              </div>
+            )}
+          </>
         ) : (
           <div className="text-center py-12">
             <p className="text-gray-500 text-lg">No trips available at the moment.</p>
