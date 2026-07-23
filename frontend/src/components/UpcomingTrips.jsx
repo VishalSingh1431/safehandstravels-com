@@ -35,11 +35,11 @@ function UpcomingTrips({ searchQuery = '' }) {
     try {
       setLoading(true)
       const response = await tripsAPI.getAllTrips()
-      // Filter only active trips that are marked as popular
-      const popularTrips = (response.trips || []).filter(trip => 
-        trip.status === 'active' && trip.isPopular === true
+      // Store all active trips in local state
+      const activeTrips = (response.trips || []).filter(trip => 
+        trip.status === 'active'
       )
-      setTrips(popularTrips)
+      setTrips(activeTrips)
     } catch (error) {
       console.error('Error fetching trips:', error)
       setTrips([])
@@ -64,6 +64,11 @@ function UpcomingTrips({ searchQuery = '' }) {
 
   const visibleTrips = useMemo(() => {
     let filtered = trips
+
+    // If there is no search query, filter to show only popular trips
+    if (!searchQuery.trim()) {
+      filtered = filtered.filter(trip => trip.isPopular === true)
+    }
 
     // Apply location filter (case-insensitive, partial match)
     if (activeFilter !== 'All') {
