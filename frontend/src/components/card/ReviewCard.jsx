@@ -37,6 +37,17 @@ function ReviewCard({ review }) {
   const youtubeId = videoUrl ? extractYouTubeId(videoUrl) : null;
   const isYouTubeLink = youtubeId !== null;
 
+  // Extract Instagram ID from URL
+  const extractInstagramId = (url) => {
+    if (!url) return null;
+    const regExp = /(?:instagram\.com\/(?:reel|p|tv)\/)([\w-]+)/i;
+    const match = url.match(regExp);
+    return match ? match[1] : null;
+  };
+  
+  const instagramId = videoUrl ? extractInstagramId(videoUrl) : null;
+  const isInstagramLink = instagramId !== null;
+
   return (
     <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border border-gray-200 overflow-hidden hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 group flex flex-col h-full w-full min-h-[480px] sm:min-h-[520px]">
       {/* Video Section */}
@@ -52,8 +63,19 @@ function ReviewCard({ review }) {
               allowFullScreen
               title={`${review.name}'s review video`}
             />
+          ) : isInstagramLink ? (
+            // Instagram Embed
+            <iframe
+              src={`https://www.instagram.com/p/${instagramId}/embed`}
+              className="w-full h-full"
+              frameBorder="0"
+              scrolling="no"
+              allowTransparency="true"
+              allowFullScreen
+              title={`${review.name}'s Instagram review`}
+            />
           ) : (
-            // Fallback for non-YouTube videos (shouldn't happen if admin panel is fixed)
+            // Fallback for non-YouTube/Instagram videos (shouldn't happen if admin panel is fixed)
             <video
               controls
               className="w-full h-full object-cover"

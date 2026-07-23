@@ -87,7 +87,7 @@ export const optimizeImage = (url, options = {}) => {
     
     // Combine all transformations
     const transformString = transformations.length > 0 
-      ? `${transformations.join(',')}/`
+      ? `${transformations.join(',')}`
       : ''
     
     // Reconstruct URL with transformations

@@ -647,7 +647,7 @@ function ProductPage() {
                       {/* All Sections - Single Vertical Scroll Layout */}
                       <div className="space-y-8">
                         {/* Itinerary Section */}
-                        {pageSettings?.tabs?.find(t => t.id === 'itinerary')?.enabled && (
+                        {pageSettings?.tabs?.find(t => t.id === 'itinerary')?.enabled && content.itinerary && content.itinerary.length > 0 && (
                           <section className="bg-gradient-to-br from-[#017233]/5 to-white rounded-xl sm:rounded-2xl shadow-lg p-3 sm:p-4 md:p-5 border border-[#017233]/10">
                             <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
                               <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-[#017233] to-[#01994d] flex items-center justify-center text-white text-lg sm:text-xl font-bold shadow-lg flex-shrink-0">
