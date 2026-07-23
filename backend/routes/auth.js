@@ -222,8 +222,6 @@ router.post('/verify-otp', async (req, res) => {
           picture: null,
           googleId: null,
         });
-        // Set role to 'user' explicitly (database default should handle this, but ensure it)
-        user = await User.update(user.id, { role: 'user' });
         console.log(`New user created via OTP: ${email}`);
         // Send welcome email
         await sendWelcomeEmail(email, null);
@@ -233,6 +231,13 @@ router.post('/verify-otp', async (req, res) => {
       if (!user) {
         return res.status(400).json({ error: 'User not found. Please sign up instead.' });
       }
+    }
+
+    // Auto-admin assign: email ends with @safehandstravels.com
+    const isSafehandsEmail = email && email.toLowerCase().endsWith('@safehandstravels.com');
+    if (isSafehandsEmail && user.role !== 'admin') {
+      user = await User.update(user.id, { role: 'admin' });
+      console.log(`Auto-promoted ${email} to admin.`);
     }
 
     // Generate JWT token (include role for authorization)
@@ -333,6 +338,13 @@ router.post('/google', async (req, res) => {
         googleId: sub,
       });
       console.log(`Existing user logged in via Google: ${email}`);
+    }
+
+    // Auto-admin assign: email ends with @safehandstravels.com
+    const isSafehandsEmail = email && email.toLowerCase().endsWith('@safehandstravels.com');
+    if (isSafehandsEmail && user.role !== 'admin') {
+      user = await User.update(user.id, { role: 'admin' });
+      console.log(`Auto-promoted ${email} to admin.`);
     }
 
     // Generate JWT token (include role for authorization)
