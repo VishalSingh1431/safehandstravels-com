@@ -17,14 +17,14 @@ class Driver {
       `;
 
       const values = [
-        data.name,
-        data.car,
-        data.experience,
+        data.name || '',
+        data.car || '',
+        data.experience || null,
         data.photoUrl || null,
         data.photoPublicId || null,
         data.status || 'active',
         data.displayOrder || 0,
-        data.fiveDriver || false,
+        Boolean(data.fiveDriver),
       ];
 
       const [result] = await pool.query(query, values);
@@ -96,22 +96,21 @@ class Driver {
       const updates = [];
       const values = [];
 
-      const fields = {
-        name: data.name,
-        car: data.car,
-        experience: data.experience,
+      const fieldMapping = {
+        name: 'name',
+        car: 'car',
+        experience: 'experience',
         photoUrl: 'photo_url',
         photoPublicId: 'photo_public_id',
-        status: data.status,
+        status: 'status',
         displayOrder: 'display_order',
         fiveDriver: 'five_driver',
       };
 
-      for (const [key, value] of Object.entries(fields)) {
-        if (value !== undefined && data[key] !== undefined) {
-          const dbKey = typeof value === 'string' ? value : key;
-          updates.push(`${dbKey} = ?`);
-          values.push(data[key]);
+      for (const [key, dbCol] of Object.entries(fieldMapping)) {
+        if (data[key] !== undefined) {
+          updates.push(`${dbCol} = ?`);
+          values.push(key === 'fiveDriver' ? Boolean(data[key]) : data[key]);
         }
       }
 

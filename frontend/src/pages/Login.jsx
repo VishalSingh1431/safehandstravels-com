@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import GoogleButton from '../components/auth/GoogleButton';
 import EmailInput from '../components/auth/EmailInput';
@@ -9,6 +9,8 @@ import { GOOGLE_CLIENT_ID } from '../config/constants';
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const redirectPath = location.state?.from || '/';
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [step, setStep] = useState('email'); // 'email' or 'otp'
@@ -74,8 +76,8 @@ const Login = () => {
       // Dispatch event to update navbar
       window.dispatchEvent(new Event('authChange'));
 
-      // Redirect to home
-      navigate('/');
+      // Redirect to intended route or home
+      navigate(redirectPath);
     } catch (err) {
       setOtpError(err.message);
     } finally {
@@ -186,8 +188,8 @@ const Login = () => {
             // Dispatch event to update navbar
             window.dispatchEvent(new Event('authChange'));
 
-            // Redirect to home
-            navigate('/');
+            // Redirect to intended route or home
+            navigate(redirectPath);
           } catch (err) {
             console.error('Error in Google Sign-In callback:', err);
             // Show user-friendly error message

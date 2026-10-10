@@ -66,6 +66,10 @@ router.get('/:id', async (req, res) => {
 // Create review (Admin only)
 router.post('/', verifyToken, verifyAdmin, async (req, res) => {
   try {
+    if (!req.body.name?.trim()) {
+      return res.status(400).json({ error: 'Name is required' });
+    }
+
     const reviewData = {
       ...req.body,
       createdBy: req.user.userId,

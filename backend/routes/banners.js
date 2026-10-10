@@ -1,6 +1,7 @@
 import express from 'express';
 import { verifyToken, verifyAdmin } from '../middleware/auth.js';
 import Banner from '../models/Banner.js';
+import { deleteFile } from '../utils/cloudinaryService.js';
 
 const router = express.Router();
 
@@ -65,6 +66,10 @@ router.get('/:id', async (req, res) => {
 // Create banner (Admin only)
 router.post('/', verifyToken, verifyAdmin, async (req, res) => {
   try {
+    if (!req.body.imageUrl?.trim()) {
+      return res.status(400).json({ error: 'Banner image is required' });
+    }
+
     const bannerData = {
       ...req.body,
       createdBy: req.user.userId,
@@ -89,11 +94,23 @@ router.post('/', verifyToken, verifyAdmin, async (req, res) => {
 router.put('/:id', verifyToken, verifyAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const banner = await Banner.update(id, req.body);
-
-    if (!banner) {
+    const existingBanner = await Banner.findById(id);
+    if (!existingBanner) {
       return res.status(404).json({ error: 'Banner not found' });
     }
+
+    const updateData = { ...req.body };
+
+    // If new image uploaded, delete old one
+    if (updateData.imageUrl && existingBanner.imagePublicId && updateData.imageUrl !== existingBanner.imageUrl) {
+      try {
+        await deleteFile(existingBanner.imagePublicId, 'image');
+      } catch (err) {
+        console.error('Error deleting old banner image:', err);
+      }
+    }
+
+    const banner = await Banner.update(id, updateData);
 
     res.json({
       message: 'Banner updated successfully',
@@ -112,11 +129,21 @@ router.put('/:id', verifyToken, verifyAdmin, async (req, res) => {
 router.delete('/:id', verifyToken, verifyAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const banner = await Banner.delete(id);
+    const banner = await Banner.findById(id);
 
     if (!banner) {
       return res.status(404).json({ error: 'Banner not found' });
     }
+
+    if (banner.imagePublicId) {
+      try {
+        await deleteFile(banner.imagePublicId, 'image');
+      } catch (err) {
+        console.error('Error deleting banner image from Cloudinary:', err);
+      }
+    }
+
+    await Banner.delete(id);
 
     res.json({
       message: 'Banner deleted successfully',

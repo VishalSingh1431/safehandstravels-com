@@ -17,11 +17,11 @@ class WrittenReview {
       `;
 
       const values = [
-        data.name,
+        data.name || '',
         data.rating || 5,
         data.date || null,
         data.title || null,
-        data.review,
+        data.review || '',
         data.location || null,
         data.avatar || null,
         data.avatarPublicId || null,
@@ -97,22 +97,21 @@ class WrittenReview {
       const updates = [];
       const values = [];
 
-      const fields = {
-        name: data.name,
-        rating: data.rating,
-        date: data.date,
-        title: data.title,
-        review: data.review,
-        location: data.location,
+      const fieldMapping = {
+        name: 'name',
+        rating: 'rating',
+        date: 'date',
+        title: 'title',
+        review: 'review',
+        location: 'location',
         avatar: 'avatar',
         avatarPublicId: 'avatar_public_id',
-        status: data.status,
+        status: 'status',
       };
 
-      for (const [key, value] of Object.entries(fields)) {
-        if (value !== undefined && data[key] !== undefined) {
-          const dbKey = typeof value === 'string' ? value : key;
-          updates.push(`${dbKey} = ?`);
+      for (const [key, dbCol] of Object.entries(fieldMapping)) {
+        if (data[key] !== undefined) {
+          updates.push(`${dbCol} = ?`);
           values.push(data[key]);
         }
       }

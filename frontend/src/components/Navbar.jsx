@@ -49,12 +49,21 @@ const travelDropdownItems = [
   { label: 'Adventure', route: '/adventure-trips', icon: '⛰️' }
 ];
 
+const getStoredUser = () => {
+  try {
+    const data = localStorage.getItem('user');
+    return data ? JSON.parse(data) : null;
+  } catch {
+    return null;
+  }
+};
+
 const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(() => Boolean(localStorage.getItem('token') && getStoredUser()));
+  const [user, setUser] = useState(() => getStoredUser());
   const [isAdminDropdownOpen, setIsAdminDropdownOpen] = useState(false);
   const [isTravelDropdownOpen, setIsTravelDropdownOpen] = useState(false);
   const adminDropdownRef = useRef(null);
@@ -77,10 +86,10 @@ const Navbar = () => {
 
   const checkAuthStatus = () => {
     const token = localStorage.getItem('token');
-    const userData = localStorage.getItem('user');
-    if (token && userData) {
+    const parsedUser = getStoredUser();
+    if (token && parsedUser) {
       setIsLoggedIn(true);
-      setUser(JSON.parse(userData));
+      setUser(parsedUser);
     } else {
       setIsLoggedIn(false);
       setUser(null);

@@ -17,7 +17,7 @@ class Destination {
       `;
 
       const values = [
-        data.name,
+        data.name || '',
         data.image || null,
         data.imagePublicId || null,
         data.status || 'active',
@@ -92,17 +92,16 @@ class Destination {
       const updates = [];
       const values = [];
 
-      const fields = {
-        name: data.name,
+      const fieldMapping = {
+        name: 'name',
         image: 'image',
         imagePublicId: 'image_public_id',
-        status: data.status,
+        status: 'status',
       };
 
-      for (const [key, value] of Object.entries(fields)) {
-        if (value !== undefined && data[key] !== undefined) {
-          const dbKey = typeof value === 'string' ? value : key;
-          updates.push(`${dbKey} = ?`);
+      for (const [key, dbColumn] of Object.entries(fieldMapping)) {
+        if (data[key] !== undefined) {
+          updates.push(`${dbColumn} = ?`);
           values.push(data[key]);
         }
       }

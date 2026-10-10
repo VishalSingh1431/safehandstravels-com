@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import { tripsAPI } from '../config/api'
 import TripCard from '../components/card/TripCard'
 import { Loader2 } from 'lucide-react'
+import { getLocationString } from '../utils/tripUtils'
 
 function DestinationTrips() {
   const { destinationName } = useParams()

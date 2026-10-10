@@ -11,7 +11,9 @@ dotenv.config({ path: join(__dirname, '..', '.env') });
 const MAIN_ADMIN_EMAILS = [
   'vishalsingh05072003@gmail.com',
   'vinodpatel63767@gmail.com',
-  'info@safehandstravels.com'
+  'info@safehandstravels.com',
+  'abhisingh9559189454@gmail.com',
+  'bhuvnesh@safehandstravels.com'
 ];
 
 async function initializeMainAdmins() {

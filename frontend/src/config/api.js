@@ -27,6 +27,12 @@ export const apiCall = async (endpoint, options = {}) => {
     const data = await response.json();
 
     if (!response.ok) {
+      if (response.status === 401 && token) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.dispatchEvent(new Event('authChange'));
+      }
+
       // If there's a help message, include it in the error
       let errorMessage = data.help
         ? `${data.error}\n\n${data.help}`
@@ -36,6 +42,7 @@ export const apiCall = async (endpoint, options = {}) => {
       error.help = data.help;
       error.code = data.code;
       error.details = data.details;
+      error.status = response.status;
       throw error;
     }
 

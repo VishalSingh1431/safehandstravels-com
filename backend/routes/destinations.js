@@ -66,6 +66,10 @@ router.get('/:id', async (req, res) => {
 // Create destination (Admin only)
 router.post('/', verifyToken, verifyAdmin, async (req, res) => {
   try {
+    if (!req.body.name || !req.body.name.trim()) {
+      return res.status(400).json({ error: 'Destination name is required' });
+    }
+
     const destinationData = {
       ...req.body,
       createdBy: req.user.userId,

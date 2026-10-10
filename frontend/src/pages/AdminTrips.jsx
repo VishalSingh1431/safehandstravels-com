@@ -7,24 +7,63 @@ import { authAPI } from '../config/api';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 
-// List of major Indian cities
-const INDIAN_CITIES = [
-  'Mumbai', 'Delhi', 'Bangalore', 'Hyderabad', 'Chennai', 'Kolkata', 'Pune', 'Ahmedabad',
-  'Jaipur', 'Surat', 'Lucknow', 'Kanpur', 'Nagpur', 'Indore', 'Thane', 'Bhopal',
-  'Visakhapatnam', 'Pimpri-Chinchwad', 'Patna', 'Vadodara', 'Ghaziabad', 'Ludhiana',
-  'Agra', 'Nashik', 'Faridabad', 'Meerut', 'Rajkot', 'Varanasi', 'Srinagar', 'Amritsar',
-  'Navi Mumbai', 'Allahabad', 'Howrah', 'Gwalior', 'Jabalpur', 'Coimbatore', 'Vijayawada',
-  'Jodhpur', 'Madurai', 'Raipur', 'Kota', 'Chandigarh', 'Guwahati', 'Solapur', 'Hubli-Dharwad',
-  'Tiruchirappalli', 'Bareilly', 'Moradabad', 'Mysore', 'Gurgaon', 'Aligarh', 'Jalandhar',
-  'Tirunelveli', 'Bhubaneswar', 'Salem', 'Warangal', 'Guntur', 'Bhiwandi', 'Saharanpur',
-  'Gorakhpur', 'Bikaner', 'Amravati', 'Noida', 'Jamshedpur', 'Bhilai', 'Cuttack',
-  'Firozabad', 'Kochi', 'Nellore', 'Bhavnagar', 'Dehradun', 'Durgapur', 'Asansol',
-  'Rourkela', 'Nanded', 'Kolhapur', 'Ajmer', 'Akola', 'Gulbarga', 'Jamnagar', 'Ujjain',
-  'Loni', 'Siliguri', 'Jhansi', 'Ulhasnagar', 'Jammu', 'Sangli-Miraj', 'Mangalore',
-  'Erode', 'Belgaum', 'Kurnool', 'Ambattur', 'Rajahmundry', 'Tiruppur', 'Kakinada',
-  'Nizamabad', 'Parbhani', 'Puducherry', 'Shimla', 'Panaji', 'Port Blair', 'Kavaratti',
-  'Aizawl', 'Agartala', 'Gangtok', 'Itanagar', 'Kohima', 'Imphal', 'Shillong', 'Dispur'
+// List of all Indian States, Union Territories, and major cities
+const INDIAN_STATES_AND_CITIES = [
+  // All 28 States
+  'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Goa',
+  'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka', 'Kerala',
+  'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland',
+  'Odisha', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura',
+  'Uttar Pradesh', 'Uttarakhand', 'West Bengal',
+  // All 8 Union Territories
+  'Andaman and Nicobar Islands', 'Chandigarh', 'Dadra and Nagar Haveli and Daman and Diu',
+  'Delhi', 'Jammu and Kashmir', 'Ladakh', 'Lakshadweep', 'Puducherry',
+  // Popular Tourist Cities & Regions
+  'Agra', 'Ahmedabad', 'Ajmer', 'Amritsar', 'Ayodhya', 'Bangalore', 'Bhopal',
+  'Bhubaneswar', 'Chennai', 'Coimbatore', 'Dehradun', 'Gangtok', 'Guwahati',
+  'Gwalior', 'Haridwar', 'Hyderabad', 'Indore', 'Jaipur', 'Jaisalmer', 'Jammu',
+  'Jodhpur', 'Kanpur', 'Kashi', 'Kochi', 'Kolkata', 'Leh', 'Lucknow', 'Madurai',
+  'Manali', 'Mangalore', 'Mumbai', 'Mysore', 'Nagpur', 'Nainital', 'Nashik',
+  'Noida', 'Ooty', 'Patna', 'Prayagraj', 'Pune', 'Puri', 'Raipur', 'Rajkot',
+  'Rameshwaram', 'Rishikesh', 'Shimla', 'Shirdi', 'Srinagar', 'Surat', 'Tirupati',
+  'Udaipur', 'Ujjain', 'Vadodara', 'Varanasi', 'Visakhapatnam', 'Vrindavan'
 ].sort();
+
+const STATE_ALIASES = {
+  'up': 'Uttar Pradesh',
+  'u.p.': 'Uttar Pradesh',
+  'u.p': 'Uttar Pradesh',
+  'mp': 'Madhya Pradesh',
+  'm.p.': 'Madhya Pradesh',
+  'm.p': 'Madhya Pradesh',
+  'hp': 'Himachal Pradesh',
+  'h.p.': 'Himachal Pradesh',
+  'uk': 'Uttarakhand',
+  'u.k.': 'Uttarakhand',
+  'ap': 'Andhra Pradesh',
+  'a.p.': 'Andhra Pradesh',
+  'wb': 'West Bengal',
+  'w.b.': 'West Bengal',
+  'tn': 'Tamil Nadu',
+  't.n.': 'Tamil Nadu',
+  'dl': 'Delhi',
+  'del': 'Delhi',
+  'ncr': 'Delhi',
+  'rj': 'Rajasthan',
+  'gj': 'Gujarat',
+  'mh': 'Maharashtra',
+  'ka': 'Karnataka',
+  'kl': 'Kerala',
+  'pb': 'Punjab',
+  'hr': 'Haryana',
+  'br': 'Bihar',
+  'jh': 'Jharkhand',
+  'or': 'Odisha',
+  'od': 'Odisha',
+  'ch': 'Chandigarh',
+  'jk': 'Jammu and Kashmir',
+  'j&k': 'Jammu and Kashmir',
+};
 
 const QUILL_MODULES = {
   toolbar: [
@@ -38,7 +77,7 @@ const QUILL_MODULES = {
 const QUILL_FORMATS = [
   'header',
   'bold', 'italic', 'underline', 'strike',
-  'list', 'bullet',
+  'list',
   'link'
 ];
 
@@ -116,22 +155,45 @@ const AdminTrips = () => {
     };
   }, []);
 
-  const filteredCities = locationSearch
-    ? INDIAN_CITIES.filter(city =>
-      city.toLowerCase().includes(locationSearch.toLowerCase())
-    )
-    : INDIAN_CITIES;
+  const filteredCities = (() => {
+    const query = (locationSearch || '').trim().toLowerCase();
+    if (!query) return INDIAN_STATES_AND_CITIES;
+
+    const matchedAlias = STATE_ALIASES[query];
+    const results = INDIAN_STATES_AND_CITIES.filter(place => {
+      const p = place.toLowerCase();
+      if (matchedAlias && p === matchedAlias.toLowerCase()) return true;
+      return p.includes(query);
+    });
+
+    if (matchedAlias && !results.some(r => r.toLowerCase() === matchedAlias.toLowerCase())) {
+      results.unshift(matchedAlias);
+    }
+    return results;
+  })();
 
   const handleLocationSelect = (city) => {
+    const trimmed = (city || '').trim();
+    if (!trimmed) return;
     setFormData(prev => {
       const currentLocations = prev.location || [];
-      if (currentLocations.includes(city)) {
+      if (currentLocations.some(loc => loc.toLowerCase() === trimmed.toLowerCase())) {
         return prev; // Already selected
       }
-      return { ...prev, location: [...currentLocations, city] };
+      return { ...prev, location: [...currentLocations, trimmed] };
     });
     setLocationSearch('');
     setShowLocationDropdown(false);
+  };
+
+  const handleLocationKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const trimmed = locationSearch.trim();
+      if (!trimmed) return;
+      const aliasMatch = STATE_ALIASES[trimmed.toLowerCase()];
+      handleLocationSelect(aliasMatch || trimmed);
+    }
   };
 
   const removeLocation = (city) => {
@@ -404,15 +466,38 @@ const AdminTrips = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validate category
-    if (!formData.category || formData.category.length === 0) {
-      toast.error('Please select at least one category tag');
+    // Validate title
+    if (!formData.title || !formData.title.trim()) {
+      toast.error('Please enter a trip title');
+      document.querySelector('input[name="title"]')?.focus();
       return;
     }
 
-    // Validate location
+    // Validate location (State)
     if (!formData.location || formData.location.length === 0) {
-      toast.error('Please select at least one location');
+      toast.error('Please select or add at least one state');
+      locationDropdownRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      locationDropdownRef.current?.querySelector('input[name="locationSearch"]')?.focus();
+      return;
+    }
+
+    // Validate duration
+    if (!formData.duration || !formData.duration.trim()) {
+      toast.error('Please enter trip duration (e.g., 5 Days / 4 Nights)');
+      document.querySelector('input[name="duration"]')?.focus();
+      return;
+    }
+
+    // Validate price
+    if (!formData.price || (typeof formData.price === 'string' && !formData.price.trim())) {
+      toast.error('Please enter a trip price');
+      document.querySelector('input[name="price"]')?.focus();
+      return;
+    }
+
+    // Validate category
+    if (!formData.category || formData.category.length === 0) {
+      toast.error('Please select at least one category tag');
       return;
     }
 
@@ -659,7 +744,7 @@ const AdminTrips = () => {
                 </button>
               </div>
 
-              <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+              <form onSubmit={handleSubmit} noValidate className="p-4 sm:p-6 space-y-4 sm:space-y-6">
                 {/* Basic Info */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
@@ -705,14 +790,28 @@ const AdminTrips = () => {
                         name="locationSearch"
                         value={locationSearch}
                         onChange={handleInputChange}
+                        onKeyDown={handleLocationKeyDown}
                         onFocus={() => setShowLocationDropdown(true)}
-                        placeholder="Type to search and add states..."
+                        placeholder="Type to search states (e.g., UP, Himachal) or press Enter to add..."
                         className="w-full px-4 py-2 pr-10 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                       />
                       <MapPin className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
 
                       {showLocationDropdown && (
                         <div className="absolute z-50 w-full mt-1 bg-white border-2 border-gray-300 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                          {locationSearch.trim() && !filteredCities.some(c => c.toLowerCase() === locationSearch.trim().toLowerCase()) && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const aliasMatch = STATE_ALIASES[locationSearch.trim().toLowerCase()];
+                                handleLocationSelect(aliasMatch || locationSearch.trim());
+                              }}
+                              className="w-full px-4 py-2.5 text-left bg-blue-50 hover:bg-blue-100 text-blue-700 font-medium transition-colors flex items-center gap-2 text-sm border-b border-blue-200"
+                            >
+                              <Plus className="w-4 h-4 text-blue-600" />
+                              <span>Add "{STATE_ALIASES[locationSearch.trim().toLowerCase()] || locationSearch.trim()}"</span>
+                            </button>
+                          )}
                           {filteredCities.length > 0 ? (
                             filteredCities
                               .filter(city => !formData.location?.includes(city)) // Filter out already selected
@@ -729,9 +828,11 @@ const AdminTrips = () => {
                                 </button>
                               ))
                           ) : (
-                            <div className="px-4 py-3 text-sm text-gray-500 text-center">
-                              No cities found
-                            </div>
+                            !locationSearch.trim() && (
+                              <div className="px-4 py-3 text-sm text-gray-500 text-center">
+                                No states found
+                              </div>
+                            )
                           )}
                           {filteredCities.length > 50 && (
                             <div className="px-4 py-2 text-xs text-gray-500 text-center border-t border-gray-200">
@@ -772,13 +873,14 @@ const AdminTrips = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Price</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Price *</label>
                     <input
                       type="text"
                       name="price"
                       value={formData.price}
                       onChange={handleInputChange}
                       placeholder="e.g., ₹22,999"
+                      required
                       className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                     />
                   </div>

@@ -66,6 +66,10 @@ router.get('/:id', async (req, res) => {
 // Create certificate (Admin only)
 router.post('/', verifyToken, verifyAdmin, async (req, res) => {
   try {
+    if (!req.body.title?.trim()) {
+      return res.status(400).json({ error: 'Certificate title is required' });
+    }
+
     const certificateData = {
       ...req.body,
       createdBy: req.user.userId,

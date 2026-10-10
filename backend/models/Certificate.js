@@ -17,7 +17,7 @@ class Certificate {
       `;
 
       const values = [
-        data.title,
+        data.title || '',
         data.description || null,
         JSON.stringify(data.images || []),
         JSON.stringify(data.imagesPublicIds || []),

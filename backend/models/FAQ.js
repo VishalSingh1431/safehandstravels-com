@@ -15,8 +15,8 @@ class FAQ {
       `;
 
       const values = [
-        data.question,
-        data.answer,
+        data.question || '',
+        data.answer || '',
         data.displayOrder || 0,
         data.status || 'active',
         data.createdBy || null,

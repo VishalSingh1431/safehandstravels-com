@@ -123,11 +123,12 @@ const AdminPopularTrips = () => {
       const trip = trips.find(t => t.id === tripId);
       if (!trip) return;
 
-      const updatedTrip = await tripsAPI.updateTrip(tripId, {
+      const response = await tripsAPI.updateTrip(tripId, {
         ...trip,
         isPopular: !currentStatus
       });
 
+      const updatedTrip = response?.trip || response;
       setTrips(prev => prev.map(t => t.id === tripId ? updatedTrip : t));
       toast.success(`Trip ${!currentStatus ? 'added to' : 'removed from'} popular trips`);
     } catch (error) {

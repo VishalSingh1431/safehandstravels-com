@@ -311,7 +311,6 @@ const AdminHotelPartners = () => {
                         accept="image/*"
                         onChange={handleLogoUpload}
                         disabled={uploading}
-                        required
                       />
                     </label>
                   </div>

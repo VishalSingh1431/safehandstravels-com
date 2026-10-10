@@ -22,6 +22,9 @@ class Trip {
    */
   static async create(data) {
     try {
+      const slug = await this.getUniqueSlug(data.title);
+      const sanitizedItinerary = this.sanitizeItinerary(data.itinerary || []);
+
       const query = `
         INSERT INTO trips (
           title, location, city, duration, price, old_price, image_url, video_url,
@@ -33,11 +36,11 @@ class Trip {
       `;
 
       const values = [
-        data.title,
+        data.title || '',
         Array.isArray(data.location) ? JSON.stringify(data.location) : (data.location || ''),
         data.city || null,
-        data.duration,
-        data.price,
+        data.duration || '',
+        data.price || '',
         data.oldPrice || null,
         data.imageUrl || null,
         data.videoUrl || null,
@@ -50,7 +53,7 @@ class Trip {
         data.subtitle || null,
         data.intro || null,
         JSON.stringify(data.whyVisit || []),
-        JSON.stringify(data.itinerary || []),
+        JSON.stringify(sanitizedItinerary),
         JSON.stringify(data.included || []),
         JSON.stringify(data.notIncluded || []),
         JSON.stringify(data.notes || []),
@@ -59,9 +62,9 @@ class Trip {
         JSON.stringify(data.category || []),
         JSON.stringify(data.recommendedTrips || []),
         JSON.stringify(data.relatedBlogs || []),
-        data.seatsLeft ? parseInt(data.seatsLeft) : null,
-        data.isPopular || false,
-        this.generateSlug(data.title),
+        data.seatsLeft ? parseInt(data.seatsLeft, 10) : null,
+        Boolean(data.isPopular),
+        slug,
         data.status || 'active',
         (data.enquiryFormType === 'form2' ? 'form2' : 'form1'),
         data.createdBy || null,
@@ -346,6 +349,33 @@ class Trip {
       .replace(/\s+/g, '-')        // Spaces to hyphens
       .replace(/-+/g, '-')         // Collapse multiple hyphens
       .replace(/^-+|-+$/g, '');    // Trim hyphens from ends
+  }
+
+  /**
+   * Generate a unique slug ensuring no collision in MySQL
+   */
+  static async getUniqueSlug(baseTitle, excludeId = null) {
+    let baseSlug = this.generateSlug(baseTitle);
+    if (!baseSlug) baseSlug = `trip-${Date.now()}`;
+
+    let candidateSlug = baseSlug;
+    let counter = 1;
+    while (true) {
+      let query = 'SELECT id FROM trips WHERE slug = ?';
+      const params = [candidateSlug];
+      if (excludeId) {
+        query += ' AND id != ?';
+        params.push(excludeId);
+      }
+      query += ' LIMIT 1';
+
+      const [existing] = await pool.query(query, params);
+      if (existing.length === 0) {
+        return candidateSlug;
+      }
+      candidateSlug = `${baseSlug}-${counter}`;
+      counter++;
+    }
   }
 
   /**

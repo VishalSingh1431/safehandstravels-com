@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { Suspense, lazy } from 'react'
 import { ToastProvider } from './contexts/ToastContext'
 import Navbar from './components/Navbar'
@@ -91,7 +91,7 @@ function App() {
               <Route path="/himalayan-escapes" element={<HimalayanEscapes />} />
               <Route path="/beach-island-breaks" element={<BeachIslandBreaks />} />
               <Route path="/wellness-retreats" element={<WellnessRetreats />} />
-              <Route path="/blog" element={<Blog />} />
+              <Route path="/blog" element={<Experiences />} />
               <Route path="/experiences" element={<Experiences />} />
               <Route path="/customise-trip" element={<CustomisedTrip />} />
               <Route path="/why-safehands-travels" element={<WhySafeHandsTravels />} />
@@ -115,6 +115,8 @@ function App() {
               <Route path="/admin/hotel-partners" element={<AdminRoute><AdminHotelPartners /></AdminRoute>} />
               <Route path="/admin/blogs" element={<AdminRoute><AdminBlogs /></AdminRoute>} />
               <Route path="/admin/team" element={<AdminRoute><AdminTeam /></AdminRoute>} />
+              {/* Catch-all route */}
+              <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Suspense>
           </main>

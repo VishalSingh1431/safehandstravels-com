@@ -80,7 +80,7 @@ router.get('/slug/:slug', async (req, res) => {
     const { slug } = req.params;
     const trip = await Trip.findBySlug(slug);
 
-    if (!trip) {
+    if (!trip || trip.status !== 'active') {
       return res.status(404).json({ error: 'Trip not found' });
     }
 
@@ -94,6 +94,17 @@ router.get('/slug/:slug', async (req, res) => {
 // Create trip (Admin only)
 router.post('/', verifyToken, verifyAdmin, async (req, res) => {
   try {
+    const { title, duration, price } = req.body;
+    if (!title || !title.trim()) {
+      return res.status(400).json({ error: 'Title is required' });
+    }
+    if (!duration || !duration.trim()) {
+      return res.status(400).json({ error: 'Duration is required' });
+    }
+    if (!price || (typeof price === 'string' && !price.trim())) {
+      return res.status(400).json({ error: 'Price is required' });
+    }
+
     const tripData = {
       ...req.body,
       createdBy: req.user.userId,
@@ -108,8 +119,8 @@ router.post('/', verifyToken, verifyAdmin, async (req, res) => {
   } catch (error) {
     console.error('Error creating trip:', error);
     
-    if (error.code === '23505') { // Unique constraint violation
-      return res.status(400).json({ error: 'Trip with this slug already exists' });
+    if (error.code === '23505' || error.code === 'ER_DUP_ENTRY' || error.errno === 1062) {
+      return res.status(400).json({ error: 'A trip with this title or slug already exists' });
     }
     
     res.status(500).json({ 

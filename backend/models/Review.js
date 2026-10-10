@@ -17,10 +17,10 @@ class Review {
       `;
 
       const values = [
-        data.name,
+        data.name || '',
         data.rating || 5,
         data.location || null,
-        data.review,
+        data.review || '',
         data.avatar || null,
         data.avatarPublicId || null,
         data.type || 'video',

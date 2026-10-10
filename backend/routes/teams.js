@@ -67,6 +67,10 @@ router.get('/:id', async (req, res) => {
 // Create team member (Admin only)
 router.post('/', verifyToken, verifyAdmin, async (req, res) => {
   try {
+    if (!req.body.name?.trim()) {
+      return res.status(400).json({ error: 'Name is required' });
+    }
+
     const team = await Team.create(req.body);
 
     res.status(201).json({

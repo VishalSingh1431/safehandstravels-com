@@ -1,6 +1,7 @@
 import express from 'express';
 import { verifyToken, verifyAdmin } from '../middleware/auth.js';
 import BrandingPartner from '../models/BrandingPartner.js';
+import { deleteFile } from '../utils/cloudinaryService.js';
 
 const router = express.Router();
 
@@ -65,6 +66,10 @@ router.get('/:id', async (req, res) => {
 // Create partner (Admin only)
 router.post('/', verifyToken, verifyAdmin, async (req, res) => {
   try {
+    if (!req.body.name?.trim()) {
+      return res.status(400).json({ error: 'Partner name is required' });
+    }
+
     const partnerData = {
       ...req.body,
       createdBy: req.user.userId,
@@ -89,11 +94,23 @@ router.post('/', verifyToken, verifyAdmin, async (req, res) => {
 router.put('/:id', verifyToken, verifyAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const partner = await BrandingPartner.update(id, req.body);
-
-    if (!partner) {
+    const existingPartner = await BrandingPartner.findById(id);
+    if (!existingPartner) {
       return res.status(404).json({ error: 'Partner not found' });
     }
+
+    const updateData = { ...req.body };
+
+    // If new logo uploaded, delete old one
+    if (updateData.logoUrl && existingPartner.logoPublicId && updateData.logoUrl !== existingPartner.logoUrl) {
+      try {
+        await deleteFile(existingPartner.logoPublicId, 'image');
+      } catch (err) {
+        console.error('Error deleting old partner logo:', err);
+      }
+    }
+
+    const partner = await BrandingPartner.update(id, updateData);
 
     res.json({
       message: 'Partner updated successfully',
@@ -112,11 +129,21 @@ router.put('/:id', verifyToken, verifyAdmin, async (req, res) => {
 router.delete('/:id', verifyToken, verifyAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const partner = await BrandingPartner.delete(id);
+    const partner = await BrandingPartner.findById(id);
 
     if (!partner) {
       return res.status(404).json({ error: 'Partner not found' });
     }
+
+    if (partner.logoPublicId) {
+      try {
+        await deleteFile(partner.logoPublicId, 'image');
+      } catch (err) {
+        console.error('Error deleting partner logo from Cloudinary:', err);
+      }
+    }
+
+    await BrandingPartner.delete(id);
 
     res.json({
       message: 'Partner deleted successfully',

@@ -65,6 +65,10 @@ router.get('/:id', async (req, res) => {
 // Create FAQ (Admin only)
 router.post('/', verifyToken, verifyAdmin, async (req, res) => {
   try {
+    if (!req.body.question?.trim() || !req.body.answer?.trim()) {
+      return res.status(400).json({ error: 'Question and answer are required' });
+    }
+
     const faqData = {
       ...req.body,
       createdBy: req.user.userId,

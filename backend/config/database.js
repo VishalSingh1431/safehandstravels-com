@@ -287,7 +287,8 @@ export const initializeDatabase = async () => {
       CREATE TABLE IF NOT EXISTS trips (
         id INT AUTO_INCREMENT PRIMARY KEY,
         title VARCHAR(255) NOT NULL,
-        location VARCHAR(255) NOT NULL,
+        location TEXT NOT NULL,
+        city VARCHAR(255) DEFAULT NULL,
         duration VARCHAR(50) NOT NULL,
         price VARCHAR(50) NOT NULL,
         old_price VARCHAR(50),
@@ -379,6 +380,21 @@ export const initializeDatabase = async () => {
       console.log('✅ Added enquiry_form_type column to trips table');
     } catch (e) {
       // Column might already exist, ignore
+    }
+
+    // Add city column if it doesn't exist
+    try {
+      await pool.query(`ALTER TABLE trips ADD COLUMN city VARCHAR(255) DEFAULT NULL`);
+      console.log('✅ Added city column to trips table');
+    } catch (e) {
+      // Column might already exist, ignore
+    }
+
+    // Ensure location column can store multi-destination JSON without overflow
+    try {
+      await pool.query(`ALTER TABLE trips MODIFY COLUMN location TEXT NOT NULL`);
+    } catch (e) {
+      // Ignore
     }
 
     // Create certificates table if it doesn't exist

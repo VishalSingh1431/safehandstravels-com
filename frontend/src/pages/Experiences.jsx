@@ -43,11 +43,15 @@ function Experiences() {
   }
 
   const handleDestinationClick = (destination) => {
-    navigate(`/blog/destination/${destination.id}`)
+    navigate(`/destination/${encodeURIComponent(destination.name)}`)
   }
 
   const handleBlogClick = (blog) => {
-    navigate(`/blog/${blog.id}`)
+    if (blog.slug) {
+      navigate(`/blog/${blog.slug}`)
+    } else {
+      navigate(`/blog/${blog.id}`)
+    }
   }
 
   return (

@@ -18,7 +18,7 @@ class Team {
       `;
 
       const values = [
-        data.name,
+        data.name || '',
         data.position || null,
         data.bio || null,
         data.photoUrl || null,

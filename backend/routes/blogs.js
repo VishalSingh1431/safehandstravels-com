@@ -123,6 +123,10 @@ router.get('/slug/:slug', async (req, res) => {
 // Create blog (Admin only)
 router.post('/', verifyToken, verifyAdmin, async (req, res) => {
   try {
+    if (!req.body.title?.trim()) {
+      return res.status(400).json({ error: 'Blog title is required' });
+    }
+
     const blogData = {
       ...req.body,
       createdBy: req.user.userId,
@@ -143,6 +147,9 @@ router.post('/', verifyToken, verifyAdmin, async (req, res) => {
     });
   } catch (error) {
     console.error('Error creating blog:', error);
+    if (error.code === 'ER_DUP_ENTRY' || error.errno === 1062 || error.code === '23505') {
+      return res.status(400).json({ error: 'A blog with this title or slug already exists' });
+    }
     res.status(500).json({ 
       error: 'Failed to create blog',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
@@ -176,6 +183,9 @@ router.put('/:id', verifyToken, verifyAdmin, async (req, res) => {
     });
   } catch (error) {
     console.error('Error updating blog:', error);
+    if (error.code === 'ER_DUP_ENTRY' || error.errno === 1062 || error.code === '23505') {
+      return res.status(400).json({ error: 'A blog with this title or slug already exists' });
+    }
     res.status(500).json({ 
       error: 'Failed to update blog',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined

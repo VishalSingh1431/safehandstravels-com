@@ -19,23 +19,26 @@ class Blog {
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
+      const baseSlug = data.slug || this.generateSlug(data.title || 'untitled');
+      const uniqueSlug = await this.getUniqueSlug(baseSlug);
+
       const values = [
-        data.title,
-        data.slug || this.generateSlug(data.title),
-        data.description,
-        data.content,
+        data.title || '',
+        uniqueSlug,
+        data.description || null,
+        data.content || '',
         data.heroImage || null,
         data.heroImagePublicId || null,
         data.category || null,
         JSON.stringify(data.tags || []),
         data.author || null,
         data.authorId || null,
-        data.featured || false,
+        Boolean(data.featured),
         data.status || 'draft',
         data.displayOrder || 0,
         data.views || 0,
-        data.metaTitle || data.title,
-        data.metaDescription || data.description,
+        data.metaTitle || data.title || '',
+        data.metaDescription || data.description || null,
         JSON.stringify(data.metaKeywords || []),
         data.publishedAt || null,
         data.createdBy || null,
@@ -52,10 +55,32 @@ class Blog {
   }
 
   /**
+   * Get unique slug for blog
+   */
+  static async getUniqueSlug(baseSlug, excludeId = null) {
+    let slug = baseSlug;
+    let counter = 1;
+    while (true) {
+      let query = 'SELECT id FROM blogs WHERE slug = ?';
+      const params = [slug];
+      if (excludeId) {
+        query += ' AND id != ?';
+        params.push(excludeId);
+      }
+      const [rows] = await pool.query(query, params);
+      if (rows.length === 0) {
+        return slug;
+      }
+      slug = `${baseSlug}-${counter}`;
+      counter++;
+    }
+  }
+
+  /**
    * Generate slug from title
    */
   static generateSlug(title) {
-    return title
+    return (title || 'untitled')
       .toLowerCase()
       .trim()
       .replace(/[^\w\s-]/g, '')
@@ -175,10 +200,14 @@ class Blog {
       };
 
       for (const [key, dbKey] of Object.entries(fieldMapping)) {
+        if (key === 'slug') continue;
         if (data[key] !== undefined) {
           if (key === 'tags' || key === 'metaKeywords') {
             updates.push(`${dbKey} = ?`);
             values.push(JSON.stringify(data[key]));
+          } else if (key === 'featured') {
+            updates.push(`${dbKey} = ?`);
+            values.push(Boolean(data[key]));
           } else {
             updates.push(`${dbKey} = ?`);
             values.push(data[key]);
@@ -186,12 +215,16 @@ class Blog {
         }
       }
 
-      // Generate slug if title changed but slug not provided
-      if (data.title && !data.slug) {
+      if (data.slug) {
+        const uniqueSlug = await this.getUniqueSlug(data.slug, id);
+        updates.push('slug = ?');
+        values.push(uniqueSlug);
+      } else if (data.title) {
         const blog = await this.findById(id);
         if (blog && blog.title !== data.title) {
+          const uniqueSlug = await this.getUniqueSlug(this.generateSlug(data.title), id);
           updates.push('slug = ?');
-          values.push(this.generateSlug(data.title));
+          values.push(uniqueSlug);
         }
       }
 
