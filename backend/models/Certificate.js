@@ -157,12 +157,28 @@ class Certificate {
   static mapRowToCertificate(row) {
     if (!row) return null;
 
+    const safeParse = (val) => {
+      if (!val) return [];
+      if (Array.isArray(val)) return val;
+      if (typeof val === 'string') {
+        const trimmed = val.trim();
+        if (!trimmed) return [];
+        try {
+          const parsed = JSON.parse(trimmed);
+          return Array.isArray(parsed) ? parsed : [];
+        } catch {
+          return [trimmed];
+        }
+      }
+      return [];
+    };
+
     return {
       id: row.id,
       title: row.title,
       description: row.description,
-      images: Array.isArray(row.images) ? row.images : (row.images ? JSON.parse(row.images) : []),
-      imagesPublicIds: Array.isArray(row.images_public_ids) ? row.images_public_ids : (row.images_public_ids ? JSON.parse(row.images_public_ids) : []),
+      images: safeParse(row.images),
+      imagesPublicIds: safeParse(row.images_public_ids),
       status: row.status,
       createdBy: row.created_by,
       createdAt: row.created_at,

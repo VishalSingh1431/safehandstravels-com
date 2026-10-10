@@ -285,6 +285,25 @@ class Blog {
   static mapRowToBlog(row) {
     if (!row) return null;
 
+    const safeParse = (val) => {
+      if (!val) return [];
+      if (Array.isArray(val)) return val;
+      if (typeof val === 'string') {
+        const trimmed = val.trim();
+        if (!trimmed) return [];
+        try {
+          const parsed = JSON.parse(trimmed);
+          return Array.isArray(parsed) ? parsed : [];
+        } catch {
+          if (trimmed.includes(',')) {
+            return trimmed.split(',').map(s => s.trim()).filter(Boolean);
+          }
+          return [trimmed];
+        }
+      }
+      return [];
+    };
+
     return {
       id: row.id,
       title: row.title,
@@ -294,7 +313,7 @@ class Blog {
       heroImage: row.hero_image,
       heroImagePublicId: row.hero_image_public_id,
       category: row.category,
-      tags: JSON.parse(row.tags || '[]'),
+      tags: safeParse(row.tags),
       author: row.author,
       authorId: row.author_id,
       featured: Boolean(row.featured),
@@ -303,7 +322,7 @@ class Blog {
       views: row.views || 0,
       metaTitle: row.meta_title,
       metaDescription: row.meta_description,
-      metaKeywords: JSON.parse(row.meta_keywords || '[]'),
+      metaKeywords: safeParse(row.meta_keywords),
       publishedAt: row.published_at,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
