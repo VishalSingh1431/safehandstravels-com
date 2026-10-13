@@ -448,6 +448,33 @@ const AdminTrips = () => {
     }
   };
 
+  const handleMultipleHeroImagesUpload = async (files) => {
+    if (!files || files.length === 0) return;
+
+    try {
+      setUploading(prev => ({ ...prev, heroImages: true }));
+
+      const uploadPromises = Array.from(files).map(file => uploadAPI.uploadImage(file));
+      const results = await Promise.all(uploadPromises);
+
+      const newUrls = results.map(r => r.url);
+      const newPublicIds = results.map(r => r.public_id);
+
+      setFormData(prev => ({
+        ...prev,
+        heroImages: [...(prev.heroImages || []), ...newUrls],
+        heroImagesPublicIds: [...(prev.heroImagesPublicIds || []), ...newPublicIds]
+      }));
+
+      toast.success(`${results.length} hero image(s) uploaded successfully!`);
+    } catch (error) {
+      console.error('Error uploading hero images:', error);
+      toast.error(error.message || 'Failed to upload hero images');
+    } finally {
+      setUploading(prev => ({ ...prev, heroImages: false }));
+    }
+  };
+
   // Extract YouTube video ID from URL
   const extractYouTubeId = (url) => {
     if (!url) return '';
@@ -1289,7 +1316,13 @@ const AdminTrips = () => {
                   <input
                     type="file"
                     accept="image/*"
-                    onChange={(e) => e.target.files[0] && handleFileUpload(e.target.files[0], 'heroImages')}
+                    multiple
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files.length > 0) {
+                        handleMultipleHeroImagesUpload(e.target.files);
+                        e.target.value = '';
+                      }
+                    }}
                     className="hidden"
                     id="hero-images-upload"
                   />
@@ -1298,8 +1331,9 @@ const AdminTrips = () => {
                     className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg font-semibold hover:bg-blue-200 transition-colors cursor-pointer inline-flex items-center gap-2"
                   >
                     {uploading.heroImages ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
-                    Add Hero Image
+                    Add Hero Images (Multiple)
                   </label>
+                  <p className="text-xs text-gray-500 mt-1">Select up to 5 images at once for the top banner</p>
                 </div>
 
                 {/* Gallery */}

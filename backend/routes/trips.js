@@ -176,6 +176,21 @@ router.put('/:id', verifyToken, verifyAdmin, async (req, res) => {
       }
     }
 
+    // Handle hero images deletions
+    if (updateData.heroImages && Array.isArray(updateData.heroImages)) {
+      const oldHeroIds = existingTrip.heroImagesPublicIds || [];
+      const newHeroIds = updateData.heroImagesPublicIds || [];
+      const heroIdsToDelete = oldHeroIds.filter(id => !newHeroIds.includes(id));
+
+      if (heroIdsToDelete.length > 0) {
+        try {
+          await deleteFiles(heroIdsToDelete, 'image');
+        } catch (err) {
+          console.error('Error deleting old hero images:', err);
+        }
+      }
+    }
+
     console.log('--- API UPDATE TRIP ---');
     console.log('ID:', id);
     console.log('Update Data keys:', Object.keys(updateData));
@@ -241,6 +256,14 @@ router.delete('/:id', verifyToken, verifyAdmin, async (req, res) => {
         await deleteFiles(trip.galleryPublicIds, 'image');
       } catch (err) {
         console.error('Error deleting gallery images:', err);
+      }
+    }
+
+    if (trip.heroImagesPublicIds && trip.heroImagesPublicIds.length > 0) {
+      try {
+        await deleteFiles(trip.heroImagesPublicIds, 'image');
+      } catch (err) {
+        console.error('Error deleting hero images:', err);
       }
     }
 

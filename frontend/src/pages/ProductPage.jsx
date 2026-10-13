@@ -508,24 +508,37 @@ function ProductPage() {
               <div className="relative w-full bg-gray-50 py-8 md:py-12">
                 <div className="mx-auto w-full px-4 sm:px-6 lg:px-8">
                   {(() => {
-                    // Get hero images for slider - use trip.heroImages if available, otherwise fallback to gallery
+                    // Get hero images for slider - use trip.heroImages if available, supplement with gallery/main image if under 5
                     const getHeroImages = () => {
-                      // First priority: use heroImages if available
-                      if (trip.heroImages && trip.heroImages.length > 0) {
-                        return trip.heroImages
-                      }
-                      // Second priority: use content.gallery if available
-                      if (content && content.gallery && content.gallery.length > 0) {
-                        const galleryImages = content.gallery
-                        const mainImage = trip.imageUrl || trip.image
-                        if (mainImage && !galleryImages.includes(mainImage)) {
-                          return [mainImage, ...galleryImages]
+                      const list = [];
+                      const addImage = (img) => {
+                        if (img && typeof img === 'string' && img.trim() && !list.includes(img.trim())) {
+                          list.push(img.trim());
                         }
-                        return galleryImages
+                      };
+
+                      // 1. Use heroImages first
+                      if (trip.heroImages && Array.isArray(trip.heroImages)) {
+                        trip.heroImages.forEach(addImage);
                       }
-                      // Fallback: use getAllGalleryImages
-                      return getAllGalleryImages()
-                    }
+
+                      // 2. If fewer than 5, supplement with gallery images
+                      if (list.length < 5 && content && content.gallery && Array.isArray(content.gallery)) {
+                        content.gallery.forEach(addImage);
+                      }
+
+                      // 3. If still fewer than 5, supplement with main image
+                      if (list.length < 5) {
+                        addImage(trip.imageUrl || trip.image);
+                      }
+
+                      // 4. Fallback if empty
+                      if (list.length === 0) {
+                        return getAllGalleryImages();
+                      }
+
+                      return list;
+                    };
                     const heroImages = getHeroImages()
                     const totalImages = heroImages.length
                     const hasMoreThanFive = totalImages > 5
